@@ -1,6 +1,7 @@
 from .exa_search_tool import ExaSearchTool
 from .get_email_tool import GetEmailTool
 from .knowledge_base_search_tool import KnowledgeBaseSearchTool
+from .pathology_search_tool import PathologySearchTool
 from .send_email_tool import SendEmailTool
 from .tavily_search_tool import TavilySearchTool
 from .linkup_search_tool import LinkupSearchTool
@@ -14,14 +15,15 @@ from .list_directory_tool import ListDirectoryTool
 from .terminal_tool import TerminalTool
 
 __all__ = [
-    "ExaSearchTool", 
-    "KnowledgeBaseSearchTool", 
-    "SendEmailTool", 
-    "GetEmailTool", 
-    "TavilySearchTool", 
+    "ExaSearchTool",
+    "KnowledgeBaseSearchTool",
+    "PathologySearchTool",
+    "SendEmailTool",
+    "GetEmailTool",
+    "TavilySearchTool",
     "LinkupSearchTool",
     "CreateFileTool",
-    "ReadFileTool", 
+    "ReadFileTool",
     "DeleteFileTool",
     "CreateDirectoryTool",
     "DeleteDirectoryTool",

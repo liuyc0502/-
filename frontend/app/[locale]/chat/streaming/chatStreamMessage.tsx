@@ -26,6 +26,7 @@ import { copyToClipboard } from "@/lib/clipboard";
 import log from "@/lib/logger";
 
 import { ChatAttachment } from "../internal/chatAttachment";
+import { PathologyImageViewer } from "@/components/ui/PathologyImageViewer";
 
 interface StreamMessageProps {
   message: ChatMessageType;
@@ -366,6 +367,18 @@ export function ChatStreamMessage({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Pathology Images */}
+            {message.pathologyImages && message.pathologyImages.length > 0 && (
+              <div className="mt-4 space-y-4">
+                {message.pathologyImages.map((pathologyData, index) => (
+                  <PathologyImageViewer
+                    key={`pathology-${message.id}-${index}`}
+                    data={pathologyData}
+                  />
+                ))}
               </div>
             )}
           </>

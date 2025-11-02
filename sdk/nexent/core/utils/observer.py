@@ -22,6 +22,7 @@ class ProcessType(Enum):
 
     SEARCH_CONTENT = "search_content"  # search content in tool
     PICTURE_WEB = "picture_web"  # record the image after联网搜索
+    PATHOLOGY_IMAGE = "pathology_image"  # pathology image with anatomical annotations
 
     CARD = "card"  # content that needs to be rendered by the front end using cards
     TOOL = "tool"  # tool name
@@ -160,6 +161,7 @@ class MessageObserver:
             ProcessType.SEARCH_CONTENT: default_transformer,
             ProcessType.TOKEN_COUNT: TokenCountTransformer(),
             ProcessType.PICTURE_WEB: default_transformer,
+            ProcessType.PATHOLOGY_IMAGE: default_transformer,
             ProcessType.AGENT_FINISH: default_transformer,
             ProcessType.CARD: default_transformer,
             ProcessType.TOOL: default_transformer,

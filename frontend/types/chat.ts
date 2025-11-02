@@ -123,6 +123,7 @@ export interface ChatMessageType {
   showRawContent?: boolean
   docIds?: string[]
   images?: string[]
+  pathologyImages?: any[]
   isDeepSearch?: boolean
   isDeepSeek?: boolean
   sessionId?: string

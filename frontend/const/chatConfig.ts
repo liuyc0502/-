@@ -96,6 +96,7 @@ messageTypes: {
   CARD: "card" as const,
   MEMORY_SEARCH: "memory_search" as const,
   PICTURE_WEB: "picture_web" as const,
+  PATHOLOGY_IMAGE: "pathology_image" as const,
   FINAL_ANSWER: "final_answer" as const,
   PARSE: "parse" as const,
   TOOL: "tool" as const,

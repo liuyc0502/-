@@ -560,6 +560,39 @@ export const handleStreamResponse = async (
                   }
                   break;
 
+                case chatConfig.messageTypes.PATHOLOGY_IMAGE:
+                  try {
+                    // Parse pathology image data with annotations
+                    const pathologyData = JSON.parse(messageContent);
+
+                    // Update the pathology images array in the current message
+                    setMessages((prev) => {
+                      const newMessages = [...prev];
+                      const lastMsg = newMessages[newMessages.length - 1];
+
+                      // Check if lastMsg exists before accessing its properties
+                      if (!lastMsg) {
+                        return newMessages;
+                      }
+
+                      // If there is no pathology images array, initialize it
+                      if (!lastMsg.pathologyImages) {
+                        lastMsg.pathologyImages = [];
+                      }
+
+                      // Add pathology image data (no deduplication, each case is unique)
+                      lastMsg.pathologyImages.push(pathologyData);
+
+                      return newMessages;
+                    });
+                  } catch (error) {
+                    log.error(
+                      t("chatStreamHandler.processPathologyDataFailed"),
+                      error
+                    );
+                  }
+                  break;
+
                 case chatConfig.messageTypes.FINAL_ANSWER:
                   // Accumulate final answer content and process user break tag
                   finalAnswer += processUserBreakTag(messageContent, t);
