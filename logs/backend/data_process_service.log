@@ -1,0 +1,179 @@
+[08:50:13 INFO data_process_service] 🚀 Starting Data Processing Services
+[08:50:13 INFO data_process_service] ==================================================
+[08:50:13 INFO data_process_service] 📋 Effective service config: {'start_workers': True, 'start_flower': True, 'start_ray': True, 'disable_ray_dashboard': False, 'redis_port': 6379, 'flower_port': 5555, 'ray_dashboard_port': 8265}
+[08:50:13 INFO data_process_service] Starting Redis...
+[08:50:13 INFO data_process_service] ✅ Redis connection successful: redis://redis:6379/0
+[08:50:13 INFO data_process_service] Starting Ray Cluster...
+[08:50:13 INFO data_process_service] 🔮 Starting Ray cluster...
+[08:50:13 INFO data_process.ray_config] Cannot connect to Ray cluster: Could not find any running Ray instance. Please specify the one to connect to by setting `--address` flag or `RAY_ADDRESS` environment variable.
+[08:50:13 INFO data_process.ray_config] Starting local cluster...
+2025-11-07 08:50:16,005	INFO services.py:2180 -- object_store_memory is not verified when plasma_directory is set.
+2025-11-07 08:50:16,173	INFO worker.py:2003 -- Started a local Ray instance. View the dashboard at [1m[32m172.18.0.2:8265 [39m[22m
+/opt/backend/.venv/lib/python3.10/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+  warnings.warn(
+[08:50:16 INFO data_process.ray_config] ✅ Ray initialization successful
+[08:50:16 INFO data_process_service] ✅ Ray cluster initialized successfully!
+[08:50:16 INFO data_process_service] ✅ Ray dashboard available at: http://0.0.0.0:8265
+[08:50:16 INFO data_process_service] ✅ Ray cluster resources: {'CPU': 4.0, 'node:172.18.0.2': 1.0, 'object_store_memory': 2147483648.0, 'node:__internal_head__': 1.0, 'memory': 4546793472.0}
+[08:50:16 INFO data_process_service] ✅ RAY_ADDRESS environment variable set to 172.18.0.2:49540
+[08:50:16 INFO data_process_service] Starting Celery Workers...
+[08:50:16 INFO data_process_service] Starting workers in development environment
+[08:50:16 INFO data_process_service] Starting process-worker worker for queue: process_q with concurrency: 2
+[08:50:16 INFO data_process_service] Worker CWD: /opt/backend
+[08:50:16 INFO data_process_service] Worker PYTHONPATH: /opt:/opt/backend
+[08:50:16 INFO data_process_service] Started process-worker worker with PID: 5620
+[08:50:16 INFO data_process_service] Starting forward-worker worker for queue: forward_q with concurrency: 8
+[08:50:16 INFO data_process_service] Worker CWD: /opt/backend
+[08:50:16 INFO data_process_service] Worker PYTHONPATH: /opt:/opt/backend
+[08:50:16 INFO data_process_service] Started forward-worker worker with PID: 5622
+[08:50:16 INFO data_process_service] ✅ All Celery workers started successfully
+[08:50:16 INFO data_process_service] Waiting for workers to register...
+[08:50:18 INFO data_process_service] [forward-worker] Start Celery worker 'forward-worker' with queues: forward_q
+[08:50:18 INFO data_process_service] [forward-worker] Worker concurrency: 8
+[08:50:18 INFO data_process_service] [forward-worker] ⚙️ Starting worker 'forward-worker'...
+[08:50:18 INFO data_process_service] [process-worker] Start Celery worker 'process-worker' with queues: process_q
+[08:50:18 INFO data_process_service] [process-worker] Worker concurrency: 2
+[08:50:18 INFO data_process_service] [process-worker] ⚙️ Starting worker 'process-worker'...
+[08:50:18 INFO data_process_service] [forward-worker] /opt/backend/.venv/lib/python3.10/site-packages/celery/platforms.py:841: SecurityWarning: You're running the worker with superuser privileges: this is
+[08:50:18 INFO data_process_service] [process-worker] /opt/backend/.venv/lib/python3.10/site-packages/celery/platforms.py:841: SecurityWarning: You're running the worker with superuser privileges: this is
+[08:50:18 INFO data_process_service] [forward-worker] absolutely not recommended!
+[08:50:18 INFO data_process_service] [forward-worker] Please specify a different user using the --uid option.
+[08:50:18 INFO data_process_service] [process-worker] absolutely not recommended!
+[08:50:18 INFO data_process_service] [process-worker] Please specify a different user using the --uid option.
+[08:50:18 INFO data_process_service] [forward-worker] User information: uid=0 euid=0 gid=0 egid=0
+[08:50:18 INFO data_process_service] [forward-worker] warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
+[08:50:18 INFO data_process_service] [process-worker] User information: uid=0 euid=0 gid=0 egid=0
+[08:50:18 INFO data_process_service] [process-worker] warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
+[08:50:18 INFO data_process_service] [forward-worker] ============================================================
+[08:50:18 INFO data_process_service] [forward-worker] 🚀 Celery Worker initialization started
+[08:50:18 INFO data_process_service] [forward-worker] Process ID: 5622
+[08:50:18 INFO data_process_service] [forward-worker] ============================================================
+[08:50:18 INFO data_process_service] [forward-worker] 🔮 Ray connecting to existing cluster...
+[08:50:18 INFO data_process_service] [process-worker] ============================================================
+[08:50:18 INFO data_process_service] [forward-worker] Initialize Ray connection for Celery Worker...
+[08:50:18 INFO data_process_service] [process-worker] 🚀 Celery Worker initialization started
+[08:50:18 INFO data_process_service] [process-worker] Process ID: 5620
+[08:50:18 INFO data_process_service] [process-worker] ============================================================
+[08:50:18 INFO data_process_service] [process-worker] 🔮 Ray connecting to existing cluster...
+[08:50:18 INFO data_process_service] [process-worker] Initialize Ray connection for Celery Worker...
+[08:50:18 INFO data_process_service] [process-worker] 2025-11-07 08:50:18,764	INFO worker.py:1832 -- Connecting to existing Ray cluster at address: 172.18.0.2:49540...
+[08:50:18 INFO data_process_service] [forward-worker] 2025-11-07 08:50:18,765	INFO worker.py:1832 -- Connecting to existing Ray cluster at address: 172.18.0.2:49540...
+[08:50:18 INFO data_process_service] [process-worker] 2025-11-07 08:50:18,778	INFO worker.py:2003 -- Connected to Ray cluster. View the dashboard at [1m[32m172.18.0.2:8265 [39m[22m
+[08:50:18 INFO data_process_service] [process-worker] /opt/backend/.venv/lib/python3.10/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+[08:50:18 INFO data_process_service] [process-worker] warnings.warn(
+[08:50:18 INFO data_process_service] [process-worker] ✅ Successfully connected to Ray cluster
+[08:50:18 INFO data_process_service] [process-worker] ✅ Ray connected to cluster at 172.18.0.2:49540 successfully.
+[08:50:18 INFO data_process_service] [process-worker] 🔍 Check sensitive variables
+[08:50:18 INFO data_process_service] [forward-worker] 2025-11-07 08:50:18,830	INFO worker.py:2003 -- Connected to Ray cluster. View the dashboard at [1m[32m172.18.0.2:8265 [39m[22m
+[08:50:18 INFO data_process_service] [process-worker] -------------- process-worker@dd68681e2dad v5.5.3 (immunity)
+[08:50:18 INFO data_process_service] [process-worker] --- ***** -----
+[08:50:18 INFO data_process_service] [process-worker] -- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41 2025-11-07 08:50:18
+[08:50:18 INFO data_process_service] [process-worker] - *** --- * ---
+[08:50:18 INFO data_process_service] [process-worker] - ** ---------- [config]
+[08:50:18 INFO data_process_service] [process-worker] - ** ---------- .> app:         nexent:0x731240c8a770
+[08:50:18 INFO data_process_service] [process-worker] - ** ---------- .> transport:   redis://redis:6379/0
+[08:50:18 INFO data_process_service] [process-worker] - ** ---------- .> results:     redis://redis:6379/1
+[08:50:18 INFO data_process_service] [process-worker] - *** --- * --- .> concurrency: 2 (thread)
+[08:50:18 INFO data_process_service] [process-worker] -- ******* ---- .> task events: ON
+[08:50:18 INFO data_process_service] [process-worker] --- ***** -----
+[08:50:18 INFO data_process_service] [process-worker] -------------- [queues]
+[08:50:18 INFO data_process_service] [process-worker] .> process_q        exchange=process_q(direct) key=process_q
+[08:50:18 INFO data_process_service] [process-worker] [tasks]
+[08:50:18 INFO data_process_service] [process-worker] . data_process.tasks.forward
+[08:50:18 INFO data_process_service] [process-worker] . data_process.tasks.process
+[08:50:18 INFO data_process_service] [process-worker] . data_process.tasks.process_and_forward
+[08:50:18 INFO data_process_service] [process-worker] . data_process.tasks.process_sync
+[08:50:18 INFO data_process_service] [process-worker] Connected to redis://redis:6379/0
+[08:50:18 INFO data_process_service] [process-worker] mingle: searching for neighbors
+[08:50:18 INFO data_process_service] [forward-worker] /opt/backend/.venv/lib/python3.10/site-packages/ray/_private/worker.py:2051: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
+[08:50:18 INFO data_process_service] [forward-worker] warnings.warn(
+[08:50:18 INFO data_process_service] [forward-worker] ✅ Successfully connected to Ray cluster
+[08:50:18 INFO data_process_service] [forward-worker] ✅ Ray connected to cluster at 172.18.0.2:49540 successfully.
+[08:50:18 INFO data_process_service] [forward-worker] 🔍 Check sensitive variables
+[08:50:18 INFO data_process_service] [forward-worker] -------------- forward-worker@dd68681e2dad v5.5.3 (immunity)
+[08:50:18 INFO data_process_service] [forward-worker] --- ***** -----
+[08:50:18 INFO data_process_service] [forward-worker] -- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41 2025-11-07 08:50:18
+[08:50:18 INFO data_process_service] [forward-worker] - *** --- * ---
+[08:50:18 INFO data_process_service] [forward-worker] - ** ---------- [config]
+[08:50:18 INFO data_process_service] [forward-worker] - ** ---------- .> app:         nexent:0x7f233d4b0fa0
+[08:50:18 INFO data_process_service] [forward-worker] - ** ---------- .> transport:   redis://redis:6379/0
+[08:50:18 INFO data_process_service] [forward-worker] - ** ---------- .> results:     redis://redis:6379/1
+[08:50:18 INFO data_process_service] [forward-worker] - *** --- * --- .> concurrency: 8 (thread)
+[08:50:18 INFO data_process_service] [forward-worker] -- ******* ---- .> task events: ON
+[08:50:18 INFO data_process_service] [forward-worker] --- ***** -----
+[08:50:18 INFO data_process_service] [forward-worker] -------------- [queues]
+[08:50:18 INFO data_process_service] [forward-worker] .> forward_q        exchange=forward_q(direct) key=forward_q
+[08:50:18 INFO data_process_service] [forward-worker] [tasks]
+[08:50:18 INFO data_process_service] [forward-worker] . data_process.tasks.forward
+[08:50:18 INFO data_process_service] [forward-worker] . data_process.tasks.process
+[08:50:18 INFO data_process_service] [forward-worker] . data_process.tasks.process_and_forward
+[08:50:18 INFO data_process_service] [forward-worker] . data_process.tasks.process_sync
+[08:50:18 INFO data_process_service] [forward-worker] Connected to redis://redis:6379/0
+[08:50:18 INFO data_process_service] [forward-worker] mingle: searching for neighbors
+[08:50:19 INFO data_process_service] [process-worker] mingle: all alone
+[08:50:19 INFO data_process_service] [process-worker] ✅ Celery Worker is fully ready!
+[08:50:19 INFO data_process_service] [process-worker] process-worker@dd68681e2dad ready.
+[08:50:19 INFO data_process_service] [forward-worker] mingle: all alone
+[08:50:19 INFO data_process_service] [forward-worker] ✅ Celery Worker is fully ready!
+[08:50:19 INFO data_process_service] [forward-worker] forward-worker@dd68681e2dad ready.
+[08:50:21 INFO data_process_service] Starting Flower Monitoring...
+[08:50:21 INFO data_process_service] ✅ Flower monitoring started with PID: 5897
+[08:50:23 INFO data_process_service] [Flower] Visit me at http://0.0.0.0:5555
+[08:50:23 INFO data_process_service] [Flower] Broker: redis://redis:6379/0
+[08:50:23 INFO data_process_service] [Flower] Registered tasks:
+[08:50:23 INFO data_process_service] [Flower] ['celery.accumulate',
+[08:50:23 INFO data_process_service] [Flower] 'celery.backend_cleanup',
+[08:50:23 INFO data_process_service] [Flower] 'celery.chain',
+[08:50:23 INFO data_process_service] [Flower] 'celery.chord',
+[08:50:23 INFO data_process_service] [Flower] 'celery.chord_unlock',
+[08:50:23 INFO data_process_service] [Flower] 'celery.chunks',
+[08:50:23 INFO data_process_service] [Flower] 'celery.group',
+[08:50:23 INFO data_process_service] [Flower] 'celery.map',
+[08:50:23 INFO data_process_service] [Flower] 'celery.starmap',
+[08:50:23 INFO data_process_service] [Flower] 'data_process.tasks.forward',
+[08:50:23 INFO data_process_service] [Flower] 'data_process.tasks.process',
+[08:50:23 INFO data_process_service] [Flower] 'data_process.tasks.process_and_forward',
+[08:50:23 INFO data_process_service] [Flower] 'data_process.tasks.process_sync']
+[08:50:23 INFO data_process_service] [Flower] Connected to redis://redis:6379/0
+[08:50:24 INFO data_process_service] ==================================================
+[08:50:24 INFO data_process_service] ✅ Started 4/4 services successfully
+[08:50:24 INFO data_process_service] 
+📋 Service Information:
+[08:50:24 INFO data_process_service] ------------------------------
+[08:50:24 INFO data_process_service] 🔴 Redis: redis://redis:6379/0
+[08:50:24 INFO data_process_service] 🔮 Ray Cluster: 172.18.0.2:49540
+[08:50:24 INFO data_process_service] 🎯 Ray Dashboard: http://localhost:8265
+[08:50:24 INFO data_process_service] 👷 Workers: 2 processes
+[08:50:24 INFO data_process_service]    - process-worker: queue=process_q
+[08:50:24 INFO data_process_service]    - forward-worker: queue=forward_q
+[08:50:24 INFO data_process_service] 🌸 Flower: http://localhost:5555
+[08:50:24 INFO data_process_service] ------------------------------
+[08:50:31 INFO data_process.service] Redis client initialized successfully.
+[08:50:31 INFO data_process_service] 🌐 Starting API server on 0.0.0.0:5012
+[08:50:31 INFO data_process_service] Starting data processing service...
+[08:50:31 INFO data_process.service] Data processing service started
+[08:54:34 INFO data_process.service] Data processing service stopped
+[08:54:34 INFO data_process_service] Shutting down data processing service...
+[08:54:34 INFO data_process_service] 🛑 Stopping all services...
+[08:54:34 INFO data_process_service] Stopping Celery workers...
+[08:54:34 INFO data_process_service] Terminating process-worker worker (PID: 5620)
+[08:54:34 INFO data_process_service] [process-worker] worker: Warm shutdown (MainProcess)
+[08:54:34 INFO data_process_service] [process-worker] 🛑 Celery Worker is shutting down...
+[08:54:34 INFO data_process_service] [process-worker] 🛑 Completed tasks: 0
+[08:54:34 INFO data_process_service] [process-worker] 🛑 Failed tasks: 0
+[08:54:35 INFO data_process_service] process-worker worker terminated gracefully
+[08:54:35 INFO data_process_service] Terminating forward-worker worker (PID: 5622)
+[08:54:35 INFO data_process_service] [forward-worker] worker: Warm shutdown (MainProcess)
+[08:54:35 INFO data_process_service] [forward-worker] 🛑 Celery Worker is shutting down...
+[08:54:35 INFO data_process_service] [forward-worker] 🛑 Completed tasks: 0
+[08:54:35 INFO data_process_service] [forward-worker] 🛑 Failed tasks: 0
+[08:54:36 INFO data_process_service] forward-worker worker terminated gracefully
+[08:54:36 INFO data_process_service] All workers stopped
+[08:54:36 INFO data_process_service] 🛑 Stopping Ray cluster...
+[08:54:37 INFO data_process_service] 🛑 Ray cluster stopped
+[08:54:38 INFO data_process_service] 🛑 Stopping Flower monitoring (PID: 5897)...
+[08:54:38 INFO data_process_service] Sending SIGTERM to Flower process group (PGID: 5897).
+[08:54:38 INFO data_process_service] [Flower] 15 detected, shutting down
+[08:54:39 INFO data_process_service] ✅ Flower stopped gracefully.
+[08:54:39 INFO data_process_service] ✅ All services stopped
+[08:54:39 INFO data_process_service] Data processing service shutdown complete

@@ -1,0 +1,19 @@
+
+> nexent@0.1.0 dev /opt/frontend
+> node server.js
+
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'optimizeCss'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+> Ready on http://localhost:3000
+> --- Backend URL Configuration ---
+> HTTP Backend Target: http://localhost:5010
+> WebSocket Backend Target: ws://localhost:5010
+> MinIO Backend Target: http://nexent-minio:9000
+> ---------------------------------
+ ELIFECYCLE  Command failed.

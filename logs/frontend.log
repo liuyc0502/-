@@ -1,0 +1,8 @@
+
+> nexent@0.1.0 dev /opt/frontend
+> node server.js
+
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'optimizeCss'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ELIFECYCLE  Command failed.
