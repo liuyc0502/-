@@ -45,7 +45,7 @@ export interface AuthContextType {
   openRegisterModal: () => void;
   closeRegisterModal: () => void;
   setIsFromSessionExpired: (value: boolean) => void;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, showSuccessMessage?: boolean) => Promise<void>;
   register: (
     email: string,
     password: string,

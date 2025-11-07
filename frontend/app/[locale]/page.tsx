@@ -8,11 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { Dropdown } from "antd";
+import { useRouter } from "next/navigation";
+import { Dropdown, App } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { languageOptions } from "@/const/constants";
 import { useLanguageSwitch } from "@/lib/language";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/useAuth";
+import { PORTAL_ROUTES } from "@/types/portal";
 
 // Portal type definition
 type PortalType = "doctor" | "student" | "patient" | "admin";
@@ -63,12 +66,19 @@ const portals: Portal[] = [
 
 export default function Home() {
   const { t } = useTranslation("common");
+  const { message } = App.useApp();
+  const router = useRouter();
+  const { login, register, isLoading: authLoading } = useAuth();
   const { currentLanguage, handleLanguageChange } = useLanguageSwitch();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [expandedPortal, setExpandedPortal] = useState<PortalType | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [buttonPosition, setButtonPosition] = useState<{ top: number; left: number; width: number; height: number; finalTop: number; finalLeft: number } | null>(null);
 
@@ -89,6 +99,13 @@ export default function Home() {
   }, [expandedPortal]);
 
   const handlePortalClick = (portalId: PortalType, e: React.MouseEvent<HTMLButtonElement>) => {
+    // Admin portal: direct navigation to setup page
+    if (portalId === "admin") {
+      router.push("/setup");
+      return;
+    }
+
+    // For other portals: show login form
     const button = e.currentTarget;
     const rect = button.getBoundingClientRect();
     
@@ -120,19 +137,99 @@ export default function Home() {
     setExpandedPortal(null);
     setEmail("");
     setPassword("");
+    setConfirmPassword("");
     setRememberMe(false);
+    setShowRegisterForm(false);
     setButtonPosition(null);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic here
-    console.log("Login:", { email, password, rememberMe, portal: expandedPortal });
+    
+    if (!email || !password) {
+      message.warning(t("auth.pleaseEnterEmailAndPassword", "请输入邮箱和密码"));
+      return;
+    }
+
+    if (!expandedPortal) return;
+
+    setIsLoggingIn(true);
+    
+    try {
+      // Call login function (showSuccessMessage = false, we'll show custom message)
+      await login(email, password, false);
+      
+      // Login successful, navigate to the corresponding portal
+      const portalRoute = PORTAL_ROUTES[expandedPortal];
+      if (portalRoute) {
+        message.success(t("auth.loginSuccess", "登录成功"));
+        // Add slight delay to ensure state is updated before navigation
+        setTimeout(() => {
+          router.push(portalRoute);
+        }, 100);
+      }
+      
+      handleClose();
+    } catch (error: any) {
+      // Error handling
+      const errorMessage = error?.message || t("auth.loginFailed", "登录失败");
+      message.error(errorMessage);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
-  const handleRegister = () => {
-    // Register logic here
-    console.log("Navigate to register");
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password || !confirmPassword) {
+      message.warning("请填写完整的注册信息");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      message.error("两次输入的密码不一致");
+      return;
+    }
+
+    if (password.length < 6) {
+      message.error("密码长度至少为6位");
+      return;
+    }
+
+    if (!expandedPortal) return;
+
+    setIsRegistering(true);
+    
+    try {
+      // Call register function
+      await register(email, password);
+      
+      // Registration successful, navigate to the corresponding portal
+      const portalRoute = PORTAL_ROUTES[expandedPortal];
+      if (portalRoute) {
+        message.success("注册成功！");
+        // Add slight delay to ensure state is updated before navigation
+        setTimeout(() => {
+          router.push(portalRoute);
+        }, 100);
+      }
+      
+      handleClose();
+    } catch (error: any) {
+      // Error handling
+      const errorMessage = error?.message || "注册失败，请重试";
+      message.error(errorMessage);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const toggleForm = () => {
+    setShowRegisterForm(!showRegisterForm);
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
   };
 
   const goToPrevious = () => {
@@ -259,17 +356,17 @@ export default function Home() {
         <>
           <button
             onClick={goToPrevious}
-            className="fixed left-6 top-1/2 -translate-y-1/2 z-10 bg-black/10 hover:bg-black/20 backdrop-blur-sm rounded-full p-4 transition-all duration-200"
+            className="fixed left-6 top-1/2 -translate-y-1/2 z-10 transition-all duration-200 hover:opacity-70"
             aria-label="Previous portal"
           >
-            <ChevronLeft className="w-8 h-8 text-gray-900" />
+            <ChevronLeft className="w-10 h-10 text-gray-900" strokeWidth={3} />
           </button>
           <button
             onClick={goToNext}
-            className="fixed right-6 top-1/2 -translate-y-1/2 z-10 bg-black/10 hover:bg-black/20 backdrop-blur-sm rounded-full p-4 transition-all duration-200"
+            className="fixed right-6 top-1/2 -translate-y-1/2 z-10 transition-all duration-200 hover:opacity-70"
             aria-label="Next portal"
           >
-            <ChevronRight className="w-8 h-8 text-gray-900" />
+            <ChevronRight className="w-10 h-10 text-gray-900" strokeWidth={3} />
           </button>
         </>
       )}
@@ -302,26 +399,30 @@ export default function Home() {
               left: buttonPosition.left,
               width: buttonPosition.width,
               height: buttonPosition.height,
+              borderRadius: "8px",
             }}
             animate={{
               top: buttonPosition.finalTop,
               left: buttonPosition.finalLeft,
               width: 420,
               height: 600,
+              borderRadius: "16px",
             }}
             exit={{
               top: buttonPosition.top,
               left: buttonPosition.left,
               width: buttonPosition.width,
               height: buttonPosition.height,
+              borderRadius: "8px",
             }}
             transition={{
               duration: 0.4,
               ease: [0.32, 0.72, 0, 1],
             }}
-            className="fixed z-50 bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="fixed z-50 bg-white shadow-2xl"
             style={{
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              overflow: "hidden",
             }}
           >
               {/* Button text shown during exit animation */}
@@ -329,11 +430,15 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0 }}
                 exit={{ opacity: 1 }}
-                transition={{ duration: 0.1 }}
-                className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-white bg-gray-900 border-2 border-gray-900 rounded-2xl pointer-events-none"
+                transition={{ 
+                  duration: 0.1,
+                  delay: 0.35
+                }}
+                className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-white bg-gray-900 border-2 border-gray-900 pointer-events-none"
                 style={{
                   fontFamily: "'Inter', 'SF Pro', Arial, sans-serif",
                   fontWeight: 600,
+                  borderRadius: "inherit",
                 }}
               >
                 {portals.find((p) => p.id === expandedPortal)?.buttonText}
@@ -360,10 +465,11 @@ export default function Home() {
                 className="p-8"
               >
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  {portals.find((p) => p.id === expandedPortal)?.loginTitle}登录
+                  {portals.find((p) => p.id === expandedPortal)?.loginTitle}
+                  {showRegisterForm ? "注册" : "登录"}
                 </h2>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={showRegisterForm ? handleRegisterSubmit : handleLogin} className="space-y-5">
                   <div>
                     <Label htmlFor="email" className="text-sm text-gray-600 mb-2">
                       邮箱地址
@@ -388,46 +494,70 @@ export default function Home() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="请输入您的密码"
+                      placeholder={showRegisterForm ? "请输入密码（至少6位）" : "请输入您的密码"}
                       className="w-full px-4 py-3 border border-gray-300 rounded-md focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                       required
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="remember"
-                        checked={rememberMe}
-                        onCheckedChange={(checked: boolean) =>
-                          setRememberMe(checked)
-                        }
-                      />
-                      <Label
-                        htmlFor="remember"
-                        className="text-sm text-gray-600 cursor-pointer"
-                      >
-                        记住我
+                  {/* Confirm password field - only show in register mode */}
+                  {showRegisterForm && (
+                    <div>
+                      <Label htmlFor="confirmPassword" className="text-sm text-gray-600 mb-2">
+                        确认密码
                       </Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="请再次输入密码"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                        required
+                      />
                     </div>
-                    <a
-                      href="#"
-                      className="text-sm text-gray-900 hover:underline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        console.log("Forgot password");
-                      }}
-                    >
-                      忘记密码？
-                    </a>
-                  </div>
+                  )}
+
+                  {!showRegisterForm && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="remember"
+                          checked={rememberMe}
+                          onCheckedChange={(checked: boolean) =>
+                            setRememberMe(checked)
+                          }
+                        />
+                        <Label
+                          htmlFor="remember"
+                          className="text-sm text-gray-600 cursor-pointer"
+                        >
+                          记住我
+                        </Label>
+                      </div>
+                      <a
+                        href="#"
+                        className="text-sm text-gray-900 hover:underline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log("Forgot password");
+                        }}
+                      >
+                        忘记密码？
+                      </a>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
-                    className="w-full bg-gray-900 text-white py-3 rounded-md text-base font-semibold hover:bg-gray-800 transition-colors"
+                    disabled={isLoggingIn || isRegistering || authLoading}
+                    className="w-full bg-gray-900 text-white py-3 rounded-md text-base font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ height: "48px" }}
                   >
-                    登录
+                    {showRegisterForm 
+                      ? (isRegistering ? "注册中..." : "注册") 
+                      : (isLoggingIn ? "登录中..." : "登录")
+                    }
                   </Button>
 
                   <div className="relative my-6">
@@ -435,18 +565,21 @@ export default function Home() {
                       <div className="w-full border-t border-gray-200"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-gray-500">或</span>
+                      <span className="px-4 bg-white text-gray-500">
+                        {showRegisterForm ? "已有账号？" : "还没有账号？"}
+                      </span>
                     </div>
                   </div>
 
                   <Button
                     type="button"
-                    onClick={handleRegister}
+                    onClick={toggleForm}
+                    disabled={isLoggingIn || isRegistering}
                     variant="outline"
-                    className="w-full border-2 border-gray-900 text-gray-900 py-3 rounded-md text-base font-semibold hover:bg-gray-50 transition-colors"
+                    className="w-full border-2 border-gray-900 text-gray-900 py-3 rounded-md text-base font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ height: "48px" }}
                   >
-                    注册新账号
+                    {showRegisterForm ? "返回登录" : "注册新账号"}
                   </Button>
                 </form>
               </motion.div>
