@@ -9,6 +9,10 @@ import { useTranslation } from "react-i18next";
 
 import { ROLE_ASSISTANT } from "@/const/agentConfig";
 import { chatConfig } from "@/const/chatConfig";
+import {
+  portalChatConfigs,
+  type PortalChatVariant,
+} from "@/const/portalChatConfig";
 import { USER_ROLES } from "@/const/modelConfig";
 import { useConfig } from "@/hooks/useConfig";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,7 +63,11 @@ const getI18nKeyByType = (type: string): string => {
   return typeToKeyMap[type] || "";
 };
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  variant?: PortalChatVariant;
+}
+
+export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const router = useRouter();
   const { user } = useAuth(); // Get user information
   const [input, setInput] = useState("");
@@ -70,6 +78,11 @@ export function ChatInterface() {
   const [isSwitchedConversation, setIsSwitchedConversation] = useState(false); // Add conversation switching tracking state
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation("common");
+  const portalConfig = portalChatConfigs[variant] || portalChatConfigs.general;
+  const displayName =
+    user?.email?.split("@")[0] ||
+    portalConfig.defaultUserName ||
+    "朋友";
   
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
@@ -1577,7 +1590,10 @@ export function ChatInterface() {
 
   return (
     <>
-      <div className="flex h-screen">
+      <div
+        className="flex h-screen text-[#1A1A1A]"
+        style={{ backgroundColor: portalConfig.backgroundColor }}
+      >
         <ChatSidebar
           conversationList={conversationManagement.conversationList}
           selectedConversationId={conversationManagement.selectedConversationId}
@@ -1598,6 +1614,8 @@ export function ChatInterface() {
           userEmail={user?.email}
           userAvatarUrl={user?.avatar_url}
           userRole={user?.role}
+          userName={displayName}
+          portalConfig={portalConfig}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -1606,6 +1624,7 @@ export function ChatInterface() {
               <ChatHeader
                 title={conversationManagement.conversationTitle}
                 onRename={handleTitleRename}
+                portalConfig={portalConfig}
               />
 
               <ChatStreamMain
@@ -1635,6 +1654,8 @@ export function ChatInterface() {
                 shouldScrollToBottom={shouldScrollToBottom}
                 selectedAgentId={selectedAgentId}
                 onAgentSelect={setSelectedAgentId}
+                portalConfig={portalConfig}
+                userDisplayName={displayName}
               />
             </div>
 

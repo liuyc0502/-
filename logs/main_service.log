@@ -1,0 +1,87 @@
+Building prefix dict from the default dictionary ...
+Loading model from cache /tmp/jieba.cache
+Loading model cost 0.426 seconds.
+Prefix dict has been built successfully.
+OpenTelemetry not available. FastAPI monitoring skipped. Install with: pip install nexent[performance]
+[08:20:51 INFO main_service] Starting server initialization...
+[08:20:51 INFO main_service] APP version is: v1.7.5.1
+[08:20:51 INFO tool_configuration_service] Starting tool initialization on server startup...
+[08:20:51 INFO tool_configuration_service] Found 2 tenants: ['283a9e02-41c3-4beb-8cd2-138bb0170a5d', 'tenant_id']
+[08:20:51 INFO tool_configuration_service] Initializing tools for tenant: 283a9e02-41c3-4beb-8cd2-138bb0170a5d
+[31m[08:20:59 ERROR tool_configuration_service] failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -3] Temporary failure in name resolution[0m
+[31m[08:20:59 ERROR tool_configuration_service] failed to get all mcp tools, detail: failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -3] Temporary failure in name resolution[0m
+[31m[08:20:59 ERROR tool_configuration_service] Tool initialization failed for tenant 283a9e02-41c3-4beb-8cd2-138bb0170a5d: failed to get all mcp tools, detail: failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -3] Temporary failure in name resolution[0m
+[08:20:59 INFO tool_configuration_service] Initializing tools for tenant: tenant_id
+[31m[08:21:03 ERROR tool_configuration_service] failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -2] Name or service not known[0m
+[31m[08:21:03 ERROR tool_configuration_service] failed to get all mcp tools, detail: failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -2] Name or service not known[0m
+[31m[08:21:03 ERROR tool_configuration_service] Tool initialization failed for tenant tenant_id: failed to get all mcp tools, detail: failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -2] Name or service not known[0m
+[08:21:03 INFO tool_configuration_service] Tool initialization completed!
+[08:21:03 INFO tool_configuration_service] Total tools available across all tenants: 0
+[08:21:03 INFO tool_configuration_service] Successfully processed: 0/2 tenants
+[33m[08:21:03 WARNING tool_configuration_service] Failed tenants: 283a9e02-41c3-4beb-8cd2-138bb0170a5d (error: failed to get all mcp tools, detail: failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -3] Temporary failure in name resolution), tenant_id (error: failed to get all mcp tools, detail: failed to get tool from remote MCP server, detail: Client failed to connect: [Errno -2] Name or service not known)[0m
+[08:21:03 INFO main_service] Server initialization completed successfully!
+/opt/backend/.venv/lib/python3.10/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+  warnings.warn(  # deprecated in 14.0 - 2024-11-09
+/opt/backend/.venv/lib/python3.10/site-packages/uvicorn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+  from websockets.server import WebSocketServerProtocol
+INFO:     Started server process [59091]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:5010 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50952 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50960 - "GET /api/v1/health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59468 - "GET /api/tenant_config/deployment_version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59470 - "GET /api/tenant_config/deployment_version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59476 - "GET /api/user/service_health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59480 - "GET /api/user/service_health HTTP/1.1" 200 OK
+[08:25:03 INFO mock_user_management_app] Mock signin request: email=mock@example.com
+INFO:     127.0.0.1:59496 - "POST /api/user/signin HTTP/1.1" 200 OK
+[08:25:03 INFO mock_user_management_app] Mock signin request: email=mock@example.com
+INFO:     127.0.0.1:59506 - "POST /api/user/signin HTTP/1.1" 200 OK
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+INFO:     127.0.0.1:59508 - "GET /api/config/load_config HTTP/1.1" 200 OK
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:04 INFO config_utils] No configurations found for tenant tenant_id
+INFO:     127.0.0.1:59510 - "GET /api/config/load_config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59516 - "GET /api/user/service_health HTTP/1.1" 200 OK
+[08:25:06 INFO mock_user_management_app] Mock signin request: email=lyc0502@outlook.com
+INFO:     127.0.0.1:59530 - "POST /api/user/signin HTTP/1.1" 200 OK
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+[08:25:07 INFO config_utils] No configurations found for tenant tenant_id
+INFO:     127.0.0.1:59538 - "GET /api/config/load_config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41276 - "GET /api/agent/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41260 - "GET /api/memory/config/load HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41282 - "GET /api/conversation/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41294 - "GET /api/agent/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41308 - "GET /api/memory/config/load HTTP/1.1" 200 OK

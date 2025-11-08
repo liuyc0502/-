@@ -37,6 +37,8 @@ export function ChatStreamMain({
   shouldScrollToBottom,
   selectedAgentId,
   onAgentSelect,
+  portalConfig,
+  userDisplayName,
 }: ChatStreamMainProps) {
   const { t } = useTranslation();
   // Animation variants for ChatInput
@@ -464,42 +466,38 @@ export function ChatStreamMain({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative custom-scrollbar">
-      {/* Main message area */}
-      <ScrollArea className="flex-1 px-4 pt-4" ref={scrollAreaRef}>
-        <div className="max-w-3xl mx-auto">
+      <ScrollArea
+        className="flex-1 px-4 md:px-12 pt-4"
+        ref={scrollAreaRef}
+      >
+        <div className="max-w-3xl lg:max-w-4xl mx-auto space-y-6">
           {processedMessages.finalMessages.length === 0 ? (
             isLoadingHistoricalConversation ? (
-              // when loading historical conversation, show empty area
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-                <div className="text-gray-500 text-sm">
+              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
+                <div className="text-[#6B6B6B] text-sm">
                   {t("chatStreamMain.loadingConversation")}
                 </div>
               </div>
             ) : conversationLoadError ? (
-              // when conversation load error, show error message
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
                 <div className="text-center max-w-md">
-                  <div className="text-red-500 text-sm mb-4">
+                  <div className="text-[#D94527] text-sm mb-4">
                     {t("chatStreamMain.loadError")}
                   </div>
-                  <div className="text-gray-500 text-xs mb-4">
+                  <div className="text-[#6B6B6B] text-xs mb-4">
                     {conversationLoadError}
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      // Trigger a page refresh to retry loading
-                      window.location.reload();
-                    }}
+                    onClick={() => window.location.reload()}
                   >
                     {t("chatStreamMain.retry")}
                   </Button>
                 </div>
               </div>
             ) : (
-              // when new conversation, show input interface
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
                 <div className="w-full max-w-3xl">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -513,7 +511,7 @@ export function ChatStreamMain({
                         input={input}
                         isLoading={isLoading}
                         isStreaming={isStreaming}
-                        isInitialMode={true}
+                        isInitialMode
                         onInputChange={onInputChange}
                         onSend={onSend}
                         onStop={onStop}
@@ -524,6 +522,8 @@ export function ChatStreamMain({
                         onImageUpload={onImageUpload}
                         selectedAgentId={selectedAgentId}
                         onAgentSelect={onAgentSelect}
+                        portalConfig={portalConfig}
+                        userDisplayName={userDisplayName}
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -614,6 +614,8 @@ export function ChatStreamMain({
               onImageUpload={onImageUpload}
               selectedAgentId={selectedAgentId}
               onAgentSelect={onAgentSelect}
+              portalConfig={portalConfig}
+              userDisplayName={userDisplayName}
             />
           </motion.div>
         </AnimatePresence>

@@ -142,3 +142,86 @@
 
 ---
 
+## 2025-11-08
+
+### 医生端聊天界面 Claude 化改造与多端复用能力
+
+**修改文件**:
+- `frontend/const/portalChatConfig.ts` (新建)
+- `frontend/app/[locale]/chat/components/chatLeftSidebar.tsx`
+- `frontend/app/[locale]/chat/components/chatHeader.tsx`
+- `frontend/app/[locale]/chat/components/chatInput.tsx`
+- `frontend/app/[locale]/chat/streaming/chatStreamMain.tsx`
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx`
+- `frontend/app/[locale]/doctor/page.tsx`
+- `frontend/types/chat.ts`
+- `doc/doctor-chat-summary-2025-11-08.md` (新建)
+
+**功能说明**:
+- 左侧导航重构为 Claude 风格：带有折叠/展开、品牌标识、功能快捷入口、搜索与分组的最近对话。
+- 右侧主区域新增欢迎 Hero、提示语和一体化输入卡片，支持多行输入、附件/语音上传、Agent 选择和即时快捷提问按钮。
+- 快捷提问按钮（Code/Write/Learn/Life stuff/Claude's choice）可一键填充输入框，便于医生快速发起常见请求。
+- 医生端页面直接复用聊天界面，实现从首页进入医生端即落地新聊天体验。
+
+**技术实现**:
+- 新增 `portalChatConfig` 配置表，集中管理不同端的品牌色、导航项、快捷按钮、输入提示等元信息。
+- `ChatInterface`、`ChatSidebar`、`ChatInput`、`ChatStreamMain` 等核心组件支持 `variant`/`portalConfig` 参数，方便其他端口开关主题。
+- 输入框和导航的样式细节全部采用 Tailwind 自定义颜色，确保与提供的设计稿（米白背景 + 橙红主色）一致。
+- `doc/doctor-chat-summary-2025-11-08.md` 记录当日投产内容，方便后续查阅。
+
+**复用策略**:
+- `portalChatConfig` 已预留 doctor/general 配置，其余端口只需补齐配置并在路由中传入 `variant` 即可接入。
+- `ChatInterface` 仍保留原有对话、上传、流式等逻辑，只对布局与 UI 层做改造，最大化复用既有能力。
+
+---
+
+## 2025-11-08
+
+### 聊天侧边栏动画优化与布局对齐修复
+
+**修改文件**:
+- [frontend/app/[locale]/chat/components/chatLeftSidebar.tsx](/opt/frontend/app/[locale]/chat/components/chatLeftSidebar.tsx) (更新)
+
+**功能说明**:
+- 🎯 **完美对齐的展开/收起动画**：
+  - 折叠和展开状态下，所有按钮保持在同一垂直位置
+  - 文字内容从按钮右侧平滑淡入，无位置跳动
+  - 图标位置固定不动，仅内容区域宽度变化
+- 🎨 **丝滑的过渡效果**：
+  - 侧边栏宽度使用 300ms ease-in-out 缓动
+  - 文字内容带有渐进式淡入延迟（75ms 起，每项递增 25ms）
+  - 所有交互元素 200ms 平滑过渡
+- ✨ **布局一致性保障**：
+  - 折叠状态：左内边距 16px (pl-4)，按钮从此基准开始
+  - 展开状态：相同的左内边距，文字在按钮右侧滑入
+  - 按钮尺寸严格统一（展开按钮 48px，导航按钮 44px）
+- 🎯 **悬停效果增强**:
+  - 展开状态按钮轻微缩放（1.02x）配合阴影变化
+  - 折叠状态按钮较大缩放（1.05x）提供明确反馈
+  - 设置按钮悬停时显示边框和阴影
+- 💫 **微交互动画**:
+  - 搜索输入框悬停时边框颜色平滑过渡
+  - 所有图标带有 transform 过渡防止跳动
+  - 文字内容使用 opacity 过渡配合 overflow 裁切
+
+**技术实现**:
+- 统一左侧基准对齐：折叠和展开状态均使用 `pl-4` (16px)
+- 文字区域添加 `overflow-hidden` + `opacity` 动画实现淡入效果
+- 使用 `transitionDelay` 为每个导航项创建渐进式动画
+- 按钮容器固定尺寸（h-12 w-12 或 h-11 w-11）配合 `flex-shrink-0`
+- 展开按钮从 40px 增大到 48px 与折叠状态完全对齐
+
+**用户体验**:
+- ✅ 按钮位置完全不跳动，保持视觉连续性
+- ✅ 文字从按钮右侧自然滑出，符合用户预期
+- ✅ 动画流畅无卡顿，具有专业级品质
+- ✅ 展开/收起状态切换丝滑如黄油
+- ✅ 所有元素对齐精确，无视觉故障
+
+**关键修复**:
+- **展开按钮尺寸**：从 h-10 w-10 调整为 h-12 w-12 与折叠状态对齐
+- **左侧对齐基准**：统一使用 pl-4 确保按钮位置一致
+- **文字淡入动画**：使用 opacity + overflow 替代位置变化
+- **导航项布局**：h-11 w-11 容器包裹图标，文字独立渐进淡入
+
+---

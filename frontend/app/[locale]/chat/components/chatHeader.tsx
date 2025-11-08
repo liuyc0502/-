@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { USER_ROLES } from "@/const/modelConfig";
 
 import MemoryManageModal from "../internal/memory/memoryManageModal";
+import type { PortalChatConfig } from "@/const/portalChatConfig";
 
 // Gradient definition for BrainCircuit icon
 const GradientDefs = () => (
@@ -36,9 +37,10 @@ const GradientDefs = () => (
 interface ChatHeaderProps {
   title: string;
   onRename?: (newTitle: string) => void;
+  portalConfig: PortalChatConfig;
 }
 
-export function ChatHeader({ title, onRename }: ChatHeaderProps) {
+export function ChatHeader({ title, onRename, portalConfig }: ChatHeaderProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
@@ -52,6 +54,10 @@ export function ChatHeader({ title, onRename }: ChatHeaderProps) {
   const { currentLanguage, handleLanguageChange } = useLanguageSwitch();
   const { user } = useAuth();
   const isAdmin = user?.role === USER_ROLES.ADMIN;
+
+  const displayedTitle =
+    title ||
+    t("chatHeader.newConversation", { defaultValue: "New conversation" });
 
   const goToModelSetup = () => {
     router.push(`/${currentLanguage}/setup/models`);
@@ -132,80 +138,72 @@ export function ChatHeader({ title, onRename }: ChatHeaderProps) {
   return (
     <>
       <GradientDefs />
-      <header className="border-b border-transparent bg-background z-10">
-        <div className="p-3 pb-1">
-          <div className="relative flex flex-1">
-            <div className="absolute left-0 top-1/2 transform -translate-y-1/2">
-              {/* Left button area */}
+      <header className="px-10 pt-6 pb-2 border-b border-transparent bg-transparent z-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.35em] text-[#B1997B]">
+              {portalConfig.brandName}
+            </p>
+            <div className="mt-3">
+              {isEditing ? (
+                <Input
+                  ref={inputRef}
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleSubmit}
+                  className="text-2xl font-semibold h-11 max-w-md border-[#E5E5E5] bg-white/70"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  className="text-3xl font-semibold text-[#1A1A1A] font-serif cursor-text hover:text-[#D16E47] transition-colors"
+                  onDoubleClick={handleDoubleClick}
+                  title={t("chatHeader.doubleClickToEdit")}
+                >
+                  {displayedTitle}
+                </button>
+              )}
             </div>
+          </div>
 
-            <div className="w-full flex justify-center">
-              <div className="max-w-3xl w-full flex justify-center mt-2 mb-0">
-                {isEditing ? (
-                  <Input
-                    ref={inputRef}
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onBlur={handleSubmit}
-                    className="text-xl font-bold text-center h-9 max-w-xs"
-                    autoFocus
-                  />
-                ) : (
-                  <h1
-                    className="text-xl font-bold cursor-pointer px-2 py-1 rounded border border-transparent hover:border-slate-200"
-                    onDoubleClick={handleDoubleClick}
-                    title={t("chatHeader.doubleClickToEdit")}
-                  >
-                    {title}
-                  </h1>
-                )}
-              </div>
-            </div>
-
-            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 flex items-center space-x-1 gap-1">
-              {/* Language Switch */}
-              <Dropdown
-                menu={{
-                  items: languageOptions.map((opt) => ({
-                    key: opt.value,
-                    label: opt.label,
-                  })),
-                  onClick: ({ key }) => handleLanguageChange(key as string),
+          <div className="flex items-center space-x-2">
+            <Dropdown
+              menu={{
+                items: languageOptions.map((opt) => ({
+                  key: opt.value,
+                  label: opt.label,
+                })),
+                onClick: ({ key }) => handleLanguageChange(key as string),
+              }}
+            >
+              <a className="ant-dropdown-link text-sm font-medium text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors flex items-center gap-2 cursor-pointer rounded-full border border-[#E5E5E5] px-3 py-2 bg-white">
+                <Globe className="h-4 w-4" />
+                {languageOptions.find((o) => o.value === currentLanguage)
+                  ?.label || currentLanguage}
+                <DownOutlined className="text-[10px]" />
+              </a>
+            </Dropdown>
+            <Badge dot={embeddingConfigured && hasNewMemory} offset={[-4, 4]}>
+              <ButtonUI
+                variant="ghost"
+                className={`rounded-full px-3 py-2 h-10 flex items-center gap-2 border border-[#E5E5E5] bg-white ${
+                  !embeddingConfigured ? "opacity-50" : ""
+                }`}
+                onClick={() => {
+                  if (!embeddingConfigured) {
+                    setShowConfigPrompt(true);
+                    return;
+                  }
+                  setMemoryModalVisible(true);
                 }}
               >
-                <a className="ant-dropdown-link text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors flex items-center gap-2 cursor-pointer w-[100px] border-0 shadow-none bg-transparent text-left">
-                  <Globe className="h-4 w-4" />
-                  {languageOptions.find((o) => o.value === currentLanguage)
-                    ?.label || currentLanguage}
-                  <DownOutlined className="text-[10px]" />
-                </a>
-              </Dropdown>
-              {/* Memory Setting */}
-              <Badge dot={embeddingConfigured && hasNewMemory} offset={[-4, 4]}>
-                <ButtonUI
-                  variant="ghost"
-                  className={`mr-4 rounded-full px-2 py-1 h-7 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                    !embeddingConfigured ? "opacity-50" : ""
-                  }`}
-                  onClick={() => {
-                    if (!embeddingConfigured) {
-                      setShowConfigPrompt(true);
-                      return;
-                    }
-                    setMemoryModalVisible(true);
-                  }}
-                >
-                  <BrainCircuit
-                    className="size-5"
-                    stroke="url(#brainCogGradient)"
-                  />
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                    {t("memoryManageModal.title")}
-                  </span>
-                </ButtonUI>
-              </Badge>
-            </div>
+                <BrainCircuit className="h-5 w-5 text-[#B87345]" />
+                <span className="text-sm text-[#6B6B6B]">
+                  {t("chatHeader.memory", { defaultValue: "Memory" })}
+                </span>
+              </ButtonUI>
+            </Badge>
           </div>
         </div>
       </header>
