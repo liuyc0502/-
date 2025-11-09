@@ -138,7 +138,7 @@ export function ChatHeader({ title, onRename, portalConfig }: ChatHeaderProps) {
   return (
     <>
       <GradientDefs />
-      <header className="px-10 pt-6 pb-2 border-b border-transparent bg-transparent z-10">
+      <header className="px-16 pt-6 pb-2 border-b border-transparent bg-transparent z-10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.35em] text-[#B1997B]">

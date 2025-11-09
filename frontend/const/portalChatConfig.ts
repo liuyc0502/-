@@ -37,11 +37,8 @@ export interface PortalChatConfig {
   accentColor: string;
   backgroundColor: string;
   brandName: string;
-  heroIcon?: string;
-  heroGreeting?: string;
   heroSubheading?: string;
   inputPlaceholder?: string;
-  newChatLabel: string;
   newChatDescription?: string;
   navItems: PortalNavItemConfig[];
   quickActions: PortalQuickActionConfig[];
@@ -88,12 +85,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   general: {
     accentColor: "#D94527",
     backgroundColor: "#FAFAFA",
-    brandName: "Claude",
-    heroIcon: "✺",
-    heroGreeting: "Good afternoon",
+    brandName: "安语",
     heroSubheading: "How can I help you today?",
     inputPlaceholder: "How can I help you today?",
-    newChatLabel: "New chat",
     newChatDescription: "Start a fresh conversation",
     navItems: [
       { id: "chats", label: "Chats", icon: MessageSquare },
@@ -112,12 +106,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   doctor: {
     accentColor: "#D94527",
     backgroundColor: "#FAFAFA",
-    brandName: "Claude",
-    heroIcon: "✺",
-    heroGreeting: "Good afternoon",
+    brandName: "安语",
     heroSubheading: "How can I help you today?",
     inputPlaceholder: "How can I help you today?",
-    newChatLabel: "新对话",
     newChatDescription: "快速开始一次病例讨论",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
@@ -136,12 +127,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   student: {
     accentColor: "#2563EB",
     backgroundColor: "#F5F9FF",
-    brandName: "Claude",
-    heroIcon: "✺",
-    heroGreeting: "Good afternoon",
+    brandName: "安语",
     heroSubheading: "Ready to learn together?",
     inputPlaceholder: "What do you want to study today?",
-    newChatLabel: "新对话",
     newChatDescription: "规划一节随时开讲的课程",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
@@ -159,12 +147,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   patient: {
     accentColor: "#10B981",
     backgroundColor: "#F4FBF7",
-    brandName: "Claude",
-    heroIcon: "✺",
-    heroGreeting: "Good afternoon",
+    brandName: "安语",
     heroSubheading: "How can I support your care today?",
     inputPlaceholder: "我今天想了解的健康问题是...",
-    newChatLabel: "新对话",
     newChatDescription: "获取贴心的健康建议",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
@@ -182,22 +167,19 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   admin: {
     accentColor: "#7C3AED",
     backgroundColor: "#F7F3FF",
-    brandName: "Claude",
-    heroIcon: "✺",
-    heroGreeting: "Good afternoon",
-    heroSubheading: "Let's keep the team aligned.",
-    inputPlaceholder: "What would you like to coordinate?",
-    newChatLabel: "新对话",
-    newChatDescription: "指挥中心的即时沟通",
+    brandName: "安语",
+    heroSubheading: "System configuration and management",
+    inputPlaceholder: "What would you like to configure?",
+    newChatDescription: "管理系统配置",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
-      { id: "operations", label: "运营面板", icon: FolderKanban },
-      { id: "reports", label: "报表分析", icon: FileText },
-      { id: "insights", label: "战略洞察", icon: Lightbulb },
-      { id: "knowledge", label: "知识库", icon: Brain },
+      { id: "agents", label: "智能体配置", icon: Sparkles },
+      { id: "models", label: "模型管理", icon: Code },
+      { id: "knowledge", label: "知识库管理", icon: Brain },
+      { id: "system", label: "系统设置", icon: FolderKanban },
     ],
     quickActions: sharedQuickActions,
-    searchPlaceholder: "搜索团队或对话",
+    searchPlaceholder: "搜索配置或对话",
     recentLabel: "Recents",
     quickActionHeading: "管理员常用快捷提问",
     defaultUserName: "沉宸",

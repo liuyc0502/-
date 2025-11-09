@@ -99,12 +99,6 @@ export default function Home() {
   }, [expandedPortal]);
 
   const handlePortalClick = (portalId: PortalType, e: React.MouseEvent<HTMLButtonElement>) => {
-    // Admin portal: direct navigation to setup page
-    if (portalId === "admin") {
-      router.push("/setup");
-      return;
-    }
-
     // For other portals: show login form
     const button = e.currentTarget;
     const rect = button.getBoundingClientRect();

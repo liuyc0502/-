@@ -44,6 +44,11 @@ import { useTranslation } from "react-i18next";
 
 import type { ChatSidebarProps, ConversationListItem } from "@/types/chat";
 
+const SIDEBAR_EXPANDED_WIDTH = 200;
+const SIDEBAR_COLLAPSED_WIDTH = 72;
+const TEXT_FADE_IN_DELAY = 100;
+const TEXT_FADE_OUT_DURATION = 100;
+
 // conversation status indicator component
 const ConversationStatusIndicator = ({
   isStreaming,
@@ -136,6 +141,9 @@ export function ChatSidebar({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dialogToDelete, setDialogToDelete] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showText, setShowText] = useState(expanded);
+  const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const accentColor = portalConfig.accentColor || "#D94527";
 
   const filteredConversations = conversationList.filter((dialog) =>
@@ -151,11 +159,54 @@ export function ChatSidebar({
     }
   }, [editingId]);
 
+  useEffect(() => {
+    if (expandTimeoutRef.current) {
+      clearTimeout(expandTimeoutRef.current);
+      expandTimeoutRef.current = null;
+    }
+
+    if (collapseTimeoutRef.current) {
+      clearTimeout(collapseTimeoutRef.current);
+      collapseTimeoutRef.current = null;
+    }
+
+    if (expanded) {
+      expandTimeoutRef.current = setTimeout(() => {
+        setShowText(true);
+      }, TEXT_FADE_IN_DELAY);
+    } else {
+      setShowText(false);
+    }
+
+    return () => {
+      if (expandTimeoutRef.current) {
+        clearTimeout(expandTimeoutRef.current);
+        expandTimeoutRef.current = null;
+      }
+
+      if (collapseTimeoutRef.current) {
+        clearTimeout(collapseTimeoutRef.current);
+        collapseTimeoutRef.current = null;
+      }
+    };
+  }, [expanded]);
+
   const handleStartEdit = (dialogId: number, title: string) => {
     setEditingId(dialogId);
     setEditingTitle(title);
     onDropdownOpenChange(false, null);
   };
+
+  // Text content transition with delay on expand, immediate on collapse
+  const slidingContentClass = `transition-all ease-out pointer-events-auto ${
+    showText
+      ? "opacity-100 translate-x-0 duration-200 delay-100"
+      : "opacity-0 -translate-x-2 duration-100 delay-0 pointer-events-none"
+  }`;
+
+  const fadingContentClass = `transition-opacity ease-in-out ${
+    showText ? "opacity-100 duration-200 delay-100" : "opacity-0 duration-100 delay-0"
+  }`;
 
   const handleSubmitEdit = () => {
     if (editingId !== null && editingTitle.trim()) {
@@ -247,8 +298,10 @@ export function ChatSidebar({
     if (dialogs.length === 0) return null;
 
     return (
-      <div className="mt-4">
-        <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-2">
+      <div className={`mt-4 ${slidingContentClass}`}>
+        <p
+          className={`text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-2 ${fadingContentClass}`}
+        >
           {title}
         </p>
         <div className="space-y-1.5">
@@ -365,7 +418,11 @@ export function ChatSidebar({
     }
 
     return (
-      <button className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-[#E0D6C6] bg-white hover:bg-[#FDF8F2] transition-all duration-200 hover:shadow-sm">
+      <button
+        className={`w-full flex items-center rounded-2xl border border-[#E0D6C6] bg-white hover:bg-[#FDF8F2] transition-all duration-200 hover:shadow-sm px-3 ${
+          expanded ? "justify-between" : "justify-center"
+        }`}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-10 w-10 rounded-full overflow-hidden bg-[#F2F0EB] flex items-center justify-center flex-shrink-0">
             {userAvatarUrl ? (
@@ -378,194 +435,172 @@ export function ChatSidebar({
               <User className="h-5 w-5 text-[#6B6B6B]" />
             )}
           </div>
-          <div className="text-left min-w-0">
+          <div
+            className={`text-left min-w-0 transition-all ease-out ${
+              showText
+                ? "opacity-100 translate-x-0 duration-200 delay-100"
+                : "opacity-0 -translate-x-2 duration-100 delay-0 pointer-events-none"
+            }`}
+          >
             <p className="text-sm font-semibold text-[#1A1A1A] truncate">
               {userName || userEmail || "用户"}
             </p>
             <p className="text-xs text-[#6B6B6B]">Pro plan</p>
           </div>
         </div>
-        <ChevronDown className="h-4 w-4 text-[#6B6B6B] flex-shrink-0 transition-transform duration-200" />
+        <ChevronDown 
+          className={`h-4 w-4 text-[#6B6B6B] flex-shrink-0 transition-all ease-in-out ${
+            showText ? "opacity-100 duration-200 delay-100" : "opacity-0 duration-100 delay-0"
+          }`} 
+        />
       </button>
     );
   };
 
-  const renderExpandedSidebar = () => (
-    <div className="hidden md:flex h-full flex-col bg-[#FDF8F2] border-r border-[#E5E5E5] transition-all duration-300 ease-in-out w-[340px]">
-      <div className="flex items-center justify-between pl-4 pr-5 pt-6 pb-2">
-        <div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ width: 'calc(100% - 48px)' }}>
-          <p className="text-[11px] uppercase tracking-[0.3em] text-[#B1997B] opacity-100 transition-opacity duration-300">
-            {portalConfig.brandName}
-          </p>
-          <p className="text-xl font-semibold text-[#1A1A1A] mt-2 opacity-100 transition-opacity duration-300">
-            {portalConfig.newChatLabel}
-          </p>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-white transition-all duration-200 hover:shadow-sm flex-shrink-0"
-                onClick={onToggleSidebar}
-              >
-                <ChevronLeft className="h-5 w-5 text-[#6B6B6B] transition-transform duration-200" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t("chatLeftSidebar.collapseSidebar")}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <div className="px-4 mt-2">
-        <button
-          className="w-full flex items-center gap-3 py-3 pl-2 pr-4 rounded-3xl border border-[#E5E5E5] bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
-          onClick={onNewConversation}
-        >
-          <div
-            className="h-12 w-12 rounded-full flex items-center justify-center text-white flex-shrink-0 transition-all duration-200"
-            style={{ backgroundColor: accentColor }}
-          >
-            <Plus className="h-5 w-5" />
-          </div>
-          <div className="text-left min-w-0 overflow-hidden">
-            <p className="text-sm font-semibold text-[#1A1A1A] opacity-100 transition-opacity duration-300 delay-75">
-              {portalConfig.newChatLabel}
-            </p>
-            {portalConfig.newChatDescription && (
-              <p className="text-xs text-[#6B6B6B] opacity-100 transition-opacity duration-300 delay-75">
-                {portalConfig.newChatDescription}
-              </p>
-            )}
-          </div>
-        </button>
-      </div>
-
-      <div className="px-4 mt-4 space-y-1">
-        {portalConfig.navItems.map((item, index) => (
-          <button
-            key={item.id}
-            className="w-full flex items-center gap-3 py-2 pl-2 pr-3 rounded-2xl text-sm text-[#4D4D4D] hover:bg-white transition-all duration-200 hover:scale-[1.02]"
-            type="button"
-          >
-            <div className="h-11 w-11 flex items-center justify-center flex-shrink-0">
-              <item.icon className="h-4 w-4 transition-transform duration-200" />
-            </div>
-            <span className="truncate opacity-100 transition-opacity duration-300" style={{ transitionDelay: `${75 + index * 25}ms` }}>
-              {item.label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="px-4 pt-5">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#B3AEA5] transition-transform duration-200" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={portalConfig.searchPlaceholder}
-            className="pl-10 pr-4 h-11 rounded-2xl bg-white border-[#EFE8DE] placeholder:text-[#B3AEA5] focus-visible:ring-0 text-sm transition-all duration-200 hover:border-[#D8CDC2]"
-          />
-        </div>
-      </div>
-
-      <StaticScrollArea className="flex-1 px-5 pb-6 mt-6">
-        {conversationList.length > 0 ? (
-          <>
-            <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
-              {portalConfig.recentLabel}
-            </p>
-            {renderDialogList(today, t("chatLeftSidebar.today"))}
-            {renderDialogList(week, t("chatLeftSidebar.last7Days"))}
-            {renderDialogList(older, t("chatLeftSidebar.older"))}
-          </>
-        ) : (
-          <div className="text-center text-sm text-[#6B6B6B] mt-10">
-            {t("chatLeftSidebar.noHistory")}
-          </div>
-        )}
-      </StaticScrollArea>
-
-      <div className="px-5 pb-5 space-y-3">
-        {renderUserSection()}
-        <div className="flex items-center justify-between transition-all duration-200">
-          {!isSpeedMode && userRole ? (
-            <Tag color={getRoleColor(userRole)}>{userRole}</Tag>
-          ) : (
-            <span />
-          )}
-          {renderSettingsButton(false)}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderCollapsedSidebar = () => (
-    <div className="hidden md:flex h-full flex-col bg-[#FDF8F2] border-r border-[#E5E5E5] w-[84px] transition-all duration-300 ease-in-out pt-6 pl-4">
-      <button
-        className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 flex-shrink-0"
-        onClick={onToggleSidebar}
-      >
-        <ChevronRight className="h-5 w-5 text-[#6B6B6B] transition-transform duration-200" />
-      </button>
-
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className="h-12 w-12 rounded-full flex items-center justify-center text-white mt-6 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
-              style={{ backgroundColor: accentColor }}
-              onClick={onNewConversation}
-            >
-              <Plus className="h-5 w-5 transition-transform duration-200" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{portalConfig.newChatLabel}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <div className="mt-6 flex-1 flex flex-col gap-3">
-        {portalConfig.navItems.map((item) => (
-          <TooltipProvider key={item.id}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="h-11 w-11 rounded-2xl bg-white flex items-center justify-center text-[#6B6B6B] hover:scale-105 hover:shadow-sm transition-all duration-200 flex-shrink-0">
-                  <item.icon className="h-4 w-4 transition-transform duration-200" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.label}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-4 pb-6">
-        {renderSettingsButton(true)}
-        {!isSpeedMode && (
-          <div className="h-10 w-10 rounded-full overflow-hidden bg-[#F2F0EB] flex items-center justify-center transition-all duration-200 hover:scale-105 flex-shrink-0">
-            {userAvatarUrl ? (
-              <img
-                src={userAvatarUrl}
-                alt={userEmail || userName || "user"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <User className="h-5 w-5 text-[#6B6B6B]" />
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <>
-      {expanded ? renderExpandedSidebar() : renderCollapsedSidebar()}
+      <div className="relative hidden md:flex h-full flex-shrink-0">
+        <button
+          type="button"
+          className="absolute z-20 flex h-10 w-10 items-center justify-center rounded-full border border-[#E5E5E5] bg-white shadow-sm transition-all duration-200 hover:shadow-md"
+          style={{
+            top: '26px',
+            left: expanded ? `${SIDEBAR_EXPANDED_WIDTH - 20}px` : '52px',
+            transition: 'left 300ms ease-in-out'
+          }}
+          onClick={onToggleSidebar}
+        >
+          {expanded ? (
+            <ChevronLeft className="h-5 w-5 text-[#6B6B6B]" />
+          ) : (
+            <ChevronRight className="h-5 w-5 text-[#6B6B6B]" />
+          )}
+        </button>
 
+        <div
+          className="flex h-full flex-col flex-shrink-0 overflow-hidden bg-[#FDF8F2] border-r border-[#E5E5E5] transition-[width] duration-300 ease-in-out"
+          style={{
+            width: expanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
+          }}
+        >
+          <div className="flex flex-col pt-20 pb-2 gap-4 items-center">
+            {/* New Chat Button */}
+            <div className="flex items-center w-full px-3">
+              <button
+                className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
+                style={{ backgroundColor: accentColor }}
+                onClick={onNewConversation}
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+              <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-all ease-out ${
+                showText
+                  ? "opacity-100 translate-x-0 duration-200 delay-100"
+                  : "opacity-0 -translate-x-2 duration-100 delay-0"
+              }`}>
+                {t("chatLeftSidebar.newConversation")}
+              </span>
+            </div>
+
+            {/* Navigation Items */}
+            <div className="flex flex-col gap-1 mt-2 w-full px-3">
+              {portalConfig.navItems.map((item) => (
+                <div key={item.id} className="flex items-center w-full">
+                  <button
+                    className="h-12 w-12 rounded-2xl flex items-center justify-center text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/70 transition-colors flex-shrink-0"
+                  >
+                    <item.icon className="h-6 w-6" />
+                  </button>
+                  <span className={`ml-3 text-lg text-[#4D4D4D] whitespace-nowrap transition-all ease-out ${
+                    showText
+                      ? "opacity-100 translate-x-0 duration-200 delay-100"
+                      : "opacity-0 -translate-x-2 duration-100 delay-0"
+                  }`}>
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Expanded Content Area */}
+          <div
+            className={`flex flex-col flex-1 overflow-hidden transition-opacity ease-in-out ${
+              expanded ? 'px-4' : 'px-0'
+            } ${
+              showText ? "opacity-100 duration-200 delay-100" : "opacity-0 duration-100 delay-0"
+            }`}
+          >
+            {expanded && (
+              <>
+                <div className="flex flex-col pt-4 pb-6 space-y-4">
+
+                  <div>
+                    <div className="flex items-center rounded-2xl border border-[#EFE8DE] bg-white px-4 h-11">
+                      <Search className="h-4 w-4 text-[#B3AEA5]" />
+                      <Input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder={portalConfig.searchPlaceholder}
+                        className="border-0 bg-transparent text-sm focus-visible:ring-0 ml-3"
+                      />
+                    </div>
+                  </div>
+
+                  <StaticScrollArea className="flex-1 pr-2">
+                    {conversationList.length > 0 ? (
+                      <>
+                        <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
+                          {portalConfig.recentLabel}
+                        </p>
+                        {renderDialogList(today, t("chatLeftSidebar.today"))}
+                        {renderDialogList(week, t("chatLeftSidebar.last7Days"))}
+                        {renderDialogList(older, t("chatLeftSidebar.older"))}
+                      </>
+                    ) : (
+                      <div className="text-center text-sm text-[#6B6B6B] mt-10">
+                        {t("chatLeftSidebar.noHistory")}
+                      </div>
+                    )}
+                  </StaticScrollArea>
+                </div>
+
+                <div className="pb-6">
+                  {renderUserSection()}
+                  <div className="mt-3 flex items-center justify-between">
+                    {!isSpeedMode && userRole ? (
+                      <Tag color={getRoleColor(userRole)}>{userRole}</Tag>
+                    ) : (
+                      <span />
+                    )}
+                    {renderSettingsButton(false)}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Bottom Section: Settings & User (collapsed state) */}
+          {!expanded && (
+            <div className="mt-auto flex flex-col items-center gap-4 pb-4">
+              {renderSettingsButton(true)}
+              {!isSpeedMode && (
+                <div className="h-10 w-10 rounded-full overflow-hidden bg-[#F2F0EB] flex items-center justify-center">
+                  {userAvatarUrl ? (
+                    <img
+                      src={userAvatarUrl}
+                      alt={userEmail || userName || "user"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-[#6B6B6B]" />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
