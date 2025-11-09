@@ -225,3 +225,36 @@
 - **导航项布局**：h-11 w-11 容器包裹图标，文字独立渐进淡入
 
 ---
+
+
+## 2025-11-09
+
+### 聊天侧边栏类型定义收敛
+
+**修改文件**:
+- `frontend/types/chat.ts` (更新)
+
+**功能说明**:
+- ✅ 新增 `PortalNavItemId` 类型，约束导航项标识的取值范围
+- ✅ 更新 `ChatSidebarProps` 的 `activeNavItem` 与 `onNavItemClick` 类型定义，消除编译期缺失属性报错
+
+**技术说明**:
+- 类型层引用 `PortalChatConfig` 的导航项定义，实现跨层类型联动，避免字符串散落导致的类型不一致问题
+
+---
+
+### 管理视图内容渲染保护
+
+**修改文件**:
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
+- `frontend/app/[locale]/admin/components/AdminAgentConfig.tsx` (新建)
+
+**功能说明**:
+- ✅ 仅在管理端 (`variant === "admin"`) 时渲染智能体、模型与知识库配置界面
+- ✅ 新增管理员端智能体配置壳组件，支持按端口切换配置
+- ✅ 非管理端切换至其它导航时展示占位提示，避免误加载设置页组件
+
+**技术说明**:
+- 使用 `PortalNavItemId` 约束 `activeView` 的初始值与更新
+- 引入管理端配置组件依赖（AgentConfig、ModelConfig、KnowledgeConfig），确保导航项可用
+- 新增国际化 fallback，缺少翻译键时自动使用默认英文文案

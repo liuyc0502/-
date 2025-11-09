@@ -132,6 +132,8 @@ export function ChatSidebar({
   userRole = "user",
   userName,
   portalConfig,
+  onNavItemClick,
+  activeNavItem = "chats",
 }: ChatSidebarProps) {
   const { t } = useTranslation();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -504,22 +506,32 @@ export function ChatSidebar({
 
             {/* Navigation Items */}
             <div className="flex flex-col gap-1 mt-2 w-full px-3">
-              {portalConfig.navItems.map((item) => (
-                <div key={item.id} className="flex items-center w-full">
-                  <button
-                    className="h-12 w-12 rounded-2xl flex items-center justify-center text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/70 transition-colors flex-shrink-0"
-                  >
-                    <item.icon className="h-6 w-6" />
-                  </button>
-                  <span className={`ml-3 text-lg text-[#4D4D4D] whitespace-nowrap transition-all ease-out ${
-                    showText
-                      ? "opacity-100 translate-x-0 duration-200 delay-100"
-                      : "opacity-0 -translate-x-2 duration-100 delay-0"
-                  }`}>
-                    {item.label}
-                  </span>
-                </div>
-              ))}
+              {portalConfig.navItems.map((item) => {
+                const isActive = activeNavItem === item.id;
+                return (
+                  <div key={item.id} className="flex items-center w-full">
+                    <button
+                      onClick={() => onNavItemClick?.(item.id)}
+                      className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors flex-shrink-0 ${
+                        isActive
+                          ? "text-[#1A1A1A] bg-white shadow-sm"
+                          : "text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/70"
+                      }`}
+                    >
+                      <item.icon className="h-6 w-6" />
+                    </button>
+                    <span className={`ml-3 text-lg whitespace-nowrap transition-all ease-out ${
+                      isActive ? "text-[#1A1A1A] font-medium" : "text-[#4D4D4D]"
+                    } ${
+                      showText
+                        ? "opacity-100 translate-x-0 duration-200 delay-100"
+                        : "opacity-0 -translate-x-2 duration-100 delay-0"
+                    }`}>
+                      {item.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

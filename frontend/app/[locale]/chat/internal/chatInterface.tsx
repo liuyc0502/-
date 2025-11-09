@@ -21,10 +21,15 @@ import { storageService } from "@/services/storageService";
 import { useConversationManagement } from "@/hooks/chat/useConversationManagement";
 
 import { ChatSidebar } from "../components/chatLeftSidebar";
-import { FilePreview } from "@/types/chat";
+import type { FilePreview, PortalNavItemId } from "@/types/chat";
 import { ChatHeader } from "../components/chatHeader";
 import { ChatRightPanel } from "../components/chatRightPanel";
 import { ChatStreamMain } from "../streaming/chatStreamMain";
+
+import AdminAgentConfig from "../../admin/components/AdminAgentConfig";
+import ModelConfig from "../../setup/models/config";
+import KnowledgeConfig from "../../setup/knowledges/config";
+
 
 import {
   preprocessAttachments,
@@ -83,6 +88,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     user?.email?.split("@")[0] ||
     portalConfig.defaultUserName ||
     "朋友";
+
+  const [activeView, setActiveView] = useState<PortalNavItemId>("chats");
   
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
@@ -1616,59 +1623,86 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
           userRole={user?.role}
           userName={displayName}
           portalConfig={portalConfig}
+          onNavItemClick={setActiveView}
+          activeNavItem={activeView}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex flex-1 overflow-hidden">
-            <div className="flex-1 flex flex-col">
-              <ChatHeader
-                title={conversationManagement.conversationTitle}
-                onRename={handleTitleRename}
-                portalConfig={portalConfig}
-              />
+        {activeView === "chats" ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex flex-1 overflow-hidden">
+              <div className="flex-1 flex flex-col">
+                <ChatHeader
+                  title={conversationManagement.conversationTitle}
+                  onRename={handleTitleRename}
+                  portalConfig={portalConfig}
+                />
 
-              <ChatStreamMain
+                <ChatStreamMain
+                  messages={currentMessages}
+                  input={input}
+                  isLoading={isLoading}
+                  isStreaming={isCurrentConversationStreaming}
+                  isLoadingHistoricalConversation={
+                    isLoadingHistoricalConversation
+                  }
+                  conversationLoadError={
+                    conversationManagement.conversationLoadError[conversationManagement.selectedConversationId || 0]
+                  }
+                  onInputChange={(value: string) => setInput(value)}
+                  onSend={handleSend}
+                  onStop={handleStop}
+                  onKeyDown={handleKeyDown}
+                  onSelectMessage={handleMessageSelect}
+                  selectedMessageId={selectedMessageId}
+                  onImageClick={handleImageClick}
+                  attachments={attachments}
+                  onAttachmentsChange={handleAttachmentsChange}
+                  onFileUpload={handleFileUpload}
+                  onImageUpload={handleImageUpload}
+                  onOpinionChange={handleOpinionChange}
+                  currentConversationId={conversationManagement.conversationId}
+                  shouldScrollToBottom={shouldScrollToBottom}
+                  selectedAgentId={selectedAgentId}
+                  onAgentSelect={setSelectedAgentId}
+                  portalConfig={portalConfig}
+                  userDisplayName={displayName}
+                />
+              </div>
+
+              <ChatRightPanel
                 messages={currentMessages}
-                input={input}
-                isLoading={isLoading}
-                isStreaming={isCurrentConversationStreaming}
-                isLoadingHistoricalConversation={
-                  isLoadingHistoricalConversation
-                }
-                conversationLoadError={
-                  conversationManagement.conversationLoadError[conversationManagement.selectedConversationId || 0]
-                }
-                onInputChange={(value: string) => setInput(value)}
-                onSend={handleSend}
-                onStop={handleStop}
-                onKeyDown={handleKeyDown}
-                onSelectMessage={handleMessageSelect}
+                onImageError={handleImageError}
+                maxInitialImages={14}
+                isVisible={showRightPanel}
+                toggleRightPanel={toggleRightPanel}
                 selectedMessageId={selectedMessageId}
-                onImageClick={handleImageClick}
-                attachments={attachments}
-                onAttachmentsChange={handleAttachmentsChange}
-                onFileUpload={handleFileUpload}
-                onImageUpload={handleImageUpload}
-                onOpinionChange={handleOpinionChange}
-                currentConversationId={conversationManagement.conversationId}
-                shouldScrollToBottom={shouldScrollToBottom}
-                selectedAgentId={selectedAgentId}
-                onAgentSelect={setSelectedAgentId}
-                portalConfig={portalConfig}
-                userDisplayName={displayName}
               />
             </div>
-
-            <ChatRightPanel
-              messages={currentMessages}
-              onImageError={handleImageError}
-              maxInitialImages={14}
-              isVisible={showRightPanel}
-              toggleRightPanel={toggleRightPanel}
-              selectedMessageId={selectedMessageId}
-            />
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 overflow-auto">
+            {variant === "admin" ? (
+              <>
+                {activeView === "agents" && <AdminAgentConfig />}
+                {activeView === "models" && <ModelConfig />}
+                {activeView === "knowledge" && <KnowledgeConfig />}
+                {activeView === "system" && (
+                  <div className="p-8 text-slate-600">
+                    {t("chatInterface.systemSettingsComingSoon", {
+                      defaultValue: "System Settings - Coming Soon",
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-8 text-slate-600">
+                {t("chatInterface.sectionComingSoon", {
+                  defaultValue: "This section is coming soon.",
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <TooltipProvider>
         <Tooltip open={false}>

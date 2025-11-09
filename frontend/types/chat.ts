@@ -1,6 +1,8 @@
 import { chatConfig } from "@/const/chatConfig";
 import type { PortalChatConfig } from "@/const/portalChatConfig";
 
+export type PortalNavItemId = PortalChatConfig["navItems"][number]["id"];
+
 // Step related types
 export interface StepSection {
   content: string
@@ -280,6 +282,8 @@ export interface ChatSidebarProps {
   userRole: string | undefined;
   userName?: string;
   portalConfig: PortalChatConfig;
+  onNavItemClick?: (itemId: PortalNavItemId) => void;
+  activeNavItem?: PortalNavItemId;
 }
 
 // Image item type for chat right panel
