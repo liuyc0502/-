@@ -9,10 +9,10 @@ import log from "@/lib/logger";
 const fetch = fetchWithAuth;
 
 export class ConfigService {
-  // Save global configuration to backend
-  async saveConfigToBackend(config: GlobalConfig): Promise<boolean> {
+  // Save global configuration to backend with portal support
+  async saveConfigToBackend(config: GlobalConfig, portal: string = "all"): Promise<boolean> {
     try {
-      const response = await fetch(API_ENDPOINTS.config.save, {
+      const response = await fetch(`${API_ENDPOINTS.config.save}?portal=${portal}`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(config),
@@ -32,10 +32,10 @@ export class ConfigService {
     }
   }
 
-  // Add: Load configuration from backend and write to localStorage
-  async loadConfigToFrontend(): Promise<boolean> {
+  // Load configuration from backend and write to localStorage with portal support
+  async loadConfigToFrontend(portal: string = "all"): Promise<boolean> {
     try {
-      const response = await fetch(API_ENDPOINTS.config.load, {
+      const response = await fetch(`${API_ENDPOINTS.config.load}?portal=${portal}`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
@@ -57,13 +57,13 @@ export class ConfigService {
         if (frontendConfig.models) {
           localStorage.setItem('model', JSON.stringify(frontendConfig.models));
         }
-        
+
         // Trigger configuration reload and dispatch event
         if (typeof window !== 'undefined') {
           const configStore = ConfigStore.getInstance();
           configStore.reloadFromStorage();
         }
-        
+
         return true;
       }
       return false;

@@ -509,17 +509,18 @@ export function ChatSidebar({
               {portalConfig.navItems.map((item) => {
                 const isActive = activeNavItem === item.id;
                 return (
-                  <div key={item.id} className="flex items-center w-full">
-                    <button
-                      onClick={() => onNavItemClick?.(item.id)}
-                      className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors flex-shrink-0 ${
-                        isActive
-                          ? "text-[#1A1A1A] bg-white shadow-sm"
-                          : "text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/70"
-                      }`}
-                    >
+                  <button
+                    key={item.id}
+                    onClick={() => onNavItemClick?.(item.id)}
+                    className={`flex items-center w-full h-11 rounded-2xl transition-colors ${
+                      isActive
+                        ? "text-[#1A1A1A] bg-white shadow-sm"
+                        : "text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/70"
+                    }`}
+                  >
+                    <div className="h-11 w-11 flex items-center justify-center flex-shrink-0">
                       <item.icon className="h-6 w-6" />
-                    </button>
+                    </div>
                     <span className={`ml-3 text-lg whitespace-nowrap transition-all ease-out ${
                       isActive ? "text-[#1A1A1A] font-medium" : "text-[#4D4D4D]"
                     } ${
@@ -529,7 +530,7 @@ export function ChatSidebar({
                     }`}>
                       {item.label}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>

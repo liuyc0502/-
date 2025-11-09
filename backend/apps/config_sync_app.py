@@ -14,12 +14,16 @@ logger = logging.getLogger("config_sync_app")
 
 
 @router.post("/save_config")
-async def save_config(config: GlobalConfig, authorization: Optional[str] = Header(None)):
+async def save_config(
+    config: GlobalConfig,
+    authorization: Optional[str] = Header(None),
+    portal: Optional[str] = "all"
+):
     try:
         user_id, tenant_id = get_current_user_id(authorization)
         logger.info(
-            f"Start to save config, user_id: {user_id}, tenant_id: {tenant_id}")
-        await save_config_impl(config, tenant_id, user_id)
+            f"Start to save config for portal: {portal}, user_id: {user_id}, tenant_id: {tenant_id}")
+        await save_config_impl(config, tenant_id, user_id, portal)
         return JSONResponse(
             status_code=HTTPStatus.OK,
             content={"message": "Configuration saved successfully",
@@ -31,9 +35,16 @@ async def save_config(config: GlobalConfig, authorization: Optional[str] = Heade
 
 
 @router.get("/load_config")
-async def load_config(authorization: Optional[str] = Header(None), request: Request = None):
+async def load_config(
+    authorization: Optional[str] = Header(None),
+    request: Request = None,
+    portal: Optional[str] = "all"
+):
     """
     Load configuration from environment variables
+
+    Args:
+        portal: Portal identifier (all, doctor, student, patient)
 
     Returns:
         JSONResponse: JSON object containing configuration content
@@ -42,7 +53,7 @@ async def load_config(authorization: Optional[str] = Header(None), request: Requ
         # Build configuration object
         user_id, tenant_id, language = get_current_user_info(
             authorization, request)
-        config = await load_config_impl(language, tenant_id)
+        config = await load_config_impl(language, tenant_id, portal)
         return JSONResponse(
             status_code=HTTPStatus.OK,
             content={"config": config}

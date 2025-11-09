@@ -1686,6 +1686,13 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                 {activeView === "agents" && <AdminAgentConfig />}
                 {activeView === "models" && <ModelConfig />}
                 {activeView === "knowledge" && <KnowledgeConfig />}
+                {activeView === "tools" && (
+                  <div className="p-8 text-slate-600">
+                    {t("chatInterface.toolsConfigComingSoon", {
+                      defaultValue: "Tools Configuration - Coming Soon",
+                    })}
+                  </div>
+                )}
                 {activeView === "system" && (
                   <div className="p-8 text-slate-600">
                     {t("chatInterface.systemSettingsComingSoon", {

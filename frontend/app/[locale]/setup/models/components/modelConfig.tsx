@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState, useRef, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Button, Card, Col, Row, Space, App } from 'antd'
+import { Button, Card, Col, Row, Space, App, Select } from 'antd'
 import {
   PlusOutlined,
   SafetyCertificateOutlined,
@@ -106,6 +106,7 @@ export const ModelConfigSection = forwardRef<
   const [isSyncing, setIsSyncing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isModifyWarningOpen, setIsModifyWarningOpen] = useState(false);
+  const [selectedPortal, setSelectedPortal] = useState<string>("all");
 
   // Error state management
   const [errorFields, setErrorFields] = useState<{ [key: string]: boolean }>({
@@ -125,7 +126,7 @@ export const ModelConfigSection = forwardRef<
     displayName: string;
   } | null>(null);
 
-  // Debounced auto-save scheduler
+  // Debounced auto-save scheduler with portal support
   const scheduleAutoSave = () => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
@@ -133,7 +134,7 @@ export const ModelConfigSection = forwardRef<
     saveTimerRef.current = setTimeout(async () => {
       try {
         const currentConfig = configStore.getConfig();
-        await configService.saveConfigToBackend(currentConfig as any);
+        await configService.saveConfigToBackend(currentConfig as any, selectedPortal);
       } catch (e) {
         // Errors are logged in configService
       } finally {
@@ -153,17 +154,17 @@ export const ModelConfigSection = forwardRef<
     voice: { tts: "", stt: "" },
   });
 
-  // Initialize loading
+  // Initialize loading - reload when portal changes
   useEffect(() => {
     // Load configuration from backend first, then load model lists when component mounts
     const fetchData = async () => {
-      await configService.loadConfigToFrontend();
+      await configService.loadConfigToFrontend(selectedPortal);
       configStore.reloadFromStorage();
       await loadModelLists(true);
     };
 
     fetchData();
-  }, [skipVerification]);
+  }, [skipVerification, selectedPortal]);
 
   // Listen to field error highlight events
   useEffect(() => {
@@ -911,67 +912,75 @@ export const ModelConfigSection = forwardRef<
       <div
         style={{
           width: "100%",
-          margin: "0 auto",
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          overflow: "hidden",
         }}
       >
         <div
           style={{
             display: "flex",
-            justifyContent: "flex-start",
-            paddingRight: 12,
-            marginLeft: "4px",
-            height: LAYOUT_CONFIG.BUTTON_AREA_HEIGHT,
+            alignItems: "center",
+            gap: "10px",
+            padding: "12px 24px",
+            flexShrink: 0,
+            flexWrap: "wrap",
+            borderBottom: "1px solid #f0f0f0",
           }}
         >
-          <Space size={10}>
-            <Button type="primary" size="middle" onClick={handleSyncModels}>
-              <SyncOutlined spin={isSyncing} />{" "}
-              {t("modelConfig.button.syncModelEngine")}
-            </Button>
-            <Button
-              type="primary"
-              size="middle"
-              icon={<PlusOutlined />}
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              {t("modelConfig.button.addCustomModel")}
-            </Button>
-            <Button
-              type="primary"
-              size="middle"
-              icon={<EditOutlined />}
-              onClick={() => setIsDeleteModalOpen(true)}
-            >
-              {t("modelConfig.button.editCustomModel")}
-            </Button>
-            <Button
-              type="primary"
-              size="middle"
-              icon={<SafetyCertificateOutlined />}
-              onClick={verifyModels}
-              loading={isVerifying}
-            >
-              {t("modelConfig.button.checkConnectivity")}
-            </Button>
-          </Space>
+          <Select
+            value={selectedPortal}
+            onChange={setSelectedPortal}
+            style={{ width: 180 }}
+            size="middle"
+            options={[
+              { value: "all", label: t("modelConfig.portal.all", { defaultValue: "所有端" }) },
+              { value: "doctor", label: t("modelConfig.portal.doctor", { defaultValue: "医生端" }) },
+              { value: "student", label: t("modelConfig.portal.student", { defaultValue: "学生端" }) },
+              { value: "patient", label: t("modelConfig.portal.patient", { defaultValue: "患者端" }) },
+            ]}
+          />
+          <Button type="primary" size="middle" onClick={handleSyncModels}>
+            <SyncOutlined spin={isSyncing} />{" "}
+            {t("modelConfig.button.syncModelEngine")}
+          </Button>
+          <Button
+            type="primary"
+            size="middle"
+            icon={<PlusOutlined />}
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            {t("modelConfig.button.addCustomModel")}
+          </Button>
+          <Button
+            type="primary"
+            size="middle"
+            icon={<EditOutlined />}
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
+            {t("modelConfig.button.editCustomModel")}
+          </Button>
+          <Button
+            type="primary"
+            size="middle"
+            icon={<SafetyCertificateOutlined />}
+            onClick={verifyModels}
+            loading={isVerifying}
+          >
+            {t("modelConfig.button.checkConnectivity")}
+          </Button>
         </div>
 
         <div
           style={{
-            width: "100%",
-            padding: "0 4px",
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
+            overflow: "auto",
+            padding: "16px 24px",
           }}
         >
           <Row
             gutter={[LAYOUT_CONFIG.CARD_GAP, LAYOUT_CONFIG.CARD_GAP]}
-            style={{ flex: 1 }}
           >
             {Object.entries(modelData).map(([key, category]) => (
               <Col
@@ -979,7 +988,7 @@ export const ModelConfigSection = forwardRef<
                 md={8}
                 lg={8}
                 key={key}
-                style={{ height: "calc((100% - 12px) / 2)" }}
+                style={{ marginBottom: LAYOUT_CONFIG.CARD_GAP }}
               >
                 <Card
                   title={

@@ -229,32 +229,85 @@
 
 ## 2025-11-09
 
-### 聊天侧边栏类型定义收敛
+### 管理员端侧边栏导航优化
 
 **修改文件**:
-- `frontend/types/chat.ts` (更新)
+- [frontend/const/portalChatConfig.ts](/opt/frontend/const/portalChatConfig.ts) (更新)
+- [frontend/app/[locale]/chat/components/chatLeftSidebar.tsx](/opt/frontend/app/[locale]/chat/components/chatLeftSidebar.tsx) (更新)
+- [frontend/app/[locale]/chat/internal/chatInterface.tsx](/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx) (更新)
 
 **功能说明**:
-- ✅ 新增 `PortalNavItemId` 类型，约束导航项标识的取值范围
-- ✅ 更新 `ChatSidebarProps` 的 `activeNavItem` 与 `onNavItemClick` 类型定义，消除编译期缺失属性报错
+- ✨ **新增工具配置导航项**：在管理员端侧边栏添加"工具配置"按钮，使用Settings图标
+- 🎯 **导航项文字可点击**：当侧边栏展开时，导航项的文字部分也可以点击跳转，提升用户体验
+- 🔄 **整个导航项可交互**：将导航项从div+button结构改为完整的button，图标和文字都在同一个可点击区域内
 
-**技术说明**:
-- 类型层引用 `PortalChatConfig` 的导航项定义，实现跨层类型联动，避免字符串散落导致的类型不一致问题
+**技术实现**:
+- 在admin配置的navItems中添加新的工具配置项：`{ id: "tools", label: "工具配置", icon: Settings }`
+- 重构侧边栏导航项结构：将嵌套的div和button改为单一button元素
+- 在chatInterface中添加tools视图的处理逻辑，显示"即将推出"占位内容
+
+**用户体验**:
+- ✅ 展开状态下，点击图标或文字都能跳转到对应功能
+- ✅ 导航项顺序：对话 → 智能体配置 → 模型管理 → 知识库管理 → 工具配置 → 系统设置
+- ✅ 保持原有的hover效果和选中状态样式
 
 ---
 
-### 管理视图内容渲染保护
+## 2025-11-09
+
+### 模型管理页面布局优化与分端配置功能
 
 **修改文件**:
-- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
-- `frontend/app/[locale]/admin/components/AdminAgentConfig.tsx` (新建)
+- [frontend/app/[locale]/setup/models/config.tsx](/opt/frontend/app/[locale]/setup/models/config.tsx) (重构)
+- [frontend/app/[locale]/setup/models/components/modelConfig.tsx](/opt/frontend/app/[locale]/setup/models/components/modelConfig.tsx) (更新)
+- [frontend/services/configService.ts](/opt/frontend/services/configService.ts) (更新)
+- [backend/apps/config_sync_app.py](/opt/backend/apps/config_sync_app.py) (更新)
+- [backend/services/config_sync_service.py](/opt/backend/services/config_sync_service.py) (更新)
 
 **功能说明**:
-- ✅ 仅在管理端 (`variant === "admin"`) 时渲染智能体、模型与知识库配置界面
-- ✅ 新增管理员端智能体配置壳组件，支持按端口切换配置
-- ✅ 非管理端切换至其它导航时展示占位提示，避免误加载设置页组件
+- 🎨 **移除左侧应用设置**：去掉原来的双栏布局中的应用设置面板
+- 📐 **模型配置全屏显示**：模型管理界面占据整个可用空间，高度自适应视口，消除所有空白边距
+- 🔧 **真实的分端配置功能**：完整实现了为不同端口配置独立模型的功能
+  - 支持为"所有端"、"医生端"、"学生端"、"患者端"分别配置模型
+  - 切换端口时自动加载对应配置
+  - 保存时自动关联到选择的端口
+  - 支持配置回退：特定端口未配置时自动使用"所有端"的配置
 
-**技术说明**:
-- 使用 `PortalNavItemId` 约束 `activeView` 的初始值与更新
-- 引入管理端配置组件依赖（AgentConfig、ModelConfig、KnowledgeConfig），确保导航项可用
-- 新增国际化 fallback，缺少翻译键时自动使用默认英文文案
+**技术实现**:
+
+**前端**:
+- 移除Row/Col双栏布局，改为全屏flex容器 (`w-full h-full`)
+- 优化布局层级，移除多余padding和margin
+- 在顶部添加端口选择器，支持4个选项
+- 监听`selectedPortal`状态变化，自动重新加载配置
+- 保存时传递`portal`参数到后端
+
+**后端**:
+- API层添加`portal`查询参数支持 (默认值: "all")
+- Service层实现portal-specific配置key生成：`{portal}_{config_key}`
+- 配置加载逻辑支持回退：优先读取特定端口配置，若为空则回退到"all"配置
+- 数据存储格式：
+  ```
+  all_MODEL_LLM_ID      # 所有端共享的大语言模型
+  doctor_MODEL_LLM_ID   # 医生端专用大语言模型
+  student_MODEL_LLM_ID  # 学生端专用大语言模型
+  patient_MODEL_LLM_ID  # 患者端专用大语言模型
+  ```
+
+**布局改进**:
+- ❌ 移除前：左侧应用设置 + 右侧模型管理（各占50%宽度，四周有空白）
+- ✅ 优化后：模型管理占100%宽度和高度，无多余空白
+- 🎯 端口选择器位于顶部，与操作按钮在同一行
+
+**用户体验**:
+- ✅ 更大的配置区域，卡片展示更清晰
+- ✅ 无浪费的空白空间，内容最大化
+- ✅ 真实的分端配置：为医生端、学生端、患者端配置不同的AI模型
+- ✅ 智能回退：特定端口未配置时自动使用通用配置
+- ✅ 切换端口即时生效，配置自动保存
+
+---
+
+## 2025-11-09
+
+### 构建管理员端
