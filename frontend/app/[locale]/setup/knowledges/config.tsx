@@ -758,168 +758,166 @@ function DataConfig({ isActive }: DataConfigProps) {
   };
 
   return (
-    <>
+    <div className="w-full h-full bg-white flex flex-col" ref={contentRef}>
+      {showEmbeddingWarning && (
+        <div className="absolute inset-0 bg-gray-500/45 z-40" />
+      )}
+      <Modal
+        open={showEmbeddingWarning && !!contentRef.current}
+        title={null}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+        mask={false}
+        centered
+        getContainer={() => contentRef.current || document.body}
+        styles={{ body: { padding: 0 } }}
+        rootClassName="kb-embedding-warning"
+      >
+        <div className="py-2">
+          <div className="flex items-center">
+            <WarningFilled className="text-yellow-500 mt-1 mr-2 text-3xl" />
+            <div className="ml-3 mt-2">
+              <div className="text-base text-gray-800 font-semibold">
+                {t("embedding.knowledgeBaseDisabledWarningModal.title")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        open={showAutoDeselectModal}
+        title={t("embedding.knowledgeBaseAutoDeselectModal.title")}
+        onOk={() => setShowAutoDeselectModal(false)}
+        onCancel={() => setShowAutoDeselectModal(false)}
+        okText={t("common.confirm")}
+        cancelButtonProps={{ style: { display: "none" } }}
+        centered
+        getContainer={() => contentRef.current || document.body}
+      >
+        <div className="py-2">
+          <div className="flex items-center px-4">
+            <InfoCircleFilled
+              className="text-blue-500 mt-1 mr-2"
+              style={{ fontSize: "48px" }}
+            />
+            <div className="ml-3 mt-2">
+              <div className="text-sm leading-6">
+                {t("embedding.knowledgeBaseAutoDeselectModal.content")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Main content area */}
       <div
-        className="w-full mx-auto relative"
+        className="flex"
         style={{
-          maxWidth: SETUP_PAGE_CONTAINER.MAX_WIDTH,
-          padding: `0 ${SETUP_PAGE_CONTAINER.HORIZONTAL_PADDING}`,
+          gap: FLEX_TWO_COLUMN_LAYOUT.GAP,
+          flex: 1,
+          overflow: "hidden",
+          padding: "16px 24px",
         }}
-        ref={contentRef}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {showEmbeddingWarning && (
-          <div className="absolute inset-0 bg-gray-500/45 z-40" />
-        )}
-        <Modal
-          open={showEmbeddingWarning && !!contentRef.current}
-          title={null}
-          footer={null}
-          closable={false}
-          maskClosable={false}
-          mask={false}
-          centered
-          getContainer={() => contentRef.current || document.body}
-          styles={{ body: { padding: 0 } }}
-          rootClassName="kb-embedding-warning"
-        >
-          <div className="py-2">
-            <div className="flex items-center">
-              <WarningFilled className="text-yellow-500 mt-1 mr-2 text-3xl" />
-              <div className="ml-3 mt-2">
-                <div className="text-base text-gray-800 font-semibold">
-                  {t("embedding.knowledgeBaseDisabledWarningModal.title")}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Modal>
-        <Modal
-          open={showAutoDeselectModal}
-          title={t("embedding.knowledgeBaseAutoDeselectModal.title")}
-          onOk={() => setShowAutoDeselectModal(false)}
-          onCancel={() => setShowAutoDeselectModal(false)}
-          okText={t("common.confirm")}
-          cancelButtonProps={{ style: { display: "none" } }}
-          centered
-          getContainer={() => contentRef.current || document.body}
-        >
-          <div className="py-2">
-            <div className="flex items-center px-4">
-              <InfoCircleFilled
-                className="text-blue-500 mt-1 mr-2"
-                style={{ fontSize: "48px" }}
-              />
-              <div className="ml-3 mt-2">
-                <div className="text-sm leading-6">
-                  {t("embedding.knowledgeBaseAutoDeselectModal.content")}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Modal>
-        <div
-          className="flex h-full"
-          style={{ gap: FLEX_TWO_COLUMN_LAYOUT.GAP }}
-        >
-          {/* Left knowledge base list - occupies 1/3 space */}
-          <div style={{ width: FLEX_TWO_COLUMN_LAYOUT.LEFT_WIDTH }}>
-            <KnowledgeBaseList
-              knowledgeBases={kbState.knowledgeBases}
-              selectedIds={kbState.selectedIds}
-              activeKnowledgeBase={kbState.activeKnowledgeBase}
-              currentEmbeddingModel={kbState.currentEmbeddingModel}
-              isLoading={kbState.isLoading}
-              onSelect={handleSelectKnowledgeBase}
-              onClick={handleKnowledgeBaseClick}
-              onDelete={handleDelete}
-              onSync={handleSync}
-              onCreateNew={handleCreateNew}
-              isSelectable={isKnowledgeBaseSelectable}
-              getModelDisplayName={(modelId) => modelId}
-              containerHeight={SETUP_PAGE_CONTAINER.MAIN_CONTENT_HEIGHT}
-              onKnowledgeBaseChange={() => {}} // No need to trigger repeatedly here as it's already handled in handleKnowledgeBaseClick
-            />
-          </div>
+        {/* Left knowledge base list - occupies 1/3 space */}
+        <div style={{ width: FLEX_TWO_COLUMN_LAYOUT.LEFT_WIDTH, display: "flex", flexDirection: "column" }}>
+          <KnowledgeBaseList
+            knowledgeBases={kbState.knowledgeBases}
+            selectedIds={kbState.selectedIds}
+            activeKnowledgeBase={kbState.activeKnowledgeBase}
+            currentEmbeddingModel={kbState.currentEmbeddingModel}
+            isLoading={kbState.isLoading}
+            onSelect={handleSelectKnowledgeBase}
+            onClick={handleKnowledgeBaseClick}
+            onDelete={handleDelete}
+            onSync={handleSync}
+            onCreateNew={handleCreateNew}
+            isSelectable={isKnowledgeBaseSelectable}
+            getModelDisplayName={(modelId) => modelId}
+            containerHeight="100%"
+            onKnowledgeBaseChange={() => {}} // No need to trigger repeatedly here as it's already handled in handleKnowledgeBaseClick
+          />
+        </div>
 
-          {/* Right content area - occupies 2/3 space, now unified with config.tsx style */}
-          <div style={{ width: FLEX_TWO_COLUMN_LAYOUT.RIGHT_WIDTH }}>
-            {isCreatingMode ? (
-              <DocumentList
-                documents={[]}
-                onDelete={() => {}}
-                isCreatingMode={true}
-                knowledgeBaseName={newKbName}
-                onNameChange={handleNameChange}
-                containerHeight={SETUP_PAGE_CONTAINER.MAIN_CONTENT_HEIGHT}
-                hasDocuments={hasClickedUpload || docState.isUploading}
-                // Upload related props
-                isDragging={uiState.isDragging}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onFileSelect={handleFileSelect}
-                onUpload={() => handleFileUpload()}
-                isUploading={docState.isUploading}
-              />
-            ) : kbState.activeKnowledgeBase ? (
-              <DocumentList
-                documents={viewingDocuments}
-                onDelete={handleDeleteDocument}
-                knowledgeBaseName={viewingKbName}
-                modelMismatch={
-                  !isKnowledgeBaseSelectable(kbState.activeKnowledgeBase)
-                }
-                currentModel={kbState.currentEmbeddingModel || ""}
-                knowledgeBaseModel={kbState.activeKnowledgeBase.embeddingModel}
-                embeddingModelInfo={
-                  !isKnowledgeBaseSelectable(kbState.activeKnowledgeBase)
-                    ? t("document.modelMismatch.withModels", {
+        {/* Right content area - occupies 2/3 space */}
+        <div style={{ width: FLEX_TWO_COLUMN_LAYOUT.RIGHT_WIDTH, display: "flex", flexDirection: "column" }}>
+          {isCreatingMode ? (
+            <DocumentList
+              documents={[]}
+              onDelete={() => {}}
+              isCreatingMode={true}
+              knowledgeBaseName={newKbName}
+              onNameChange={handleNameChange}
+              containerHeight="100%"
+              hasDocuments={hasClickedUpload || docState.isUploading}
+              // Upload related props
+              isDragging={uiState.isDragging}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onFileSelect={handleFileSelect}
+              onUpload={() => handleFileUpload()}
+              isUploading={docState.isUploading}
+            />
+          ) : kbState.activeKnowledgeBase ? (
+            <DocumentList
+              documents={viewingDocuments}
+              onDelete={handleDeleteDocument}
+              knowledgeBaseName={viewingKbName}
+              modelMismatch={
+                !isKnowledgeBaseSelectable(kbState.activeKnowledgeBase)
+              }
+              currentModel={kbState.currentEmbeddingModel || ""}
+              knowledgeBaseModel={kbState.activeKnowledgeBase.embeddingModel}
+              embeddingModelInfo={
+                !isKnowledgeBaseSelectable(kbState.activeKnowledgeBase)
+                  ? t("document.modelMismatch.withModels", {
                         currentModel: kbState.currentEmbeddingModel || "",
                         knowledgeBaseModel:
                           kbState.activeKnowledgeBase.embeddingModel,
                       })
                     : undefined
                 }
-                containerHeight={SETUP_PAGE_CONTAINER.MAIN_CONTENT_HEIGHT}
-                hasDocuments={viewingDocuments.length > 0}
-                // Upload related props
-                isDragging={uiState.isDragging}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onFileSelect={handleFileSelect}
-                onUpload={() => handleFileUpload()}
-                isUploading={docState.isUploading}
+              containerHeight="100%"
+              hasDocuments={viewingDocuments.length > 0}
+              // Upload related props
+              isDragging={uiState.isDragging}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onFileSelect={handleFileSelect}
+              onUpload={() => handleFileUpload()}
+              isUploading={docState.isUploading}
+            />
+          ) : (
+            <div
+              className={STANDARD_CARD.BASE_CLASSES}
+              style={{
+                height: "100%",
+                padding: STANDARD_CARD.PADDING,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <EmptyState
+                title={t("knowledgeBase.empty.title")}
+                description={t("knowledgeBase.empty.description")}
+                icon={
+                  <InfoCircleFilled
+                    style={{ fontSize: 36, color: "#1677ff" }}
+                  />
+                }
+                containerHeight="100%"
               />
-            ) : (
-              <div
-                className={STANDARD_CARD.BASE_CLASSES}
-                style={{
-                  height: SETUP_PAGE_CONTAINER.MAIN_CONTENT_HEIGHT,
-                  padding: STANDARD_CARD.PADDING,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <EmptyState
-                  title={t("knowledgeBase.empty.title")}
-                  description={t("knowledgeBase.empty.description")}
-                  icon={
-                    <InfoCircleFilled
-                      style={{ fontSize: 36, color: "#1677ff" }}
-                    />
-                  }
-                  containerHeight="100%"
-                />
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

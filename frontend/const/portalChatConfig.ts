@@ -174,7 +174,6 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     newChatDescription: "管理系统配置",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
-      { id: "agents", label: "智能体配置", icon: Sparkles },
       { id: "models", label: "模型管理", icon: Code },
       { id: "knowledge", label: "知识库管理", icon: Brain },
       { id: "tools", label: "工具配置", icon: Settings },
