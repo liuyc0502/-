@@ -208,6 +208,7 @@ class AgentInfo(TableBase):
         Text, doc="Manually entered by the user to describe the entire business process")
     business_logic_model_name = Column(String(100), doc="Model name used for business logic prompt generation")
     business_logic_model_id = Column(Integer, doc="Model ID used for business logic prompt generation, foreign key reference to model_record_t.model_id")
+    category = Column(String(50), doc="Agent category/type (e.g., diagnosis, analysis, teaching, consultation)")
 
 
 class ToolInstance(TableBase):
@@ -318,6 +319,20 @@ class AgentRelation(TableBase):
                          nullable=False, doc="Relationship ID, primary key")
     selected_agent_id = Column(Integer, doc="Selected agent ID")
     parent_agent_id = Column(Integer, doc="Parent agent ID")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class PortalAgentAssignment(TableBase):
+    """
+    Portal agent assignment table - maps agents to portals (doctor, student, patient)
+    """
+    __tablename__ = "ag_portal_agent_assignment_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    assignment_id = Column(Integer, primary_key=True,
+                          nullable=False, doc="Assignment ID, primary key")
+    portal_type = Column(String(50), doc="Portal type (doctor, student, patient)")
+    agent_id = Column(Integer, doc="Agent ID")
     tenant_id = Column(String(100), doc="Tenant ID")
 
 

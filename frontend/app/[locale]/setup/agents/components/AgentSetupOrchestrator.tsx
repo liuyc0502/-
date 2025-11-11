@@ -68,6 +68,8 @@ export default function AgentSetupOrchestrator({
   setAgentDescription,
   agentDisplayName,
   setAgentDisplayName,
+  agentCategory,
+  setAgentCategory,
   isGeneratingAgent = false,
   // SystemPromptDisplay related props
   onDebug,
@@ -444,7 +446,8 @@ export default function AgentSetupOrchestrator({
             agentDisplayName,
             mainAgentModelId ?? undefined,
             businessLogicModel ?? undefined,
-            businessLogicModelId ?? undefined
+            businessLogicModelId ?? undefined,
+            agentCategory || undefined
           );
         } else {
           result = await updateAgent(
@@ -462,7 +465,8 @@ export default function AgentSetupOrchestrator({
             agentDisplayName,
             mainAgentModelId ?? undefined,
             businessLogicModel ?? undefined,
-            businessLogicModelId ?? undefined
+            businessLogicModelId ?? undefined,
+            agentCategory || undefined
           );
         }
 
@@ -880,7 +884,7 @@ export default function AgentSetupOrchestrator({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-full gap-0 justify-between relative ml-2 mr-2">
+      <div className="flex flex-col h-full gap-0 justify-between relative px-6 py-4">
         {/* Lower part: Agent pool + Agent capability configuration + System Prompt */}
         <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 max-w-full">
           {/* Left column: Always show SubAgentPool - Equal flex width */}
@@ -992,6 +996,8 @@ export default function AgentSetupOrchestrator({
               onAgentDescriptionChange={setAgentDescription}
               agentDisplayName={agentDisplayName}
               onAgentDisplayNameChange={setAgentDisplayName}
+              agentCategory={agentCategory}
+              onAgentCategoryChange={setAgentCategory}
               isEditingMode={isEditingAgent || isCreatingNewAgent}
               mainAgentModel={mainAgentModel ?? undefined}
               mainAgentModelId={mainAgentModelId}

@@ -323,7 +323,8 @@ export const updateAgent = async (
   displayName?: string,
   modelId?: number,
   businessLogicModelName?: string,
-  businessLogicModelId?: number
+  businessLogicModelId?: number,
+  category?: string
 ) => {
   try {
     const response = await fetch(API_ENDPOINTS.agent.update, {
@@ -345,6 +346,7 @@ export const updateAgent = async (
         few_shots_prompt: fewShotsPrompt,
         business_logic_model_name: businessLogicModelName,
         business_logic_model_id: businessLogicModelId,
+        category: category,
       }),
     });
 

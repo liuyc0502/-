@@ -213,6 +213,7 @@ class AgentInfoRequest(BaseModel):
     enabled: Optional[bool] = None
     business_logic_model_name: Optional[str] = None
     business_logic_model_id: Optional[int] = None
+    category: Optional[str] = None
 
 
 class AgentIDRequest(BaseModel):

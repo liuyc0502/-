@@ -37,6 +37,8 @@ export interface AgentConfigModalProps {
   onAgentDescriptionChange?: (description: string) => void;
   agentDisplayName?: string;
   onAgentDisplayNameChange?: (displayName: string) => void;
+  agentCategory?: string;
+  onAgentCategoryChange?: (category: string) => void;
   isEditingMode?: boolean;
   mainAgentModel?: string;
   mainAgentModelId?: number | null;
@@ -72,6 +74,8 @@ export default function AgentConfigModal({
   onAgentDescriptionChange,
   agentDisplayName = "",
   onAgentDisplayNameChange,
+  agentCategory = "",
+  onAgentCategoryChange,
   isEditingMode = false,
   mainAgentModel = "",
   mainAgentModelId = null,
@@ -613,6 +617,30 @@ export default function AgentConfigModal({
           }}
         />
       </div>
+
+      {/* Agent Category */}
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          智能体类型:
+        </label>
+        <Select
+          value={agentCategory || undefined}
+          onChange={(value) => onAgentCategoryChange?.(value)}
+          size="large"
+          disabled={!isEditingMode}
+          style={{ width: "100%" }}
+          placeholder="请选择智能体类型"
+          allowClear
+        >
+          <Select.Option value="诊断">诊断</Select.Option>
+          <Select.Option value="分析">分析</Select.Option>
+          <Select.Option value="教学">教学</Select.Option>
+          <Select.Option value="咨询">咨询</Select.Option>
+          <Select.Option value="管理">管理</Select.Option>
+          <Select.Option value="康复">康复</Select.Option>
+          <Select.Option value="其他">其他</Select.Option>
+        </Select>
+      </div>
     </div>
   );
 
@@ -669,7 +697,7 @@ export default function AgentConfigModal({
 
   return (
     <div
-      className={`flex flex-col h-full relative mt-4 ${
+      className={`flex flex-col h-full relative ${
         isEditingMode ? "editing-mode" : "viewing-mode"
       }`}
     >

@@ -27,6 +27,7 @@ import { ChatRightPanel } from "../components/chatRightPanel";
 import { ChatStreamMain } from "../streaming/chatStreamMain";
 
 import AdminAgentConfig from "../../admin/components/AdminAgentConfig";
+import AgentAssignment from "../../admin/components/AgentAssignment";
 import ModelConfig from "../../setup/models/config";
 import KnowledgeConfig from "../../setup/knowledges/config";
 
@@ -1684,15 +1685,9 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             {variant === "admin" ? (
               <>
                 {activeView === "agents" && <AdminAgentConfig />}
+                {activeView === "agent-assignment" && <AgentAssignment />}
                 {activeView === "models" && <ModelConfig />}
                 {activeView === "knowledge" && <KnowledgeConfig />}
-                {activeView === "tools" && (
-                  <div className="p-8 text-slate-600">
-                    {t("chatInterface.toolsConfigComingSoon", {
-                      defaultValue: "Tools Configuration - Coming Soon",
-                    })}
-                  </div>
-                )}
                 {activeView === "system" && (
                   <div className="p-8 text-slate-600">
                     {t("chatInterface.systemSettingsComingSoon", {

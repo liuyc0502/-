@@ -123,6 +123,8 @@ export interface AgentSetupOrchestratorProps {
   setAgentDescription?: (value: string) => void;
   agentDisplayName?: string;
   setAgentDisplayName?: (value: string) => void;
+  agentCategory?: string;
+  setAgentCategory?: (value: string) => void;
   isGeneratingAgent?: boolean;
   onDebug?: () => void;
   getCurrentAgentId?: () => number | undefined;

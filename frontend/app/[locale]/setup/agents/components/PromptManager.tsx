@@ -49,11 +49,11 @@ export function SimplePromptEditor({
       }}
       style={
         height
-          ? { height, resize: "none", overflow: "auto" }
-          : { resize: "none", overflow: "hidden" }
+          ? { height, resize: "none", overflowX: "hidden", overflowY: "auto" }
+          : { resize: "none", overflowX: "hidden", overflowY: "hidden" }
       }
       autoSize={height ? false : { minRows: 8 }}
-      bordered={bordered}
+      variant={bordered ? "outlined" : "borderless"}
     />
   );
 }
@@ -185,6 +185,7 @@ export interface PromptManagerProps {
   agentName?: string;
   agentDescription?: string;
   agentDisplayName?: string;
+  agentCategory?: string;
   mainAgentModel?: string;
   mainAgentModelId?: number | null;
   mainAgentMaxStep?: number;
@@ -208,6 +209,7 @@ export interface PromptManagerProps {
   onAgentNameChange?: (name: string) => void;
   onAgentDescriptionChange?: (description: string) => void;
   onAgentDisplayNameChange?: (displayName: string) => void;
+  onAgentCategoryChange?: (category: string) => void;
   onModelChange?: (value: string, modelId?: number) => void;
   onMaxStepChange?: (value: number | null) => void;
   onGenerateAgent?: (model: ModelOption) => void;
@@ -235,6 +237,7 @@ export default function PromptManager({
   agentName = "",
   agentDescription = "",
   agentDisplayName = "",
+  agentCategory = "",
   mainAgentModel = "",
   mainAgentModelId = null,
   mainAgentMaxStep = 5,
@@ -252,6 +255,7 @@ export default function PromptManager({
   onAgentNameChange,
   onAgentDescriptionChange,
   onAgentDisplayNameChange,
+  onAgentCategoryChange,
   onModelChange,
   onMaxStepChange,
   onGenerateAgent,
@@ -618,6 +622,8 @@ export default function PromptManager({
             onAgentDescriptionChange={onAgentDescriptionChange}
             agentDisplayName={agentDisplayName}
             onAgentDisplayNameChange={onAgentDisplayNameChange}
+            agentCategory={agentCategory}
+            onAgentCategoryChange={onAgentCategoryChange}
             isEditingMode={isEditingMode}
             mainAgentModel={mainAgentModel}
             mainAgentModelId={mainAgentModelId}
