@@ -2,6 +2,53 @@
 
 
 
+## 2025-11-12
+
+### Git 分支管理
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/2025-11-12`
+- 📦 **提交更改**: 30 个文件，1318 行新增，162 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**后端文件**:
+- `backend/apps/conversation_management_app.py`
+- `backend/apps/portal_agent_assignment_app.py`
+- `backend/consts/model.py`
+- `backend/database/agent_db.py`
+- `backend/database/conversation_db.py`
+- `backend/database/db_models.py`
+- `backend/database/portal_agent_assignment_db.py`
+- `backend/services/agent_service.py`
+- `backend/services/conversation_management_service.py`
+- `backend/services/portal_agent_assignment_service.py`
+
+**前端文件**:
+- `frontend/app/[locale]/admin/components/AgentAssignment.tsx`
+- `frontend/app/[locale]/chat/components/chatInput.tsx`
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx`
+- `frontend/app/[locale]/chat/streaming/chatStreamMain.tsx`
+- `frontend/app/[locale]/setup/agents/components/AgentSetupOrchestrator.tsx`
+- `frontend/app/[locale]/setup/agents/components/PromptManager.tsx`
+- `frontend/app/[locale]/setup/agents/components/agent/AgentConfigModal.tsx`
+- `frontend/const/portalChatConfig.ts`
+- `frontend/hooks/chat/useConversationManagement.ts`
+- `frontend/services/agentConfigService.ts`
+- `frontend/services/api.ts`
+- `frontend/services/conversationService.ts`
+- `frontend/services/portalAgentAssignmentService.ts`
+- `frontend/types/agentConfig.ts`
+- `frontend/types/chat.ts`
+
+**新增文件**:
+- `backend/database/migrations/add_portal_type_to_conversation.sql` (数据库迁移脚本)
+- `backend/database/migrations/run_migration.py` (迁移执行脚本)
+- `portal_agent_prompts.md` (Agent 提示词文档)
+
+---
+
 ## 2025-11-07
 
 ### 首页注册功能集成
