@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 
 import {
+  BookOpen,
   BookOpenCheck,
   Brain,
   Code,
@@ -38,6 +39,8 @@ export interface PortalChatConfig {
   accentColor: string;
   backgroundColor: string;
   brandName: string;
+  heroIcon?: string;
+  heroGreeting?: string;
   heroSubheading?: string;
   inputPlaceholder?: string;
   newChatDescription?: string;
@@ -113,11 +116,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     newChatDescription: "快速开始一次病例讨论",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
-      { id: "patients", label: "病人档案", icon: FileText },
+      { id: "patients", label: "病人档案", icon: Users },
       { id: "cases", label: "病例库", icon: FolderKanban },
-      { id: "reports", label: "诊断报告", icon: BookOpenCheck },
-      { id: "knowledge", label: "知识速查", icon: Brain },
-      { id: "research", label: "研究工具", icon: Microscope },
+      { id: "knowledge", label: "病理知识库", icon: BookOpen },
     ],
     quickActions: sharedQuickActions,
     searchPlaceholder: "搜索病历或对话",

@@ -1,91 +1,93 @@
 """
 Database operations for portal agent assignments
+Now uses AgentRelation for managing sub-agents of portal main agents
 """
 from sqlalchemy import and_
 from database.client import get_db_session, as_dict
-from database.db_models import PortalAgentAssignment
+from database.db_models import PortalAgentAssignment, AgentRelation
+from database.agent_db import get_portal_main_agent, query_sub_agents_id_list
 
 
 def get_portal_agents(portal_type: str, tenant_id: str) -> list[int]:
     """
-    Get list of agent IDs assigned to a specific portal
-    
+    Get list of sub-agent IDs assigned to a portal's main agent
+
     Args:
         portal_type: Type of portal (doctor, student, patient)
         tenant_id: Tenant ID
-        
+
     Returns:
-        List of agent IDs
+        List of sub-agent IDs
     """
-    with get_db_session() as session:
-        assignments = session.query(PortalAgentAssignment).filter(
-            and_(
-                PortalAgentAssignment.portal_type == portal_type,
-                PortalAgentAssignment.tenant_id == tenant_id,
-                PortalAgentAssignment.delete_flag != 'Y'
-            )
-        ).all()
-        return [assignment.agent_id for assignment in assignments]
+    # First get the main agent for this portal
+    main_agent = get_portal_main_agent(portal_type, tenant_id)
+    if not main_agent:
+        return []
+
+    # Then get its sub-agents
+    return query_sub_agents_id_list(main_agent['agent_id'], tenant_id)
 
 
 def assign_agent_to_portal(portal_type: str, agent_id: int, tenant_id: str, user_id: str) -> dict:
     """
-    Assign an agent to a portal
-    
+    Assign a sub-agent to a portal's main agent
+
     Args:
         portal_type: Type of portal (doctor, student, patient)
-        agent_id: Agent ID to assign
+        agent_id: Sub-agent ID to assign
         tenant_id: Tenant ID
         user_id: User ID performing the operation
-        
+
     Returns:
-        Assignment record as dictionary
+        Success status
     """
+    # Get the main agent for this portal
+    main_agent = get_portal_main_agent(portal_type, tenant_id)
+    if not main_agent:
+        raise ValueError(f"No main agent found for portal type: {portal_type}")
+
+    # Check if already assigned
+    sub_agents = query_sub_agents_id_list(main_agent['agent_id'], tenant_id)
+    if agent_id in sub_agents:
+        return {"status": "already_assigned", "main_agent_id": main_agent['agent_id'], "sub_agent_id": agent_id}
+
+    # Add to AgentRelation
     with get_db_session() as session:
-        # Check if assignment already exists
-        existing = session.query(PortalAgentAssignment).filter(
-            and_(
-                PortalAgentAssignment.portal_type == portal_type,
-                PortalAgentAssignment.agent_id == agent_id,
-                PortalAgentAssignment.tenant_id == tenant_id,
-                PortalAgentAssignment.delete_flag != 'Y'
-            )
-        ).first()
-        
-        if existing:
-            # Already assigned, return existing record
-            return as_dict(existing)
-        
-        # Create new assignment
-        new_assignment = PortalAgentAssignment(
-            portal_type=portal_type,
-            agent_id=agent_id,
+        new_relation = AgentRelation(
+            parent_agent_id=main_agent['agent_id'],
+            selected_agent_id=agent_id,
             tenant_id=tenant_id,
             created_by=user_id,
             updated_by=user_id,
             delete_flag='N'
         )
-        session.add(new_assignment)
+        session.add(new_relation)
         session.flush()
-        return as_dict(new_assignment)
+        return {"status": "success", "main_agent_id": main_agent['agent_id'], "sub_agent_id": agent_id}
 
 
 def remove_agent_from_portal(portal_type: str, agent_id: int, tenant_id: str, user_id: str) -> None:
     """
-    Remove an agent assignment from a portal (soft delete)
-    
+    Remove a sub-agent assignment from a portal's main agent (soft delete)
+
     Args:
         portal_type: Type of portal (doctor, student, patient)
-        agent_id: Agent ID to remove
+        agent_id: Sub-agent ID to remove
         tenant_id: Tenant ID
         user_id: User ID performing the operation
     """
+    # Get the main agent for this portal
+    main_agent = get_portal_main_agent(portal_type, tenant_id)
+    if not main_agent:
+        raise ValueError(f"No main agent found for portal type: {portal_type}")
+
+    # Remove from AgentRelation
     with get_db_session() as session:
-        session.query(PortalAgentAssignment).filter(
+        session.query(AgentRelation).filter(
             and_(
-                PortalAgentAssignment.portal_type == portal_type,
-                PortalAgentAssignment.agent_id == agent_id,
-                PortalAgentAssignment.tenant_id == tenant_id
+                AgentRelation.parent_agent_id == main_agent['agent_id'],
+                AgentRelation.selected_agent_id == agent_id,
+                AgentRelation.tenant_id == tenant_id
             )
         ).update({
             'delete_flag': 'Y',
@@ -95,43 +97,51 @@ def remove_agent_from_portal(portal_type: str, agent_id: int, tenant_id: str, us
 
 def set_portal_agents(portal_type: str, agent_ids: list[int], tenant_id: str, user_id: str) -> list[dict]:
     """
-    Set the complete list of agents for a portal (replaces existing assignments)
-    
+    Set the complete list of sub-agents for a portal's main agent (replaces existing assignments)
+
     Args:
         portal_type: Type of portal (doctor, student, patient)
-        agent_ids: List of agent IDs to assign
+        agent_ids: List of sub-agent IDs to assign
         tenant_id: Tenant ID
         user_id: User ID performing the operation
-        
+
     Returns:
-        List of assignment records
+        List of assignment results
     """
+    # Get the main agent for this portal
+    main_agent = get_portal_main_agent(portal_type, tenant_id)
+    if not main_agent:
+        raise ValueError(f"No main agent found for portal type: {portal_type}")
+
     with get_db_session() as session:
-        # Soft delete all existing assignments for this portal
-        session.query(PortalAgentAssignment).filter(
+        # Soft delete all existing sub-agent relations for this main agent
+        session.query(AgentRelation).filter(
             and_(
-                PortalAgentAssignment.portal_type == portal_type,
-                PortalAgentAssignment.tenant_id == tenant_id
+                AgentRelation.parent_agent_id == main_agent['agent_id'],
+                AgentRelation.tenant_id == tenant_id
             )
         ).update({
             'delete_flag': 'Y',
             'updated_by': user_id
         })
-        
-        # Create new assignments
+
+        # Create new relations
         assignments = []
         for agent_id in agent_ids:
-            new_assignment = PortalAgentAssignment(
-                portal_type=portal_type,
-                agent_id=agent_id,
+            new_relation = AgentRelation(
+                parent_agent_id=main_agent['agent_id'],
+                selected_agent_id=agent_id,
                 tenant_id=tenant_id,
                 created_by=user_id,
                 updated_by=user_id,
                 delete_flag='N'
             )
-            session.add(new_assignment)
+            session.add(new_relation)
             session.flush()
-            assignments.append(as_dict(new_assignment))
-        
+            assignments.append({
+                "main_agent_id": main_agent['agent_id'],
+                "sub_agent_id": agent_id
+            })
+
         return assignments
 

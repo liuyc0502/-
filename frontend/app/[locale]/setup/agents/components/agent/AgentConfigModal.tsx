@@ -39,6 +39,10 @@ export interface AgentConfigModalProps {
   onAgentDisplayNameChange?: (displayName: string) => void;
   agentCategory?: string;
   onAgentCategoryChange?: (category: string) => void;
+  agentRoleCategory?: string; // 'portal_main' or 'tool'
+  onAgentRoleCategoryChange?: (roleCategory: string) => void;
+  portalType?: string | null; // 'doctor', 'student', 'patient' or null
+  onPortalTypeChange?: (portalType: string | null) => void;
   isEditingMode?: boolean;
   mainAgentModel?: string;
   mainAgentModelId?: number | null;
@@ -76,6 +80,10 @@ export default function AgentConfigModal({
   onAgentDisplayNameChange,
   agentCategory = "",
   onAgentCategoryChange,
+  agentRoleCategory = "tool",
+  onAgentRoleCategoryChange,
+  portalType,
+  onPortalTypeChange,
   isEditingMode = false,
   mainAgentModel = "",
   mainAgentModelId = null,
@@ -618,29 +626,85 @@ export default function AgentConfigModal({
         />
       </div>
 
-      {/* Agent Category */}
+      {/* Agent Role Category */}
       <div className="mb-2">
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          智能体类型:
+          智能体角色分类 <span className="text-red-500">*</span>:
         </label>
         <Select
-          value={agentCategory || undefined}
-          onChange={(value) => onAgentCategoryChange?.(value)}
+          value={agentRoleCategory || "tool"}
+          onChange={(value) => {
+            onAgentRoleCategoryChange?.(value);
+            // Clear portal type if switching to tool
+            if (value === "tool") {
+              onPortalTypeChange?.(null);
+            }
+          }}
           size="large"
           disabled={!isEditingMode}
           style={{ width: "100%" }}
-          placeholder="请选择智能体类型"
-          allowClear
+          placeholder="请选择角色分类"
         >
-          <Select.Option value="诊断">诊断</Select.Option>
-          <Select.Option value="分析">分析</Select.Option>
-          <Select.Option value="教学">教学</Select.Option>
-          <Select.Option value="咨询">咨询</Select.Option>
-          <Select.Option value="管理">管理</Select.Option>
-          <Select.Option value="康复">康复</Select.Option>
-          <Select.Option value="其他">其他</Select.Option>
+          <Select.Option value="portal_main">端口主智能体</Select.Option>
+          <Select.Option value="tool">工具智能体</Select.Option>
         </Select>
+        <p className="text-xs text-gray-500 mt-1">
+          {agentRoleCategory === "portal_main"
+            ? "端口主智能体：作为各端（医生/学生/患者）的主要智能体，通过智能体分配界面管理子智能体"
+            : "工具智能体：可被主智能体调用的工具，支持配置协作智能体（多层嵌套）"}
+        </p>
       </div>
+
+      {/* Portal Type - Only show for portal_main agents */}
+      {agentRoleCategory === "portal_main" && (
+        <div className="mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            所属端口 <span className="text-red-500">*</span>:
+          </label>
+          <Select
+            value={portalType || undefined}
+            onChange={(value) => onPortalTypeChange?.(value)}
+            size="large"
+            disabled={!isEditingMode}
+            style={{ width: "100%" }}
+            placeholder="请选择所属端口"
+          >
+            <Select.Option value="doctor">医生端</Select.Option>
+            <Select.Option value="student">学生端</Select.Option>
+            <Select.Option value="patient">患者端</Select.Option>
+            <Select.Option value="admin">管理端</Select.Option>
+          </Select>
+          <p className="text-xs text-gray-500 mt-1">
+            选择此智能体作为哪个端口的主智能体（每个端口只能有一个主智能体）
+          </p>
+        </div>
+      )}
+
+      {/* Agent Category - Only show for tool agents */}
+      {agentRoleCategory === "tool" && (
+        <div className="mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            智能体类型:
+          </label>
+          <Select
+            value={agentCategory || undefined}
+            onChange={(value) => onAgentCategoryChange?.(value)}
+            size="large"
+            disabled={!isEditingMode}
+            style={{ width: "100%" }}
+            placeholder="请选择智能体类型"
+            allowClear
+          >
+            <Select.Option value="诊断">诊断</Select.Option>
+            <Select.Option value="分析">分析</Select.Option>
+            <Select.Option value="教学">教学</Select.Option>
+            <Select.Option value="咨询">咨询</Select.Option>
+            <Select.Option value="管理">管理</Select.Option>
+            <Select.Option value="康复">康复</Select.Option>
+            <Select.Option value="其他">其他</Select.Option>
+          </Select>
+        </div>
+      )}
     </div>
   );
 

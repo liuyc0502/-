@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Stethoscope, GraduationCap, Heart, Plus, X, Filter } from "lucide-react";
+import { Stethoscope, GraduationCap, Heart, Settings, Plus, X, Filter } from "lucide-react";
 import { Modal, Select, message, Spin } from "antd";
 import { fetchAgentList } from "@/services/agentConfigService";
 import {
   getPortalAgents,
   setPortalAgents,
+  getPortalMainAgent,
   type PortalType,
 } from "@/services/portalAgentAssignmentService";
 import log from "@/lib/logger";
@@ -46,6 +47,14 @@ const portalConfig = {
     borderColor: "border-gray-200",
     activeBorderColor: "border-gray-900",
   },
+  admin: {
+    label: "管理端",
+    icon: Settings,
+    color: "text-gray-700",
+    bgColor: "bg-gray-50",
+    borderColor: "border-gray-200",
+    activeBorderColor: "border-gray-900",
+  },
 };
 
 export default function AgentAssignment() {
@@ -56,12 +65,18 @@ export default function AgentAssignment() {
   const [draggedAgent, setDraggedAgent] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState<'assigned' | 'pool' | null>(null);
 
-  // 真实数据状态
   const [allAgents, setAllAgents] = useState<Agent[]>([]);
   const [assignedAgents, setAssignedAgents] = useState<Record<PortalType, string[]>>({
     doctor: [],
     student: [],
     patient: [],
+    admin: [],
+  });
+  const [portalMainAgents, setPortalMainAgents] = useState<Record<PortalType, any>>({
+    doctor: null,
+    student: null,
+    patient: null,
+    admin: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -79,17 +94,39 @@ export default function AgentAssignment() {
           setAllAgents(agentsResult.data);
         }
 
-        // 加载各端口已分配的智能体
-        const [doctorIds, studentIds, patientIds] = await Promise.all([
+        // 加载各端口的主智能体和已分配的工具智能体
+        const [
+          doctorMainAgent,
+          studentMainAgent,
+          patientMainAgent,
+          adminMainAgent,
+          doctorIds,
+          studentIds,
+          patientIds,
+          adminIds,
+        ] = await Promise.all([
+          getPortalMainAgent("doctor"),
+          getPortalMainAgent("student"),
+          getPortalMainAgent("patient"),
+          getPortalMainAgent("admin"),
           getPortalAgents("doctor"),
           getPortalAgents("student"),
           getPortalAgents("patient"),
+          getPortalAgents("admin"),
         ]);
+
+        setPortalMainAgents({
+          doctor: doctorMainAgent,
+          student: studentMainAgent,
+          patient: patientMainAgent,
+          admin: adminMainAgent,
+        });
 
         setAssignedAgents({
           doctor: doctorIds.map(String),
           student: studentIds.map(String),
           patient: patientIds.map(String),
+          admin: adminIds.map(String),
         });
       } catch (error) {
         log.error("Failed to load agent assignment data:", error);
@@ -119,6 +156,15 @@ export default function AgentAssignment() {
   );
 
   const handleAddAgent = async (agentId: string) => {
+    // Check if main agent exists before allowing assignment
+    const mainAgent = portalMainAgents[selectedPortal];
+    if (!mainAgent) {
+      message.warning(
+        `请先为${portalConfig[selectedPortal].label}配置主智能体。请在智能体配置页面创建一个"端口主智能体"类型的智能体，并选择对应的端口类型。`
+      );
+      return;
+    }
+
     const newAssigned = [...currentAssigned, agentId];
     setAssignedAgents({
       ...assignedAgents,
@@ -266,9 +312,16 @@ export default function AgentAssignment() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Icon className={`h-5 w-5 ${config.color}`} />
-                      <span className="font-medium text-gray-900">
-                        {config.label}
-                      </span>
+                      <div>
+                        <span className="font-medium text-gray-900 block">
+                          {config.label}
+                        </span>
+                        {!portalMainAgents[portal] && (
+                          <span className="text-xs text-amber-600 mt-0.5 block">
+                            未配置主智能体
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span className="text-sm text-gray-500">
                       {count} 个
@@ -287,9 +340,20 @@ export default function AgentAssignment() {
           <h3 className="text-lg font-semibold text-gray-900">
             {portalConfig[selectedPortal].label} - 已分配智能体
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            为该端口分配和管理可用的智能体
-          </p>
+          {portalMainAgents[selectedPortal] ? (
+            <p className="text-sm text-gray-500 mt-1">
+              主智能体：{portalMainAgents[selectedPortal].display_name || portalMainAgents[selectedPortal].name}
+            </p>
+          ) : (
+            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                ⚠️ 该端口尚未配置主智能体，无法分配工具智能体。
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                请先在智能体配置页面创建一个"端口主智能体"类型的智能体，并选择该端口类型。
+              </p>
+            </div>
+          )}
         </div>
 
           {/* 主体 - 已分配智能体列表（改成三列） */}

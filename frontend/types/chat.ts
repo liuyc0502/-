@@ -174,6 +174,7 @@ export interface ChatStreamMainProps {
   onAgentSelect?: (agentId: number | null) => void;
   portalConfig: PortalChatConfig;
   userDisplayName?: string;
+  hideAgentSelector?: boolean;
 }
 
 // Card item type for task window

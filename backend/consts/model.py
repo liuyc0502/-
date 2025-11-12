@@ -136,6 +136,7 @@ class MessageRequest(BaseModel):
 
 class ConversationRequest(BaseModel):
     title: str = "新对话"
+    portal_type: str = "general"
 
 
 class ConversationResponse(BaseModel):
@@ -214,6 +215,8 @@ class AgentInfoRequest(BaseModel):
     business_logic_model_name: Optional[str] = None
     business_logic_model_id: Optional[int] = None
     category: Optional[str] = None
+    agent_role_category: Optional[str] = None
+    portal_type: Optional[str] = None
 
 
 class AgentIDRequest(BaseModel):

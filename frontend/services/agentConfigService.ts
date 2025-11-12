@@ -324,7 +324,9 @@ export const updateAgent = async (
   modelId?: number,
   businessLogicModelName?: string,
   businessLogicModelId?: number,
-  category?: string
+  category?: string,
+  agentRoleCategory?: string,
+  portalType?: string | null
 ) => {
   try {
     const response = await fetch(API_ENDPOINTS.agent.update, {
@@ -347,6 +349,8 @@ export const updateAgent = async (
         business_logic_model_name: businessLogicModelName,
         business_logic_model_id: businessLogicModelId,
         category: category,
+        agent_role_category: agentRoleCategory,
+        portal_type: portalType,
       }),
     });
 
@@ -516,6 +520,8 @@ export const searchAgentInfo = async (agentId: number) => {
       enabled: data.enabled,
       is_available: data.is_available,
       sub_agent_id_list: data.sub_agent_id_list || [], // Add sub_agent_id_list
+      agent_category: data.agent_category,
+      portal_type: data.portal_type,
       tools: data.tools
         ? data.tools.map((tool: any) => {
             const params =

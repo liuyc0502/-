@@ -1,4 +1,7 @@
 
+
+
+
 ## 2025-11-07
 
 ### 首页注册功能集成
@@ -434,5 +437,313 @@ cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrati
 - 修复AgentAssignment组件中Spin组件的使用警告，添加`spinning`属性和包裹内容
 - 修复数据库迁移脚本的schema名称（从ag_schema改为nexent）
 - 优化迁移脚本以正确处理DO $$ ... END $$ 块
+
+---
+
+## 2025-11-11 - 添加智能体角色分类和端口类型字段
+
+**需求描述**:
+为智能体添加角色分类，区分"端口主智能体"和"工具智能体"，并为端口主智能体指定所属端口。
+
+**数据库迁移**:
+文件：
+- `backend/database/migrations/add_agent_role_and_portal_type.sql` (SQL迁移脚本)
+- `backend/database/migrations/run_role_portal_migration.py` (Python迁移执行脚本)
+
+新增字段：
+1. **agent_role_category** (VARCHAR(20))
+   - 智能体角色分类
+   - 可选值：`portal_main`（端口主智能体）或 `tool`（工具智能体）
+   - 默认值：`tool`
+
+2. **portal_type** (VARCHAR(20), nullable)
+   - 所属端口类型
+   - 可选值：`doctor`（医生端）、`student`（学生端）、`patient`（患者端）或 NULL
+   - 仅用于 `portal_main` 类型的智能体
+
+新增约束和索引：
+- `idx_agent_role_category`: 角色分类索引
+- `idx_agent_portal_type`: 端口类型索引
+- `chk_portal_type_for_portal_main`: 检查约束，确保只有 portal_main 可以设置 portal_type
+- `uniq_portal_main_per_tenant`: 唯一约束，每个租户的每个端口只能有一个主智能体
+
+**前端修改**:
+1. `/opt/frontend/app/[locale]/setup/agents/components/agent/AgentConfigModal.tsx`
+   - 添加"智能体角色分类"选择器（必填）
+   - 添加"所属端口"选择器（仅当角色为portal_main时显示，必填）
+   - 添加说明文本，解释两种角色的区别
+
+**技术说明**:
+- 端口主智能体：作为各端（医生/学生/患者）的主要智能体，通过智能体分配界面管理子智能体
+- 工具智能体：可被主智能体调用的工具，支持配置协作智能体（多层嵌套）
+- 通过数据库约束确保每个端口只能有一个主智能体
+- 默认所有现有智能体为"工具智能体"，保持向后兼容
+
+迁移执行命令：
+```bash
+cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrations/run_role_portal_migration.py
+```
+
+迁移验证：
+- ✓ 添加了 `agent_role_category` 字段（默认值：'tool'）
+- ✓ 添加了 `portal_type` 字段（nullable）
+- ✓ 创建了索引（idx_agent_role_category, idx_agent_portal_type, uniq_portal_main_per_tenant）
+- ✓ 创建了约束（chk_portal_type_for_portal_main）
+
+**后端代码修复**:
+修复500错误，更新后端代码以支持新字段：
+
+1. `backend/database/db_models.py`
+   - 修正字段名：`agent_category` → `agent_role_category`
+
+2. `backend/consts/model.py`
+   - 在 `AgentInfoRequest` 中添加 `agent_role_category` 和 `portal_type` 字段
+
+3. `backend/services/agent_service.py`
+   - 在 `list_all_agent_info_impl` 中返回新字段
+
+4. `backend/database/agent_db.py`
+   - 修正 `get_portal_main_agent` 查询：使用 `agent_role_category` 而非 `agent_category`
+
+**问题原因**:
+- 数据库字段名是 `agent_role_category`
+- 但部分代码使用了 `agent_category`
+- 导致查询失败，返回500错误
+
+**修复效果**:
+- ✅ agent 列表 API 正常返回
+- ✅ 获取主智能体 API 正常工作
+- ✅ 智能体分配 API 正常工作
+- ✅ 前后端数据结构一致
+
+#### 添加管理端支持 (2025-11-12 06:00)
+
+**修改文件**:
+- `/opt/frontend/app/[locale]/setup/agents/components/agent/AgentConfigModal.tsx`
+- `/opt/frontend/app/[locale]/admin/components/AgentAssignment.tsx`
+- `/opt/frontend/services/portalAgentAssignmentService.ts`
+- `/opt/backend/database/migrations/update_portal_type_constraint.sql`
+- `/opt/backend/database/migrations/run_portal_constraint_update.py`
+
+**新增功能**:
+1. 智能体配置界面新增"管理端"选项
+2. 智能体分配界面新增"管理端"Tab
+3. 数据库约束更新支持'admin'作为有效的portal_type
+
+**修改内容**:
+
+**前端**:
+1. `AgentConfigModal.tsx`: 端口选择下拉框添加"管理端"选项
+2. `AgentAssignment.tsx`: 
+   - 导入Settings图标
+   - portalConfig添加admin配置
+   - assignedAgents和portalMainAgents状态添加admin
+   - loadData添加加载admin数据的Promise
+3. `portalAgentAssignmentService.ts`: PortalType类型添加"admin"
+
+**数据库**:
+1. 更新约束允许portal_type为'admin':
+```sql
+CHECK (
+  (agent_role_category = 'portal_main' AND portal_type IN ('doctor', 'student', 'patient', 'admin'))
+  OR (agent_role_category = 'tool' AND portal_type IS NULL)
+)
+```
+
+**使用效果**:
+- ✅ 可以创建管理端的主智能体
+- ✅ 可以在智能体分配界面管理管理端的子智能体
+- ✅ 符合数据库约束，数据一致性得到保证
+
+#### 聊天记录端口字段迁移 (2025-11-12 06:30)
+
+**修改文件**:
+- `/opt/backend/database/migrations/add_portal_type_to_conversation.sql`
+- `/opt/backend/database/migrations/run_migration.py`
+
+**新增功能**:
+为 `conversation_record_t` 表添加 `portal_type` 字段，实现对话按端口隔离
+
+**数据库修改**:
+1. 新增字段：
+   - `portal_type` (VARCHAR(50), DEFAULT 'general')
+   - 可选值：'doctor', 'student', 'patient', 'admin', 'general'
+
+2. 新增索引：
+   - `idx_conversation_portal_type` - 提升按端口查询对话的性能
+
+3. 数据迁移：
+   - 现有对话自动标记为 'general'
+
+**后端支持**（已实现）:
+- ✅ ORM模型已包含 `portal_type` 字段
+- ✅ `create_conversation()` 支持 `portal_type` 参数
+- ✅ `get_conversation_list()` 支持按 `portal_type` 筛选
+- ✅ API `/conversation/create` 接收 `portal_type` 参数
+- ✅ API `/conversation/list?portal_type=xxx` 支持按端口查询
+
+**应用场景**:
+```python
+# 创建医生端对话
+conversation = create_conversation("患者咨询", user_id, portal_type='doctor')
+
+# 查询学生端对话列表
+conversations = get_conversation_list(user_id, portal_type='student')
+```
+
+**前端集成提示**:
+前端需要在创建对话时传递当前端口类型：
+```typescript
+// 根据当前端口创建对话
+const response = await fetch('/conversation/create', {
+  method: 'POST',
+  body: JSON.stringify({
+    title: '新对话',
+    portal_type: currentPortal  // 'doctor', 'student', 'patient', 'admin'
+  })
+});
+```
+
+---
+
+## 2025-11-11
+
+### 端口专属主智能体架构
+
+**修改文件（后端）**：
+- `backend/database/db_models.py` - 在 AgentInfo 表中添加 `agent_category` 和 `portal_type` 字段
+- `backend/database/agent_db.py` - 新增 `get_portal_main_agent()` 函数
+- `backend/database/portal_agent_assignment_db.py` - 重构为使用 AgentRelation 表
+- `backend/apps/portal_agent_assignment_app.py` - 新增 `/get_main_agent/{portal_type}` 接口
+- `backend/services/portal_agent_assignment_service.py` - 新增 `get_portal_main_agent_impl()` 函数
+- `backend/services/agent_service.py` - 更新以支持新的智能体字段
+
+**修改文件（前端）**：
+- `frontend/types/agentConfig.ts` - 在 Agent 接口中添加 `agent_category` 和 `portal_type` 字段
+- `frontend/app/[locale]/setup/agents/components/agent/AgentConfigModal.tsx` - 新增智能体角色和端口类型选择器
+- `frontend/app/[locale]/setup/agents/components/AgentSetupOrchestrator.tsx` - 新增状态管理逻辑
+- `frontend/app/[locale]/setup/agents/components/PromptManager.tsx` - 传递新的 props
+- `frontend/app/[locale]/admin/components/AgentAssignment.tsx` - 新增主智能体验证逻辑
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` - 自动加载并使用端口主智能体
+- `frontend/app/[locale]/chat/streaming/chatStreamMain.tsx` - 支持隐藏智能体选择器
+- `frontend/app/[locale]/chat/components/chatInput.tsx` - 条件渲染智能体选择器
+- `frontend/services/agentConfigService.ts` - 更新智能体时包含新字段
+- `frontend/services/portalAgentAssignmentService.ts` - 新增 `getPortalMainAgent()` 函数
+- `frontend/services/api.ts` - 新增 API 端点定义
+- `frontend/types/chat.ts` - 新增 `hideAgentSelector` 属性
+
+**功能说明**：
+- 🎯 **双层智能体架构**：
+  - **端口主智能体**：每个端口（医生端/学生端/患者端）配置一个专属的主智能体
+  - **工具智能体**：可复用的子智能体，可分配给任意主智能体使用
+- 🔧 **智能体角色配置**：
+  - 在智能体配置中新增"智能体角色分类"选择器："端口主智能体" vs "工具智能体"
+  - 为主智能体新增"所属端口"选择器："医生端" / "学生端" / "患者端"
+  - 工具智能体可以配置协作子智能体（嵌套架构）
+  - 主智能体的子智能体通过"智能体分配"界面统一管理
+- ✅ **分配验证机制**：
+  - 智能体分配界面会检查端口是否已配置主智能体
+  - 未配置主智能体时显示警告提示
+  - 端口卡片显示"未配置主智能体"状态指示器
+- 🤖 **自动智能体选择**：
+  - 医生端/学生端/患者端自动加载并使用各自的主智能体
+  - 端口专属聊天界面中隐藏智能体选择器
+  - 管理员端和通用端保留手动选择功能
+- 📊 **数据库架构**：
+  - 使用现有的 `AgentRelation` 表维护父子关系
+  - `agent_category`：'portal_main' 或 'tool'（默认值：'tool'）
+  - `portal_type`：'doctor'、'student'、'patient' 或 null
+  - 保持与现有智能体的向后兼容性
+
+**用户体验**：
+1. **配置主智能体**：
+   - 进入智能体配置页面
+   - 创建或编辑智能体
+   - 选择"智能体角色分类" → "端口主智能体"
+   - 选择"所属端口" → 目标端口类型
+   - 配置智能体参数并保存
+2. **分配工具智能体**：
+   - 进入智能体分配界面
+   - 选择目标端口
+   - 界面显示主智能体名称或未配置警告
+   - 从资源池拖拽工具智能体进行分配
+   - 系统验证主智能体存在后才允许分配
+3. **聊天使用**：
+   - 医生端/学生端/患者端用户：主智能体自动选中，无需手动选择
+   - 管理员/通用端用户：保留手动智能体选择功能
+   - 主智能体可自动调用已分配的工具智能体
+
+**技术实现**：
+- 后端：在 `ag_tenant_agent_t` 表中新增字段及相应索引
+- 前端：基于 `agent_category` 条件渲染 UI
+- API：RESTful 接口 `/portal_agent_assignment/get_main_agent/{portal_type}`
+- 聊天：通过 `useEffect` hook 在端口加载时自动获取主智能体
+- 验证：UI、API、数据库三层数据一致性检查
+
+**核心优势**：
+- ✨ 简化用户体验 - 无需手动选择智能体
+- 🔐 职责分离清晰 - 管理员配置一次，用户直接使用
+- 🔄 架构灵活 - 主智能体可编排多个工具智能体
+- 📈 易于扩展 - 轻松添加新端口或修改智能体分配
+- 🛡️ 验证可靠 - 防止配置不完整导致的错误
+
+---
+
+
+## 2025-11-12
+
+### 端口对话隔离功能
+
+**修改文件（后端）**：
+- `backend/database/db_models.py` - 在 ConversationRecord 表中添加 `portal_type` 字段
+- `backend/database/conversation_db.py` - 修改 `create_conversation()` 和 `get_conversation_list()` 函数支持端口类型
+- `backend/apps/conversation_management_app.py` - API 接口支持 `portal_type` 参数
+- `backend/services/conversation_management_service.py` - Service 层传递端口类型参数
+- `backend/consts/model.py` - ConversationRequest 模型添加 `portal_type` 字段
+
+**修改文件（前端）**：
+- `frontend/services/conversationService.ts` - `create()` 和 `getList()` 方法支持端口类型参数
+- `frontend/hooks/chat/useConversationManagement.ts` - `fetchConversationList()` 方法支持端口类型参数
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` - 创建和查询对话时传递 `variant` 参数
+
+**功能说明**：
+- 🔒 **对话隔离**：不同端口的对话记录完全隔离，互不可见
+  - 医生端的对话只在医生端显示
+  - 学生端的对话只在学生端显示
+  - 患者端的对话只在患者端显示
+  - 管理端的对话只在管理端显示
+  - 通用端（general）的对话保持独立
+- 📝 **自动标记**：创建对话时自动标记所属端口类型
+- 🔍 **智能过滤**：查询对话列表时自动按端口类型过滤
+- 🔄 **向后兼容**：现有对话默认标记为 'general' 类型
+
+**数据库字段**：
+```sql
+-- conversation_record_t 表新增字段
+portal_type VARCHAR(50) DEFAULT 'general'
+-- 可选值: 'doctor', 'student', 'patient', 'admin', 'general'
+```
+
+**API 变更**：
+- `PUT /conversation/create`：请求体新增 `portal_type` 字段（可选，默认 'general'）
+- `GET /conversation/list`：新增查询参数 `portal_type`（可选，不传则返回所有对话）
+
+**技术实现**：
+- 后端：通过 SQLAlchemy 在 ConversationRecord 表添加 portal_type 字段并建立索引
+- 数据层：create_conversation 和 get_conversation_list 函数增加 portal_type 参数
+- API 层：从请求中获取 portal_type 并传递到数据层
+- 前端：根据当前页面的 variant 自动传递对应的 portal_type
+
+**使用效果**：
+- ✅ 医生端用户只能看到医生端的对话历史
+- ✅ 学生端用户只能看到学生端的对话历史
+- ✅ 患者端用户只能看到患者端的对话历史
+- ✅ 管理端用户只能看到管理端的对话历史
+- ✅ 各端对话完全独立，不会串台
+
+**注意事项**：
+- 已创建的对话会自动标记为 'general' 类型
+- 如需迁移现有对话到特定端口，需运行数据库更新脚本
+- 建议定期清理不同端口的过期对话
 
 ---

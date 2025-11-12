@@ -726,7 +726,9 @@ async def list_all_agent_info_impl(tenant_id: str) -> list[dict]:
                 "display_name": agent["display_name"] if agent["display_name"] else agent["name"],
                 "description": agent["description"],
                 "is_available": is_available,
-                "category": agent.get("category", None)
+                "category": agent.get("category", None),
+                "agent_role_category": agent.get("agent_role_category", "tool"),
+                "portal_type": agent.get("portal_type", None)
             })
         return simple_agent_list
     except Exception as e:

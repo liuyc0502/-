@@ -27,6 +27,7 @@ class ConversationRecord(TableBase):
     conversation_id = Column(Integer, Sequence(
         "conversation_record_t_conversation_id_seq", schema=SCHEMA), primary_key=True, nullable=False)
     conversation_title = Column(String(100), doc="Conversation title")
+    portal_type = Column(String(50), doc="Portal type: 'doctor', 'student', 'patient', 'admin', or 'general'", default='general')
 
 
 class ConversationMessage(TableBase):
@@ -209,6 +210,8 @@ class AgentInfo(TableBase):
     business_logic_model_name = Column(String(100), doc="Model name used for business logic prompt generation")
     business_logic_model_id = Column(Integer, doc="Model ID used for business logic prompt generation, foreign key reference to model_record_t.model_id")
     category = Column(String(50), doc="Agent category/type (e.g., diagnosis, analysis, teaching, consultation)")
+    agent_role_category = Column(String(50), doc="Agent role category: 'portal_main' for portal main agents, 'tool' for tool agents", default='tool')
+    portal_type = Column(String(50), doc="Portal type for main agents: 'doctor', 'student', 'patient', or null for tool agents")
 
 
 class ToolInstance(TableBase):

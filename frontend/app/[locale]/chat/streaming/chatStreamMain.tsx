@@ -39,6 +39,7 @@ export function ChatStreamMain({
   onAgentSelect,
   portalConfig,
   userDisplayName,
+  hideAgentSelector = false,
 }: ChatStreamMainProps) {
   const { t } = useTranslation();
   // Animation variants for ChatInput
@@ -524,6 +525,7 @@ export function ChatStreamMain({
                         onAgentSelect={onAgentSelect}
                         portalConfig={portalConfig}
                         userDisplayName={userDisplayName}
+                        hideAgentSelector={hideAgentSelector}
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -616,6 +618,7 @@ export function ChatStreamMain({
               onAgentSelect={onAgentSelect}
               portalConfig={portalConfig}
               userDisplayName={userDisplayName}
+              hideAgentSelector={hideAgentSelector}
             />
           </motion.div>
         </AnimatePresence>

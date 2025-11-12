@@ -8,8 +8,27 @@ from database.portal_agent_assignment_db import (
     remove_agent_from_portal,
     set_portal_agents
 )
+from database.agent_db import get_portal_main_agent
 
 logger = logging.getLogger(__name__)
+
+
+async def get_portal_main_agent_impl(portal_type: str, tenant_id: str):
+    """
+    Get the main agent for a portal
+
+    Args:
+        portal_type: Portal type (doctor, student, patient)
+        tenant_id: Tenant ID
+
+    Returns:
+        Main agent info dict or None
+    """
+    try:
+        return get_portal_main_agent(portal_type, tenant_id)
+    except Exception as e:
+        logger.error(f"Failed to get portal main agent: {str(e)}")
+        raise ValueError(f"Failed to get portal main agent: {str(e)}")
 
 
 async def get_portal_agents_impl(portal_type: str, tenant_id: str) -> list[int]:

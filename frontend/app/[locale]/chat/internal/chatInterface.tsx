@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { conversationService } from "@/services/conversationService";
 import { storageService } from "@/services/storageService";
 import { useConversationManagement } from "@/hooks/chat/useConversationManagement";
+import { getPortalMainAgent } from "@/services/portalAgentAssignmentService";
 
 import { ChatSidebar } from "../components/chatLeftSidebar";
 import type { FilePreview, PortalNavItemId } from "@/types/chat";
@@ -158,6 +159,29 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
 
   // Add agent selection state
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+  const [portalMainAgentId, setPortalMainAgentId] = useState<number | null>(null);
+
+  // Auto-load portal main agent for doctor/student/patient portals
+  useEffect(() => {
+    const loadPortalMainAgent = async () => {
+      // Only auto-load for specific portal types, not for admin or general
+      if (variant === "doctor" || variant === "student" || variant === "patient") {
+        try {
+          const mainAgent = await getPortalMainAgent(variant);
+          if (mainAgent && mainAgent.agent_id) {
+            setPortalMainAgentId(mainAgent.agent_id);
+            setSelectedAgentId(mainAgent.agent_id); // Auto-select the main agent
+          } else {
+            log.warn(`No main agent configured for portal: ${variant}`);
+          }
+        } catch (error) {
+          log.error("Failed to load portal main agent:", error);
+        }
+      }
+    };
+
+    loadPortalMainAgent();
+  }, [variant]);
 
   // Reset scroll to bottom state
   useEffect(() => {
@@ -209,7 +233,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       conversationManagement.initialized.current = true;
 
       // Get conversation history list, but don't auto-select the latest conversation
-      conversationManagement.fetchConversationList()
+      conversationManagement.fetchConversationList(variant)
         .then((dialogData) => {
           // Create new conversation by default regardless of history
           handleNewConversation();
@@ -338,7 +362,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
         // If no session ID or ID is -1, create new conversation first
         try {
           const createData = await conversationService.create(
-            t("chatInterface.newConversation")
+            t("chatInterface.newConversation"),
+            variant
           );
           currentConversationId = createData.conversation_id;
 
@@ -360,7 +385,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
 
           // Refresh conversation list
           try {
-            const dialogList = await conversationManagement.fetchConversationList();
+            const dialogList = await conversationManagement.fetchConversationList(variant);
             const newDialog = dialogList.find(
               (dialog) => dialog.conversation_id === currentConversationId
             );
@@ -1071,7 +1096,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             }, 1000);
 
             // Refresh history list
-            conversationManagement.fetchConversationList().catch((err) => {
+            conversationManagement.fetchConversationList(variant).catch((err) => {
               log.error(
                 t("chatInterface.refreshDialogListFailedButContinue"),
                 err
@@ -1203,7 +1228,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
           }, 1000);
 
           // Refresh history list
-          conversationManagement.fetchConversationList().catch((err) => {
+          conversationManagement.fetchConversationList(variant).catch((err) => {
             log.error(
               t("chatInterface.refreshDialogListFailedButContinue"),
               err
@@ -1283,7 +1308,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const handleConversationRename = async (dialogId: number, title: string) => {
     try {
       await conversationService.rename(dialogId, title);
-      await conversationManagement.fetchConversationList();
+      await conversationManagement.fetchConversationList(variant);
 
       if (conversationManagement.selectedConversationId === dialogId) {
         conversationManagement.setConversationTitle(title);
@@ -1335,7 +1360,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       }
 
       await conversationService.delete(dialogId);
-      await conversationManagement.fetchConversationList();
+      await conversationManagement.fetchConversationList(variant);
 
       if (conversationManagement.selectedConversationId === dialogId) {
         conversationManagement.setSelectedConversationId(null);
@@ -1536,7 +1561,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   // Add event listener for conversation list updates
   useEffect(() => {
     const handleConversationListUpdate = () => {
-      conversationManagement.fetchConversationList().catch((err) => {
+      conversationManagement.fetchConversationList(variant).catch((err) => {
         log.error(t("chatInterface.failedToUpdateConversationList"), err);
       });
     };
@@ -1667,6 +1692,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   onAgentSelect={setSelectedAgentId}
                   portalConfig={portalConfig}
                   userDisplayName={displayName}
+                  hideAgentSelector={variant === "doctor" || variant === "student" || variant === "patient"}
                 />
               </div>
 

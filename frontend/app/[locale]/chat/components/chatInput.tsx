@@ -335,6 +335,7 @@ interface ChatInputProps {
   onAgentSelect?: (agentId: number | null) => void;
   portalConfig?: PortalChatConfig;
   userDisplayName?: string;
+  hideAgentSelector?: boolean;
 }
 
 export function ChatInput({
@@ -355,6 +356,7 @@ export function ChatInput({
   onAgentSelect,
   portalConfig,
   userDisplayName,
+  hideAgentSelector = false,
 }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState<
@@ -526,8 +528,8 @@ export function ChatInput({
         return;
       }
 
-      // Check if agent is selected
-      if (!selectedAgentId) {
+      // Check if agent is selected (skip check if agent selector is hidden)
+      if (!hideAgentSelector && !selectedAgentId) {
         setErrorMessage(t("agentSelector.pleaseSelectAgent"));
         setTimeout(() => setErrorMessage(null), 3000);
         return;
@@ -1078,14 +1080,16 @@ export function ChatInput({
                   true
                 )}
               </div>
-              <div className="flex justify-end">
-                <ChatAgentSelector
-                  selectedAgentId={selectedAgentId}
-                  onAgentSelect={onAgentSelect || (() => {})}
-                  disabled={isLoading || isStreaming}
-                  isInitialMode={isInitialMode}
-                />
-              </div>
+              {!hideAgentSelector && (
+                <div className="flex justify-end">
+                  <ChatAgentSelector
+                    selectedAgentId={selectedAgentId}
+                    onAgentSelect={onAgentSelect || (() => {})}
+                    disabled={isLoading || isStreaming}
+                    isInitialMode={isInitialMode}
+                  />
+                </div>
+              )}
             </div>
 
             {renderAttachments()}
@@ -1190,19 +1194,19 @@ export function ChatInput({
                 ) : (
                   <Button
                     onClick={handleSend}
-                    disabled={!input.trim() || isLoading || !selectedAgentId}
+                    disabled={!input.trim() || isLoading || (!hideAgentSelector && !selectedAgentId)}
                     size="icon"
                     className="h-11 w-11 text-white rounded-full flex items-center justify-center"
                     style={{
                       backgroundColor:
-                        hasUnsupportedFiles || !selectedAgentId
+                        hasUnsupportedFiles || (!hideAgentSelector && !selectedAgentId)
                           ? "#D4D4D4"
                           : accentColor,
                     }}
                     title={
                       hasUnsupportedFiles
                         ? t("chatInput.unsupportedFileTypeSimple")
-                        : !selectedAgentId
+                        : (!hideAgentSelector && !selectedAgentId)
                         ? t("agentSelector.pleaseSelectAgent")
                         : t("chatInput.send")
                     }
@@ -1257,8 +1261,8 @@ export function ChatInput({
 
   // Stop recording before sending a message
   const handleSend = () => {
-    // Check if agent is selected
-    if (!selectedAgentId) {
+    // Check if agent is selected (skip check if agent selector is hidden)
+    if (!hideAgentSelector && !selectedAgentId) {
       setErrorMessage(t("agentSelector.pleaseSelectAgent"));
       setTimeout(() => setErrorMessage(null), 3000);
       return;

@@ -99,6 +99,10 @@ export default function AgentSetupOrchestrator({
   const [isEditingAgent, setIsEditingAgent] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
+  // Agent role category and portal type
+  const [agentRoleCategory, setAgentRoleCategory] = useState<string>("tool");
+  const [portalType, setPortalType] = useState<string | null>(null);
+
   // Add a flag to track if it has been initialized to avoid duplicate calls
   const hasInitialized = useRef(false);
 
@@ -429,6 +433,9 @@ export default function AgentSetupOrchestrator({
     if (name.trim() && mainAgentId) {
       try {
         let result;
+        
+        // Only set portal_type if agent_role_category is 'portal_main'
+        const effectivePortalType = agentRoleCategory === "portal_main" ? portalType : null;
 
         if (isEditingAgent && editingAgent) {
           result = await updateAgent(
@@ -447,7 +454,9 @@ export default function AgentSetupOrchestrator({
             mainAgentModelId ?? undefined,
             businessLogicModel ?? undefined,
             businessLogicModelId ?? undefined,
-            agentCategory || undefined
+            agentCategory || undefined,
+            agentRoleCategory || "tool",
+            effectivePortalType
           );
         } else {
           result = await updateAgent(
@@ -466,7 +475,9 @@ export default function AgentSetupOrchestrator({
             mainAgentModelId ?? undefined,
             businessLogicModel ?? undefined,
             businessLogicModelId ?? undefined,
-            agentCategory || undefined
+            agentCategory || undefined,
+            agentRoleCategory || "tool",
+            effectivePortalType
           );
         }
 
@@ -579,6 +590,8 @@ export default function AgentSetupOrchestrator({
       setAgentName?.(agentDetail.name || "");
       setAgentDescription?.(agentDetail.description || "");
       setAgentDisplayName?.(agentDetail.display_name || "");
+      setAgentRoleCategory(agentDetail.agent_category || "tool");
+      setPortalType(agentDetail.portal_type || null);
 
       // Notify external editing state change (use complete data)
       onEditingStateChange?.(true, agentDetail);
@@ -921,22 +934,32 @@ export default function AgentSetupOrchestrator({
             <div className="flex-1 overflow-hidden border-t pt-2">
               <div className="flex flex-col h-full" style={{ gap: "16px" }}>
                 {/* Upper section: Collaborative Agent Display - fixed area */}
-                <CollaborativeAgentDisplay
-                  className="h-[128px] lg:h-[128px]"
-                  style={{ flexShrink: 0 }}
-                  availableAgents={subAgentList}
-                  selectedAgentIds={enabledAgentIds}
-                  parentAgentId={
-                    isEditingAgent && editingAgent
-                      ? Number(editingAgent.id)
-                      : isCreatingNewAgent && mainAgentId
-                      ? Number(mainAgentId)
-                      : undefined
-                  }
-                  onAgentIdsChange={handleUpdateEnabledAgentIds}
-                  isEditingMode={isEditingAgent || isCreatingNewAgent}
-                  isGeneratingAgent={isGeneratingAgent}
-                />
+                {/* Only show for tool agents, not for portal main agents */}
+                {agentRoleCategory === "tool" && (
+                  <CollaborativeAgentDisplay
+                    className="h-[128px] lg:h-[128px]"
+                    style={{ flexShrink: 0 }}
+                    availableAgents={subAgentList}
+                    selectedAgentIds={enabledAgentIds}
+                    parentAgentId={
+                      isEditingAgent && editingAgent
+                        ? Number(editingAgent.id)
+                        : isCreatingNewAgent && mainAgentId
+                        ? Number(mainAgentId)
+                        : undefined
+                    }
+                    onAgentIdsChange={handleUpdateEnabledAgentIds}
+                    isEditingMode={isEditingAgent || isCreatingNewAgent}
+                    isGeneratingAgent={isGeneratingAgent}
+                  />
+                )}
+                {agentRoleCategory === "portal_main" && (
+                  <div className="h-[128px] lg:h-[128px] flex items-center justify-center bg-blue-50 border border-blue-200 rounded-md" style={{ flexShrink: 0 }}>
+                    <p className="text-sm text-blue-600">
+                      💡 端口主智能体的子智能体通过「智能体分配」界面统一管理
+                    </p>
+                  </div>
+                )}
 
                 {/* Lower section: Tool Pool - flexible area */}
                 <div className="flex-1 overflow-hidden">
@@ -998,6 +1021,10 @@ export default function AgentSetupOrchestrator({
               onAgentDisplayNameChange={setAgentDisplayName}
               agentCategory={agentCategory}
               onAgentCategoryChange={setAgentCategory}
+              agentRoleCategory={agentRoleCategory}
+              onAgentRoleCategoryChange={setAgentRoleCategory}
+              portalType={portalType}
+              onPortalTypeChange={setPortalType}
               isEditingMode={isEditingAgent || isCreatingNewAgent}
               mainAgentModel={mainAgentModel ?? undefined}
               mainAgentModelId={mainAgentModelId}

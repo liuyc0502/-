@@ -186,6 +186,8 @@ export interface PromptManagerProps {
   agentDescription?: string;
   agentDisplayName?: string;
   agentCategory?: string;
+  agentRoleCategory?: string;
+  portalType?: string | null;
   mainAgentModel?: string;
   mainAgentModelId?: number | null;
   mainAgentMaxStep?: number;
@@ -210,6 +212,8 @@ export interface PromptManagerProps {
   onAgentDescriptionChange?: (description: string) => void;
   onAgentDisplayNameChange?: (displayName: string) => void;
   onAgentCategoryChange?: (category: string) => void;
+  onAgentRoleCategoryChange?: (roleCategory: string) => void;
+  onPortalTypeChange?: (portalType: string | null) => void;
   onModelChange?: (value: string, modelId?: number) => void;
   onMaxStepChange?: (value: number | null) => void;
   onGenerateAgent?: (model: ModelOption) => void;
@@ -238,6 +242,8 @@ export default function PromptManager({
   agentDescription = "",
   agentDisplayName = "",
   agentCategory = "",
+  agentRoleCategory = "tool",
+  portalType = null,
   mainAgentModel = "",
   mainAgentModelId = null,
   mainAgentMaxStep = 5,
@@ -256,6 +262,8 @@ export default function PromptManager({
   onAgentDescriptionChange,
   onAgentDisplayNameChange,
   onAgentCategoryChange,
+  onAgentRoleCategoryChange,
+  onPortalTypeChange,
   onModelChange,
   onMaxStepChange,
   onGenerateAgent,
@@ -624,6 +632,10 @@ export default function PromptManager({
             onAgentDisplayNameChange={onAgentDisplayNameChange}
             agentCategory={agentCategory}
             onAgentCategoryChange={onAgentCategoryChange}
+            agentRoleCategory={agentRoleCategory}
+            onAgentRoleCategoryChange={onAgentRoleCategoryChange}
+            portalType={portalType}
+            onPortalTypeChange={onPortalTypeChange}
             isEditingMode={isEditingMode}
             mainAgentModel={mainAgentModel}
             mainAgentModelId={mainAgentModelId}

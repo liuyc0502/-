@@ -23,34 +23,38 @@ const getWebSocketUrl = (endpoint: string): string => {
 
 export const conversationService = {
   // Get conversation list
-  async getList(): Promise<ConversationListItem[]> {
-    const response = await fetch(API_ENDPOINTS.conversation.list);
+  async getList(portalType?: string): Promise<ConversationListItem[]> {
+    const url = portalType
+      ? `${API_ENDPOINTS.conversation.list}?portal_type=${portalType}`
+      : API_ENDPOINTS.conversation.list;
+    const response = await fetch(url);
 
     const data = await response.json() as ConversationListResponse;
-    
+
     if (data.code === 0) {
       return data.data || [];
     }
-    
+
     throw new ApiError(data.code, data.message);
   },
 
   // Create new conversation
-  async create(title?: string) {
+  async create(title?: string, portalType?: string) {
     const response = await fetch(API_ENDPOINTS.conversation.create, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({
-        title: title || "new conversation"
+        title: title || "new conversation",
+        portal_type: portalType || "general"
       }),
     });
 
     const data = await response.json();
-    
+
     if (data.code === 0) {
       return data.data;
     }
-    
+
     throw new ApiError(data.code, data.message);
   },
 

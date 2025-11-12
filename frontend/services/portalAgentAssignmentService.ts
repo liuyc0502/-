@@ -7,12 +7,36 @@ import log from "@/lib/logger";
  * Handles API calls for assigning agents to portals (doctor, student, patient)
  */
 
-export type PortalType = "doctor" | "student" | "patient";
+export type PortalType = "doctor" | "student" | "patient" | "admin";
 
 /**
- * Get list of agent IDs assigned to a portal
+ * Get the main agent for a portal
  * @param portalType Portal type (doctor, student, patient)
- * @returns List of agent IDs
+ * @returns Main agent info or null if not configured
+ */
+export const getPortalMainAgent = async (portalType: PortalType): Promise<any> => {
+  try {
+    const response = await fetch(API_ENDPOINTS.portalAgentAssignment.getMainAgent(portalType), {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get portal main agent: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.main_agent || null;
+  } catch (error) {
+    log.error("Error getting portal main agent:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get list of sub-agent IDs assigned to a portal's main agent
+ * @param portalType Portal type (doctor, student, patient)
+ * @returns List of sub-agent IDs
  */
 export const getPortalAgents = async (portalType: PortalType): Promise<number[]> => {
   try {

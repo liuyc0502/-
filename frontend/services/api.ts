@@ -156,7 +156,9 @@ export const API_ENDPOINTS = {
     },
   },
   portalAgentAssignment: {
-    getAgents: (portalType: string) => 
+    getMainAgent: (portalType: string) =>
+      `${API_BASE_URL}/portal_agent_assignment/get_main_agent/${portalType}`,
+    getAgents: (portalType: string) =>
       `${API_BASE_URL}/portal_agent_assignment/get_agents/${portalType}`,
     assign: `${API_BASE_URL}/portal_agent_assignment/assign`,
     remove: `${API_BASE_URL}/portal_agent_assignment/remove`,
