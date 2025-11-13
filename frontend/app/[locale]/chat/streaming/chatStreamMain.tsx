@@ -468,19 +468,19 @@ export function ChatStreamMain({
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative custom-scrollbar">
       <ScrollArea
-        className="flex-1 px-4 md:px-12 pt-4"
+        className="flex-1 px-4 md:px-12 py-4"
         ref={scrollAreaRef}
       >
         <div className="max-w-3xl lg:max-w-4xl mx-auto space-y-6">
           {processedMessages.finalMessages.length === 0 ? (
             isLoadingHistoricalConversation ? (
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
+              <div className="flex flex-col items-center justify-center py-20">
                 <div className="text-[#6B6B6B] text-sm">
                   {t("chatStreamMain.loadingConversation")}
                 </div>
               </div>
             ) : conversationLoadError ? (
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
+              <div className="flex flex-col items-center justify-center py-20">
                 <div className="text-center max-w-md">
                   <div className="text-[#D94527] text-sm mb-4">
                     {t("chatStreamMain.loadError")}
@@ -498,7 +498,7 @@ export function ChatStreamMain({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
+              <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-full max-w-3xl">
                   <AnimatePresence mode="wait">
                     <motion.div

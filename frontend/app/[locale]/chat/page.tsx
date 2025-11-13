@@ -19,9 +19,5 @@ export default function ChatPage() {
     }
   }, [appConfig.appName]);
 
-  return (
-    <div className="flex h-screen flex-col">
-      <ChatInterface />
-    </div>
-  );
+  return <ChatInterface />;
 }

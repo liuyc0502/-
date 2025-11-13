@@ -26,6 +26,10 @@ import type { FilePreview, PortalNavItemId } from "@/types/chat";
 import { ChatHeader } from "../components/chatHeader";
 import { ChatRightPanel } from "../components/chatRightPanel";
 import { ChatStreamMain } from "../streaming/chatStreamMain";
+import { ImageAnnotationPanel } from "@/components/pathology/ImageAnnotationPanel";
+import { PatientFileManager } from "@/components/pathology/PatientFileManager";
+import { PathologyCaseLibrary } from "@/components/pathology/PathologyCaseLibrary";
+import { PathologyKnowledge } from "@/components/pathology/PathologyKnowledge";
 
 import AdminAgentConfig from "../../admin/components/AdminAgentConfig";
 import AgentAssignment from "../../admin/components/AgentAssignment";
@@ -161,6 +165,10 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
   const [portalMainAgentId, setPortalMainAgentId] = useState<number | null>(null);
 
+  // Add image annotation panel state for doctor portal
+  const [showAnnotationPanel, setShowAnnotationPanel] = useState(false);
+  const [annotationImages, setAnnotationImages] = useState<Array<{ url: string; name?: string }>>([]);
+
   // Auto-load portal main agent for doctor/student/patient portals
   useEffect(() => {
     const loadPortalMainAgent = async () => {
@@ -216,6 +224,29 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   // Add attachment management function
   const handleAttachmentsChange = (newAttachments: FilePreview[]) => {
     setAttachments(newAttachments);
+
+    // For doctor portal, automatically open annotation panel when images are uploaded
+    if (variant === "doctor") {
+      const imageAttachments = newAttachments.filter(att =>
+        att.type === "image"
+      );
+
+      if (imageAttachments.length > 0) {
+        const images = imageAttachments.map(att => ({
+          url: att.previewUrl || "",
+          name: att.file.name,
+        })).filter(img => img.url);
+
+        if (images.length > 0) {
+          setAnnotationImages(images);
+          setShowAnnotationPanel(true);
+        }
+      } else if (newAttachments.length === 0) {
+        // Close annotation panel when all attachments are removed
+        setShowAnnotationPanel(false);
+        setAnnotationImages([]);
+      }
+    }
   };
 
   // Define sidebar toggle function
@@ -226,6 +257,25 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   // Handle right panel toggle - keep it simple and clear
   const toggleRightPanel = () => {
     setShowRightPanel(!showRightPanel);
+  };
+
+  // Handle annotation completion - auto-send to AI for doctor portal
+  const handleAnnotationComplete = async (imageIndex: number, annotations: any[]) => {
+    if (variant !== "doctor" || annotations.length === 0) return;
+
+    // Automatically send a message about the annotation
+    const annotationMessage = `I have marked ${annotations.length} area${annotations.length > 1 ? 's' : ''} on the pathology image. Please analyze the marked regions.`;
+
+    // Add to input or send directly
+    setInput(annotationMessage);
+
+    // Note: The actual image with annotations will be sent as part of the attachments
+    // when the user sends the message
+  };
+
+  // Close annotation panel
+  const handleCloseAnnotationPanel = () => {
+    setShowAnnotationPanel(false);
   };
 
   useEffect(() => {
@@ -1624,7 +1674,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   return (
     <>
       <div
-        className="flex h-screen text-[#1A1A1A]"
+        className="flex h-screen overflow-hidden text-[#1A1A1A]"
         style={{ backgroundColor: portalConfig.backgroundColor }}
       >
         <ChatSidebar
@@ -1655,14 +1705,27 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
 
         {activeView === "chats" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex flex-1 overflow-hidden">
-              <div className="flex-1 flex flex-col">
-                <ChatHeader
-                  title={conversationManagement.conversationTitle}
-                  onRename={handleTitleRename}
-                  portalConfig={portalConfig}
-                />
+            {/* Chat Header - Full Width */}
+            <ChatHeader
+              title={conversationManagement.conversationTitle}
+              onRename={handleTitleRename}
+              portalConfig={portalConfig}
+            />
 
+            {/* Split Screen Content Area */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Image Annotation Panel - Only for doctor portal with uploaded images */}
+              {variant === "doctor" && showAnnotationPanel && annotationImages.length > 0 && (
+                <ImageAnnotationPanel
+                  images={annotationImages}
+                  onClose={handleCloseAnnotationPanel}
+                  onAnnotationComplete={handleAnnotationComplete}
+                  className="w-[45%] min-w-[400px] max-w-[600px]"
+                />
+              )}
+
+              {/* Main Chat Area */}
+              <div className="flex-1 flex flex-col overflow-hidden">
                 <ChatStreamMain
                   messages={currentMessages}
                   input={input}
@@ -1696,6 +1759,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                 />
               </div>
 
+              {/* Right Panel */}
               <ChatRightPanel
                 messages={currentMessages}
                 onImageError={handleImageError}
@@ -1707,7 +1771,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {variant === "admin" ? (
               <>
                 {activeView === "agents" && <AdminAgentConfig />}
@@ -1721,6 +1785,12 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                     })}
                   </div>
                 )}
+              </>
+            ) : variant === "doctor" ? (
+              <>
+                {activeView === "patients" && <PatientFileManager />}
+                {activeView === "cases" && <PathologyCaseLibrary />}
+                {activeView === "knowledge" && <PathologyKnowledge />}
               </>
             ) : (
               <div className="p-8 text-slate-600">
