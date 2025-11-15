@@ -17,9 +17,9 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4">
+      <div className="bg-[#FAFAFA] border-b border-gray-200 px-8 py-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Button
@@ -35,7 +35,7 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
       </div>
 
       {/* Tab Navigation - Reference Image 2 Style */}
-      <div className="bg-gray-100 border-b border-gray-200">
+      <div className="bg-gray-100 border-b border-gray-200 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="bg-transparent h-14 p-0 gap-1">
@@ -63,7 +63,8 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="overview" className="mt-0">
             <PatientOverview patientId={patientId} />
@@ -75,6 +76,7 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
             <PatientTodos patientId={patientId} />
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   );

@@ -1719,7 +1719,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-hidden">
             {variant === "admin" ? (
               <>
                 {activeView === "agents" && <AdminAgentConfig />}

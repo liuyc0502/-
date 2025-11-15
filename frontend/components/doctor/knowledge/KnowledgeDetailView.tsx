@@ -11,9 +11,9 @@ interface KnowledgeDetailViewProps {
 
 export function KnowledgeDetailView({ knowledgeId, onBack }: KnowledgeDetailViewProps) {
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-4">
+      <div className="bg-[#FAFAFA] border-b border-gray-200 px-8 py-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -41,8 +41,9 @@ export function KnowledgeDetailView({ knowledgeId, onBack }: KnowledgeDetailView
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="grid grid-cols-12 gap-6">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-8">
+          <div className="grid grid-cols-12 gap-6">
           {/* Main Content */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
             {/* Overview */}
@@ -310,6 +311,7 @@ export function KnowledgeDetailView({ knowledgeId, onBack }: KnowledgeDetailView
                 ))}
               </CardContent>
             </Card>
+          </div>
           </div>
         </div>
       </div>

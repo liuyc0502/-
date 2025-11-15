@@ -17,14 +17,16 @@ export default function PatientsPage() {
     );
   }
 
-  if (selectedPatientId) {
-    return (
-      <PatientDetailView
-        patientId={selectedPatientId}
-        onBack={() => setSelectedPatientId(null)}
-      />
-    );
-  }
-
-  return <PatientListView onSelectPatient={setSelectedPatientId} />;
+  return (
+    <div className="h-screen overflow-hidden">
+      {selectedPatientId ? (
+        <PatientDetailView
+          patientId={selectedPatientId}
+          onBack={() => setSelectedPatientId(null)}
+        />
+      ) : (
+        <PatientListView onSelectPatient={setSelectedPatientId} />
+      )}
+    </div>
+  );
 }

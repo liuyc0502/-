@@ -18,9 +18,13 @@ export default function CasesPage() {
     );
   }
 
-  if (selectedCaseId) {
-    return <CaseDetailView caseId={selectedCaseId} onBack={() => setSelectedCaseId(null)} />;
-  }
-
-  return <CaseLibraryView activeTab={activeTab} onTabChange={setActiveTab} onSelectCase={setSelectedCaseId} />;
+  return (
+    <div className="h-screen overflow-hidden">
+      {selectedCaseId ? (
+        <CaseDetailView caseId={selectedCaseId} onBack={() => setSelectedCaseId(null)} />
+      ) : (
+        <CaseLibraryView activeTab={activeTab} onTabChange={setActiveTab} onSelectCase={setSelectedCaseId} />
+      )}
+    </div>
+  );
 }

@@ -61,28 +61,28 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      {/* Header with Tab Navigation - Reference Image 2 Style */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">病例库</h1>
+    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+      {/* Header with Tab Navigation */}
+      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+        <div className="px-8 py-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">病例库</h1>
           <Tabs value={activeTab} onValueChange={onTabChange}>
-            <TabsList className="bg-gray-100 h-12 p-1 gap-1">
+            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
               <TabsTrigger
                 value="search"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-6 font-bold"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 病例检索
               </TabsTrigger>
               <TabsTrigger
                 value="favorites"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-6 font-bold"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 我的收藏
               </TabsTrigger>
               <TabsTrigger
                 value="recent"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-6 font-bold"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 最近浏览
               </TabsTrigger>
@@ -91,9 +91,10 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8">
-        <Tabs value={activeTab} onValueChange={onTabChange}>
-          <TabsContent value="search" className="mt-0 space-y-6">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-8">
+          <Tabs value={activeTab} onValueChange={onTabChange}>
+            <TabsContent value="search" className="mt-0 space-y-6">
             {/* Search Area */}
             <div className="space-y-4">
               <div className="relative">
@@ -262,10 +263,9 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
             </div>
           </TabsContent>
         </Tabs>
-      </div>
 
-      {/* AI Recommendation Floating Window */}
-      {searchQuery.includes("肿痛") && (
+        {/* AI Recommendation Floating Window */}
+        {searchQuery.includes("肿痛") && (
         <div className="fixed bottom-8 right-8 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 p-5 space-y-3 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-blue-600" />
@@ -285,7 +285,9 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
             </CardContent>
           </Card>
         </div>
-      )}
+        )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -17,9 +17,13 @@ export default function KnowledgePage() {
     );
   }
 
-  if (selectedKnowledgeId) {
-    return <KnowledgeDetailView knowledgeId={selectedKnowledgeId} onBack={() => setSelectedKnowledgeId(null)} />;
-  }
-
-  return <KnowledgeBaseView onSelectKnowledge={setSelectedKnowledgeId} />;
+  return (
+    <div className="h-screen overflow-hidden">
+      {selectedKnowledgeId ? (
+        <KnowledgeDetailView knowledgeId={selectedKnowledgeId} onBack={() => setSelectedKnowledgeId(null)} />
+      ) : (
+        <KnowledgeBaseView onSelectKnowledge={setSelectedKnowledgeId} />
+      )}
+    </div>
+  );
 }

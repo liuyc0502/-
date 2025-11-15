@@ -14,5 +14,9 @@ export default function DoctorPage() {
     );
   }
 
-  return <ChatInterface variant="doctor" />;
+  return (
+    <div className="h-screen overflow-hidden">
+      <ChatInterface variant="doctor" />
+    </div>
+  );
 }

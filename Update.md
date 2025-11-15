@@ -745,9 +745,9 @@ portal_type VARCHAR(50) DEFAULT 'general'
 ---
 
 
-## 2025-11-12
+## 2025-11-15
 
-### Git 分支管理
+### 医生侧边栏内容完善
 
 **操作内容**:
 - 🌿 **创建新分支**: `feature/2025-11-12`
@@ -789,5 +789,68 @@ portal_type VARCHAR(50) DEFAULT 'general'
 - `backend/database/migrations/add_portal_type_to_conversation.sql` (数据库迁移脚本)
 - `backend/database/migrations/run_migration.py` (迁移执行脚本)
 - `portal_agent_prompts.md` (Agent 提示词文档)
+
+---
+
+## 2025-11-15
+
+### 医生端UI系统完整实现
+
+**修改文件**:
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
+- `frontend/app/[locale]/doctor/patients/page.tsx` (新建)
+- `frontend/app/[locale]/doctor/cases/page.tsx` (新建)
+- `frontend/app/[locale]/doctor/knowledge/page.tsx` (新建)
+- `frontend/components/doctor/patients/PatientListView.tsx` (新建)
+- `frontend/components/doctor/patients/PatientDetailView.tsx` (新建)
+- `frontend/components/doctor/patients/PatientOverview.tsx` (新建)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (新建)
+- `frontend/components/doctor/patients/PatientTodos.tsx` (新建)
+- `frontend/components/doctor/cases/CaseLibraryView.tsx` (新建)
+- `frontend/components/doctor/cases/CaseDetailView.tsx` (新建)
+- `frontend/components/doctor/knowledge/KnowledgeBaseView.tsx` (新建)
+- `frontend/components/doctor/knowledge/KnowledgeDetailView.tsx` (新建)
+
+**功能说明**:
+
+#### 1. 患者档案系统 (`/doctor/patients`)
+- **患者列表页**: 网格卡片布局，搜索筛选，快速操作
+- **患者详情页**: 三个标签页
+  - **患者概览**: 左右分栏（40%/60%），基本信息 + AI摘要 + 关键指标 + 快速入口 + 最近动态 + 待办提醒
+  - **诊疗时间线**: 横向进度条 + 就诊记录网格（70%）+ 侧边栏（30%）+ AI分析
+  - **待办事项**: AI智能建议 + 优先级分类（紧急/高/普通/已完成）
+
+#### 2. 病例库系统 (`/doctor/cases`)
+- **病例库视图**: 三标签导航（病例检索/我的收藏/最近浏览）
+- **病例检索**: 自然语言搜索 + 疾病类型筛选 + 高级筛选 + AI被动推荐浮窗
+- **病例详情**: 完整病例信息 + AI辅助分析 + 相关病例推荐 + 操作按钮
+
+#### 3. 知识库系统 (`/doctor/knowledge`)
+- **知识检索**: 左侧知识树导航 + 主内容区搜索和浏览
+- **学习记录**: 统计卡片 + 学习热力图 + AI学习建议
+- **知识地图**: 预留交互式知识图谱（开发中）
+
+#### 4. UI/UX优化
+- ✅ **移除多余滚动条**:
+  - ChatInterface容器改为 `overflow-hidden`（line 1722）
+  - 各组件使用 `h-full flex flex-col` 布局
+  - 内容区使用 `flex-1 overflow-y-auto` 实现单一滚动条
+  - 彻底消除页面右侧多余滚动条
+- ✅ **修复侧边栏抖动**: 使用固定高度布局（h-full）+ flex-shrink-0 防止内容跳动
+- ✅ **统一配色方案**: header改为灰色背景（#FAFAFA）与整体一致
+- ✅ **标签布局优化**: 移至右上角，增大尺寸（h-14，px-8 py-3，text-base）
+- ✅ **直接渲染组件**: 替换iframe为组件直接渲染，提升加载速度
+
+**设计风格**:
+- 参考图片2：深色胶囊标签（选中时黑底白字）
+- 参考图片3：紧凑网格卡片，充分利用空间
+- 配色：黑白灰基调 + 红/黄/绿点缀色
+- 每个页面有独特性但保持整体一致性
+
+**技术实现**:
+- 组件化架构：列表/详情视图分离
+- 状态管理：使用React hooks管理选择状态
+- 响应式布局：flex + grid混合布局
+- 性能优化：直接渲染避免iframe开销
 
 ---

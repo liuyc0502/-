@@ -79,8 +79,9 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">患者档案</h1>
@@ -161,6 +162,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
               </CardContent>
             </Card>
           ))}
+        </div>
         </div>
       </div>
     </div>
