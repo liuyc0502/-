@@ -32,6 +32,12 @@ import AgentAssignment from "../../admin/components/AgentAssignment";
 import ModelConfig from "../../setup/models/config";
 import KnowledgeConfig from "../../setup/knowledges/config";
 
+// Doctor portal components
+import { PatientListView } from "@/components/doctor/patients/PatientListView";
+import { PatientDetailView } from "@/components/doctor/patients/PatientDetailView";
+import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
+import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
+import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
 
 import {
   preprocessAttachments,
@@ -92,7 +98,13 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     "朋友";
 
   const [activeView, setActiveView] = useState<PortalNavItemId>("chats");
-  
+
+  // Doctor portal state management
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
+  const [caseLibraryTab, setCaseLibraryTab] = useState("search");
+
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -1720,6 +1732,36 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                       defaultValue: "System Settings - Coming Soon",
                     })}
                   </div>
+                )}
+              </>
+            ) : variant === "doctor" ? (
+              <>
+                {activeView === "patients" && (
+                  selectedPatientId ? (
+                    <PatientDetailView
+                      patientId={selectedPatientId}
+                      onBack={() => setSelectedPatientId(null)}
+                    />
+                  ) : (
+                    <PatientListView onSelectPatient={setSelectedPatientId} />
+                  )
+                )}
+                {activeView === "cases" && (
+                  selectedCaseId ? (
+                    <CaseDetailView
+                      caseId={selectedCaseId}
+                      onBack={() => setSelectedCaseId(null)}
+                    />
+                  ) : (
+                    <CaseLibraryView
+                      activeTab={caseLibraryTab}
+                      onTabChange={setCaseLibraryTab}
+                      onSelectCase={setSelectedCaseId}
+                    />
+                  )
+                )}
+                {activeView === "knowledge" && (
+                  <KnowledgeBaseView onSelectKnowledge={setSelectedKnowledgeId} />
                 )}
               </>
             ) : (
