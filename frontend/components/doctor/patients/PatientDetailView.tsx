@@ -64,7 +64,7 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="px-8 py-5">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="overview" className="mt-0">
             <PatientOverview patientId={patientId} />

@@ -42,10 +42,10 @@ export function KnowledgeDetailView({ knowledgeId, onBack }: KnowledgeDetailView
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="grid grid-cols-12 gap-6">
+        <div className="px-8 py-5">
+          <div className="grid grid-cols-12 gap-4">
           {/* Main Content */}
-          <div className="col-span-12 lg:col-span-8 space-y-6">
+          <div className="col-span-12 lg:col-span-8 space-y-5">
             {/* Overview */}
             <Card className="bg-white border-gray-200">
               <CardHeader>
@@ -146,7 +146,7 @@ export function KnowledgeDetailView({ knowledgeId, onBack }: KnowledgeDetailView
               <CardHeader>
                 <CardTitle className="text-lg font-bold">治疗方案</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">一、改善病情抗风湿药（DMARDs）</h4>
                   <ul className="space-y-2 text-sm text-gray-700 pl-5 list-disc">

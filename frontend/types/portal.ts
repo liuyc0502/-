@@ -1,5 +1,5 @@
 // Portal type definitions for multi-portal architecture
-export type PortalType = "doctor" | "student" | "patient" | "admin";
+export type PortalType = "doctor" | "patient" | "admin";
 
 export interface Portal {
   id: PortalType;
@@ -21,7 +21,6 @@ export interface PortalUser {
 
 export const PORTAL_ROUTES: Record<PortalType, string> = {
   doctor: "/doctor",
-  student: "/student",
   patient: "/patient",
   admin: "/admin",
 };

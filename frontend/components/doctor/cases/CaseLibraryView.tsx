@@ -92,12 +92,12 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="px-8 py-5">
           <Tabs value={activeTab} onValueChange={onTabChange}>
-            <TabsContent value="search" className="mt-0 space-y-6">
+            <TabsContent value="search" className="mt-0 space-y-5">
             {/* Search Area */}
             <div className="space-y-4">
-              <div className="relative">
+              <div className="relative w-1/2">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   placeholder="描述症状或搜索病例，如：60岁男性，双膝关节肿痛3个月，晨僵明显"

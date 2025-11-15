@@ -116,11 +116,11 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="px-8 py-5">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Knowledge Search Tab */}
           <TabsContent value="search" className="mt-0">
-            <div className="grid grid-cols-12 gap-6">
+            <div className="grid grid-cols-12 gap-4">
               {/* Left Sidebar - Knowledge Tree */}
               <div className="col-span-12 lg:col-span-3">
                 <Card className="bg-white border-gray-200 sticky top-8">
@@ -165,13 +165,13 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
               {/* Right Content Area */}
               <div className="col-span-12 lg:col-span-9 space-y-6">
                 {/* Search Bar */}
-                <div className="relative">
+                <div className="relative w-1/2">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     placeholder="搜索疾病、药物、诊断标准..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-12 bg-white border-gray-200"
+                    className="pl-12 h-14 bg-white border-gray-200 text-base"
                   />
                 </div>
 

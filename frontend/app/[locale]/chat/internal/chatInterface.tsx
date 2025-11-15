@@ -173,11 +173,11 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
   const [portalMainAgentId, setPortalMainAgentId] = useState<number | null>(null);
 
-  // Auto-load portal main agent for doctor/student/patient portals
+  // Auto-load portal main agent for doctor/patient portals
   useEffect(() => {
     const loadPortalMainAgent = async () => {
       // Only auto-load for specific portal types, not for admin or general
-      if (variant === "doctor" || variant === "student" || variant === "patient") {
+      if (variant === "doctor" || variant === "patient") {
         try {
           const mainAgent = await getPortalMainAgent(variant);
           if (mainAgent && mainAgent.agent_id) {
@@ -1704,7 +1704,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   onAgentSelect={setSelectedAgentId}
                   portalConfig={portalConfig}
                   userDisplayName={displayName}
-                  hideAgentSelector={variant === "doctor" || variant === "student" || variant === "patient"}
+                  hideAgentSelector={variant === "doctor" || variant === "patient"}
                 />
               </div>
 

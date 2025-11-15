@@ -34,17 +34,6 @@
 - 集成 `useAuth` 的 `register` 函数
 - 完善的前端表单验证
 
----
-
-## 2025-11-09
-
-**修改文件**:
-- `frontend/app/[locale]/setup/knowledges/config.tsx`
-- `frontend/const/portalChatConfig.ts`
-
-**改动内容**:
-- 调整知识库配置页容器结构，改用 `flex` 布局并移除标题区域，使左右列高度自适应。
-- 从管理员侧栏导航中移除“智能体配置”入口，保持导航项与实际功能一致。
 
 ---
 

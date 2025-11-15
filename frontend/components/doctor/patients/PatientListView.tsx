@@ -80,25 +80,28 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
 
   return (
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+        <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">患者档案</h1>
-          <Button className="bg-[#D94527] hover:bg-[#C23E21] text-white">
+          <Button className="bg-[#D94527] hover:bg-[#C23E21] text-white h-14">
             <Plus className="h-4 w-4 mr-2" />
             新建档案
           </Button>
         </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-8 py-5 space-y-5">
 
         {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <div className="relative w-1/2">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input
             placeholder="搜索患者姓名、病历号或诊断关键词..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 bg-white border-gray-200"
+            className="pl-12 h-14 bg-white border-gray-200 text-base"
           />
         </div>
 

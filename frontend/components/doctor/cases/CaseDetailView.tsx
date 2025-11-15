@@ -42,10 +42,10 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="grid grid-cols-12 gap-6">
+        <div className="px-8 py-5">
+          <div className="grid grid-cols-12 gap-4">
           {/* Left Column - Case Information */}
-          <div className="col-span-12 lg:col-span-8 space-y-6">
+          <div className="col-span-12 lg:col-span-8 space-y-5">
             {/* Patient Information */}
             <Card className="bg-white border-gray-200">
               <CardHeader>
@@ -225,7 +225,7 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                   AI辅助分析
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
+              <CardContent className="space-y-5 text-sm">
                 <div>
                   <p className="font-semibold text-gray-900 mb-2">诊断要点提取:</p>
                   <ul className="space-y-1 text-gray-700 pl-4 list-disc">
