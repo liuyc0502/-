@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from apps.agent_app import router as agent_router
 from apps.config_sync_app import router as config_sync_router
 from apps.conversation_management_app import router as conversation_management_router
+from apps.doctor_knowledge_app import router as doctor_knowledge_router
 from apps.elasticsearch_app import router as elasticsearch_router
 from apps.file_management_app import router as file_manager_router
 from apps.image_app import router as proxy_router
@@ -47,6 +48,7 @@ app.include_router(config_sync_router)
 app.include_router(agent_router)
 app.include_router(portal_agent_assignment_router)
 app.include_router(conversation_management_router)
+app.include_router(doctor_knowledge_router)
 app.include_router(elasticsearch_router)
 app.include_router(voice_router)
 app.include_router(file_manager_router)

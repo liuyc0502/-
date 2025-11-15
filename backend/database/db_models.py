@@ -247,6 +247,25 @@ class KnowledgeRecord(TableBase):
     tenant_id = Column(String(100), doc="Tenant ID")
 
 
+class KnowledgeFileCard(TableBase):
+    """
+    Knowledge file card information for display in doctor portal
+    """
+    __tablename__ = "knowledge_file_card_t"
+    __table_args__ = {"schema": "nexent"}
+
+    card_id = Column(Integer, Sequence("knowledge_file_card_t_card_id_seq", schema="nexent"),
+                     primary_key=True, nullable=False, doc="Card ID, unique primary key")
+    file_path = Column(String(500), nullable=False, doc="File path in MinIO storage")
+    knowledge_id = Column(Integer, nullable=False, doc="Knowledge base ID")
+    card_title = Column(String(200), doc="Card display title")
+    card_summary = Column(String(1000), doc="Card summary/description")
+    category = Column(String(100), doc="Category tag (e.g., 诊断标准, 药物信息)")
+    tags = Column(String(500), doc="JSON array of tags")
+    view_count = Column(Integer, default=0, doc="View count")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
 class TenantConfig(TableBase):
     """
     Tenant configuration information table
