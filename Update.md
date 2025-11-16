@@ -1091,3 +1091,46 @@ cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrati
 - ✓ 创建更新时间戳触发器
 
 - ✓ 添加必要的约束和默认值
+
+---
+
+## 2025-11-16
+
+### 创建新分支并推送患者管理功能更新
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/patient-management-updates-20251116`
+- 📦 **提交更改**: 15 个文件，3819 行新增，1051 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**后端文件**:
+- `backend/apps/base_app.py` (更新)
+- `backend/apps/patient_app.py` (新建)
+- `backend/database/db_models.py` (更新)
+- `backend/database/migrations/create_patient_management_tables.sql` (新建)
+- `backend/database/migrations/run_patient_migration.py` (新建)
+- `backend/database/patient_db.py` (新建)
+- `backend/services/patient_service.py` (新建)
+
+**前端文件**:
+- `frontend/components/doctor/patients/PatientDetailView.tsx` (更新)
+- `frontend/components/doctor/patients/PatientListView.tsx` (更新)
+- `frontend/components/doctor/patients/PatientOverview.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTodos.tsx` (更新)
+- `frontend/services/doctorKnowledgeService.ts` (更新)
+- `frontend/services/patientService.ts` (新建)
+- `frontend/types/patient.ts` (新建)
+
+**功能说明**:
+- 新增患者管理相关服务和数据库模型
+- 更新患者详情、列表、概览和时间线组件
+- 添加患者管理数据库迁移脚本
+- 更新医生知识服务
+
+**分支信息**:
+- 分支名称: `feature/patient-management-updates-20251116`
+- 远程仓库: `origin/feature/patient-management-updates-20251116`
+- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/patient-management-updates-20251116

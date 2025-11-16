@@ -105,39 +105,7 @@ async def create_patient(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to create patient: {str(e)}"
         )
-@router.get("/patient/{patient_id}")
-async def get_patient(
-    patient_id: int,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Get patient information by ID
-    """
-    try:
-        user_id, tenant_id = get_current_user_id(authorization)
-        if not user_id or not tenant_id:
-            raise HTTPException(
-                status_code=HTTPStatus.UNAUTHORIZED,
-                detail="Unauthorized"
-            )
-        patient = await patient_service.get_patient_info(patient_id, tenant_id)
-        if not patient:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail="Patient not found"
-            )
-        return JSONResponse(
-            status_code=HTTPStatus.OK,
-            content={"patient": patient}
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Get patient failed: {str(e)}")
-        raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get patient: {str(e)}"
-        )
+
 @router.get("/patient/list")
 async def list_patients(
     search: Optional[str] = None,
@@ -173,6 +141,41 @@ async def list_patients(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to list patients: {str(e)}"
         )
+
+@router.get("/patient/{patient_id}")
+async def get_patient(
+    patient_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Get patient information by ID
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        patient = await patient_service.get_patient_info(patient_id, tenant_id)
+        if not patient:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Patient not found"
+            )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content={"patient": patient}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get patient failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get patient: {str(e)}"
+        )
+                
 @router.put("/patient/{patient_id}/update")
 async def update_patient(
     patient_id: int,
