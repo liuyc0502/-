@@ -1134,3 +1134,26 @@ cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrati
 - 分支名称: `feature/patient-management-updates-20251116`
 - 远程仓库: `origin/feature/patient-management-updates-20251116`
 - Pull Request: https://github.com/liuyc0502/-/pull/new/feature/patient-management-updates-20251116
+
+---
+
+## 2025-11-16
+
+### 创建新分支并推送患者管理API更新
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/patient-updates-20251116`
+- 📝 **提交更改**: 
+  - `backend/apps/patient_app.py` - 修改患者API端点，从get_patient改为list_patients，添加患者列表查询功能，支持搜索和过滤
+  - `Update.md` - 更新文档记录
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新**:
+- 修改患者API端点，从单个患者查询改为患者列表查询
+- 添加患者列表查询功能，支持搜索和过滤参数
+- 更新API响应格式，返回患者列表和总数
+
+**分支信息**:
+- 分支名称: `feature/patient-updates-20251116`
+- 远程仓库: `origin/feature/patient-updates-20251116`
+- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/patient-updates-20251116
