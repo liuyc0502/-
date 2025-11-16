@@ -163,14 +163,13 @@ async def get_knowledge_base_files(
 
 @router.get("/files/{file_path:path}/content")
 async def get_file_content(
-    file_path: str
+    file_path: str,
+    authorization: Optional[str] = Header(None)
 ):
     """
     Get Markdown file content
-
     Args:
         file_path: Full path to the file in MinIO
-
     Returns:
         File content as text
     """
@@ -178,12 +177,12 @@ async def get_file_content(
         # Get file stream from MinIO
         file_stream, content_type = await get_file_stream_impl(object_name=file_path)
 
-       # Read content as text (file_stream is BytesIO, not async iterator)
+        # Read content as text (file_stream is BytesIO, not async iterator)
         content = file_stream.read()
-
+ 
         # Decode to string
         text_content = content.decode("utf-8")
-
+ 
         return JSONResponse(
             status_code=HTTPStatus.OK,
             content={
@@ -193,11 +192,21 @@ async def get_file_content(
         )
     except Exception as e:
         logger.error(f"Failed to get file content: {str(e)}")
+ 
+        # If file not found, try to clean up orphaned card
+        try:
+            _, tenant_id = get_current_user_id(authorization)
+            if tenant_id and "not found" in str(e).lower():
+                logger.info(f"File not found, attempting to clean up orphaned card for: {file_path}")
+                delete_card(file_path, tenant_id, tenant_id)
+                logger.info(f"Successfully cleaned up orphaned card for: {file_path}")
+        except Exception as cleanup_error:
+            logger.error(f"Failed to clean up orphaned card: {str(cleanup_error)}")
+ 
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to get file content: {str(e)}"
         )
-
 
 # ==================== Knowledge File Card APIs ====================
 

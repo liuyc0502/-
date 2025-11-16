@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Input, Select, Tag, message } from "antd";
+import { Modal, Input, Select, Tag, App } from "antd";
 import { doctorKnowledgeService, CardCreateParams } from "@/services/doctorKnowledgeService";
 
 const { TextArea } = Input;
@@ -31,6 +31,7 @@ export function CardEditDialog({
   knowledgeId,
   onSuccess
 }: CardEditDialogProps) {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [cardTitle, setCardTitle] = useState("");
   const [cardSummary, setCardSummary] = useState("");

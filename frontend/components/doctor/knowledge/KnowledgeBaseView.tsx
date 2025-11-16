@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { doctorKnowledgeService, DoctorKnowledgeBase, DoctorKnowledgeFile, KnowledgeCard } from "@/services/doctorKnowledgeService"
-import { message } from "antd";
+import { App } from "antd";
 import { ReactMarkdown } from "react-markdown/lib/react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -36,6 +36,7 @@ export function KnowledgeBaseView({
   selectedKnowledgeId,
   onClearSelection,
 }:KnowledgeBaseViewProps){
+  const { message } = App.useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("search");
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
@@ -52,7 +53,6 @@ export function KnowledgeBaseView({
   // Load knowledge bases and build tree structure
   useEffect(() => {
     loadKnowledgeBases();
-    loadKnowledgeCards();
   }, []);
 
   // Load cards when category changes
@@ -62,12 +62,8 @@ export function KnowledgeBaseView({
 
   // Load file content when selected
   useEffect(() => {
-    console.log("=== selectedKnowledgeId changed ===");
-    console.log("New value:", selectedKnowledgeId);
     if (selectedKnowledgeId) {
       loadFileContent(selectedKnowledgeId);
-    } else {
-      console.log("No knowledge selected, showing cards view");
     }
   }, [selectedKnowledgeId]);
 
@@ -152,15 +148,9 @@ export function KnowledgeBaseView({
     try {
       setCardsLoading(true);
       const cards = await doctorKnowledgeService.getAllCards(category);
-      console.log("Knowledge cards loaded:", cards);
-      console.log("Category filter:", category);
-      console.log("Number of cards:", cards.length);
-      console.log("Cards data:", cards);
       setKnowledgeCards(cards);
     } catch (error) {
-      message.error("Failed to load knowledge cards");
-      console.error("Failed to load knowledge cards:", error);
-    } finally {
+      message.error("加载知识卡片失败");
       setCardsLoading(false);
     }
   };
@@ -176,23 +166,15 @@ export function KnowledgeBaseView({
 
   const loadFileContent = async (filePath: string) => {
     try {
-      console.log("=== Loading file content ===");
-      console.log("File path:", filePath);
       setFileLoading(true);
       const fileData = await doctorKnowledgeService.getFileContent(filePath);
-      console.log("File data received:", fileData);
       setFileContent(fileData.content);
       // Extract file name from path
       const parts = filePath.split("/");
       const name = parts[parts.length - 1].replace(".md", "");
       setFileName(name);
-      console.log("File loaded successfully:", name);
     } catch (error) {
-      console.error("=== Error loading file ===");
-      console.error("File path:", filePath);
-      console.error("Error details:", error);
-      message.error(`加载文件失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    } finally {
+      console.error("Failed to load file:", filePath, error);
       setFileLoading(false);
     }
   };
@@ -376,19 +358,7 @@ export function KnowledgeBaseView({
                           <Card
                             key={card.card_id}
                             className="bg-white border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => {
-                              console.log("=== Card clicked ===");
-                              console.log("Card title:", card.card_title);
-                              console.log("File path:", card.file_path);
-                              console.log("onSelectKnowledge function:", onSelectKnowledge);
-                              console.log("typeof onSelectKnowledge:", typeof onSelectKnowledge);
-                              if (typeof onSelectKnowledge === 'function') {
-                                console.log("Calling onSelectKnowledge with:", card.file_path);
-                                onSelectKnowledge(card.file_path);
-                                console.log("onSelectKnowledge called successfully");
-                              } else {
-                                console.error("onSelectKnowledge is not a function!");
-                              }}}
+                            onClick={() => onSelectKnowledge(card.file_path)}
                           >
                             <CardContent className="p-5 space-y-3">
                               <div className="flex items-start justify-between">
