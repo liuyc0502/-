@@ -1761,7 +1761,11 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   )
                 )}
                 {activeView === "knowledge" && (
-                  <KnowledgeBaseView onSelectKnowledge={setSelectedKnowledgeId} />
+                  <KnowledgeBaseView 
+                  onSelectKnowledge={setSelectedKnowledgeId}
+                  selectedKnowledgeId={selectedKnowledgeId}
+                  onClearSelection={() => setSelectedKnowledgeId(null)}
+                  />
                 )}
               </>
             ) : (

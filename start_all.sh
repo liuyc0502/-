@@ -21,5 +21,3 @@ export PNPM_HOME="/root/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
 export CI=true
 
-cd frontend
-pnpm run dev

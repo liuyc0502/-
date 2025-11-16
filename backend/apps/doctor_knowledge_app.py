@@ -178,10 +178,8 @@ async def get_file_content(
         # Get file stream from MinIO
         file_stream, content_type = await get_file_stream_impl(object_name=file_path)
 
-        # Read content as text
-        content = b""
-        async for chunk in file_stream:
-            content += chunk
+       # Read content as text (file_stream is BytesIO, not async iterator)
+        content = file_stream.read()
 
         # Decode to string
         text_content = content.decode("utf-8")

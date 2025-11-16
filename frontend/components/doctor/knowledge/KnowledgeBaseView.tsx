@@ -380,8 +380,15 @@ export function KnowledgeBaseView({
                               console.log("=== Card clicked ===");
                               console.log("Card title:", card.card_title);
                               console.log("File path:", card.file_path);
-                              console.log("Full card data:", card);
-                              onSelectKnowledge(card.file_path)}}
+                              console.log("onSelectKnowledge function:", onSelectKnowledge);
+                              console.log("typeof onSelectKnowledge:", typeof onSelectKnowledge);
+                              if (typeof onSelectKnowledge === 'function') {
+                                console.log("Calling onSelectKnowledge with:", card.file_path);
+                                onSelectKnowledge(card.file_path);
+                                console.log("onSelectKnowledge called successfully");
+                              } else {
+                                console.error("onSelectKnowledge is not a function!");
+                              }}}
                           >
                             <CardContent className="p-5 space-y-3">
                               <div className="flex items-start justify-between">
