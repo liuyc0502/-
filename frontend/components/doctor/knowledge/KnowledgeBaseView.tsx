@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, BookOpen, TrendingUp, Lightbulb } from "lucide-react";
+import { Search, ChevronRight, BookOpen, TrendingUp, Lightbulb,ArrowLeft} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { doctorKnowledgeService, DoctorKnowledgeBase, DoctorKnowledgeFile, KnowledgeCard } from "@/services/doctorKnowledgeService";
+import { Button } from "@/components/ui/button";
+import { doctorKnowledgeService, DoctorKnowledgeBase, DoctorKnowledgeFile, KnowledgeCard } from "@/services/doctorKnowledgeService"
 import { message } from "antd";
+import { ReactMarkdown } from "react-markdown/lib/react-markdown";
+import remarkGfm from "remark-gfm";
+
 
 interface KnowledgeTreeNode {
   id: string;
@@ -23,9 +27,15 @@ interface KnowledgeTreeFile {
 
 interface KnowledgeBaseViewProps {
   onSelectKnowledge: (id: string) => void;
+  selectedKnowledgeId: string | null;
+  onClearSelection: () => void;
 }
 
-export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps) {
+export function KnowledgeBaseView({
+  onSelectKnowledge,
+  selectedKnowledgeId,
+  onClearSelection,
+}:KnowledgeBaseViewProps){
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("search");
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
@@ -34,6 +44,10 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
   const [knowledgeCards, setKnowledgeCards] = useState<KnowledgeCard[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [cardsLoading, setCardsLoading] = useState(false);
+  const[fileContent, setFileContent] = useState<string>("");
+  const[fileLoading, setFileLoading] = useState(false);
+  const[fileName, setFileName] = useState<string | null>(null);
+  
 
   // Load knowledge bases and build tree structure
   useEffect(() => {
@@ -45,6 +59,17 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
   useEffect(() => {
     loadKnowledgeCards(selectedCategory);
   }, [selectedCategory]);
+
+  // Load file content when selected
+  useEffect(() => {
+    console.log("=== selectedKnowledgeId changed ===");
+    console.log("New value:", selectedKnowledgeId);
+    if (selectedKnowledgeId) {
+      loadFileContent(selectedKnowledgeId);
+    } else {
+      console.log("No knowledge selected, showing cards view");
+    }
+  }, [selectedKnowledgeId]);
 
   const loadKnowledgeBases = async () => {
     try {
@@ -127,6 +152,10 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
     try {
       setCardsLoading(true);
       const cards = await doctorKnowledgeService.getAllCards(category);
+      console.log("Knowledge cards loaded:", cards);
+      console.log("Category filter:", category);
+      console.log("Number of cards:", cards.length);
+      console.log("Cards data:", cards);
       setKnowledgeCards(cards);
     } catch (error) {
       message.error("Failed to load knowledge cards");
@@ -142,6 +171,29 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
       setSelectedCategory(undefined);
     } else {
       setSelectedCategory(category);
+    }
+  };
+
+  const loadFileContent = async (filePath: string) => {
+    try {
+      console.log("=== Loading file content ===");
+      console.log("File path:", filePath);
+      setFileLoading(true);
+      const fileData = await doctorKnowledgeService.getFileContent(filePath);
+      console.log("File data received:", fileData);
+      setFileContent(fileData.content);
+      // Extract file name from path
+      const parts = filePath.split("/");
+      const name = parts[parts.length - 1].replace(".md", "");
+      setFileName(name);
+      console.log("File loaded successfully:", name);
+    } catch (error) {
+      console.error("=== Error loading file ===");
+      console.error("File path:", filePath);
+      console.error("Error details:", error);
+      message.error(`加载文件失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setFileLoading(false);
     }
   };
 
@@ -242,92 +294,137 @@ export function KnowledgeBaseView({ onSelectKnowledge }: KnowledgeBaseViewProps)
 
               {/* Right Content Area */}
               <div className="col-span-12 lg:col-span-9 space-y-6">
-                {/* Search Bar */}
-                <div className="relative w-1/2">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    placeholder="搜索疾病、药物、诊断标准..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-14 bg-white border-gray-200 text-base"
-                  />
-                </div>
-
-                {/* Quick Category Buttons */}
-                <div className="flex gap-2 flex-wrap">
-                  {["解剖学", "病理学", "诊断标准", "药物信息", "治疗方案"].map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => handleCategoryClick(category)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        selectedCategory === category
-                          ? "bg-[#D94527] text-white border border-[#D94527]"
-                          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Knowledge Cards */}
-                <div className="space-y-4">
-                  {cardsLoading ? (
-                    <div className="text-center py-20">
-                      <div className="text-lg text-gray-600">加载中...</div>
-                    </div>
-                  ) : knowledgeCards.length === 0 ? (
-                    <div className="text-center py-20">
-                      <div className="text-lg text-gray-500">暂无知识卡片</div>
-                      <p className="text-sm text-gray-400 mt-2">管理员可以在设置中为知识库文件创建卡片</p>
-                    </div>
-                  ) : (
-                    knowledgeCards.map((card) => (
-                      <Card
-                        key={card.card_id}
-                        className="bg-white border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => onSelectKnowledge(card.file_path)}
+                {selectedKnowledgeId ? (
+                  // Document Detail View
+                  <div className="space-y-4">
+                    {/* Back Button and Title */}
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="ghost"
+                        onClick={onClearSelection}
+                        className="text-gray-600 hover:text-gray-900"
                       >
-                        <CardContent className="p-5 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                {card.category && (
-                                  <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200">
-                                    {card.category}
-                                  </span>
-                                )}
-                                {card.view_count && card.view_count > 100 && (
-                                  <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full border border-orange-200">
-                                    热门
-                                  </span>
-                                )}
-                                {card.tags && card.tags.length > 0 && (
-                                  <div className="flex gap-1 flex-wrap">
-                                    {card.tags.slice(0, 3).map((tag, idx) => (
-                                      <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                        {tag}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              <h3 className="font-bold text-lg text-gray-900 mb-2">{card.card_title}</h3>
-                              <p className="text-sm text-gray-600 line-clamp-2">
-                                {card.card_summary || "暂无摘要"}
-                              </p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                          </div>
-                          <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
-                            <span>更新: {new Date(card.update_time).toLocaleDateString()}</span>
-                            {card.view_count !== undefined && <span>浏览: {card.view_count}次</span>}
-                          </div>
+                        <ArrowLeft className="h-5 w-5 mr-2" />
+                        返回知识库
+                      </Button>
+                      <h2 className="text-2xl font-bold text-gray-900">{fileName || "加载中..."}</h2>
+                    </div>
+
+                    {/* Document Content */}
+                    {fileLoading ? (
+                      <div className="flex items-center justify-center py-20">
+                        <div className="text-center">
+                          <div className="text-lg text-gray-600">加载中...</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Card className="bg-white border-gray-200">
+                        <CardContent className="p-8">
+                          <article className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-[#D94527] prose-strong:text-gray-900 prose-code:text-[#D94527] prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {fileContent}
+                            </ReactMarkdown>
+                          </article>
                         </CardContent>
                       </Card>
-                    ))
-                  )}
-                </div>
+                    )}
+                  </div>
+                ) : (
+                  // Knowledge Search and Cards View
+                  <>
+                    {/* Search Bar */}
+                    <div className="relative w-1/2">
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        placeholder="搜索疾病、药物、诊断标准..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-12 h-14 bg-white border-gray-200 text-base"
+                      />
+                    </div>
+
+                    {/* Quick Category Buttons */}
+                    <div className="flex gap-2 flex-wrap">
+                      {["解剖学", "病理学", "诊断标准", "药物信息", "治疗方案"].map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => handleCategoryClick(category)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            selectedCategory === category
+                              ? "bg-[#D94527] text-white border border-[#D94527]"
+                              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Knowledge Cards */}
+                    <div className="space-y-4">
+                      {cardsLoading ? (
+                        <div className="text-center py-20">
+                          <div className="text-lg text-gray-600">加载中...</div>
+                        </div>
+                      ) : knowledgeCards.length === 0 ? (
+                        <div className="text-center py-20">
+                          <div className="text-lg text-gray-500">暂无知识卡片</div>
+                          <p className="text-sm text-gray-400 mt-2">管理员可以在设置中为知识库文件创建卡片</p>
+                        </div>
+                      ) : (
+                        knowledgeCards.map((card) => (
+                          <Card
+                            key={card.card_id}
+                            className="bg-white border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => {
+                              console.log("=== Card clicked ===");
+                              console.log("Card title:", card.card_title);
+                              console.log("File path:", card.file_path);
+                              console.log("Full card data:", card);
+                              onSelectKnowledge(card.file_path)}}
+                          >
+                            <CardContent className="p-5 space-y-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {card.category && (
+                                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200">
+                                        {card.category}
+                                      </span>
+                                    )}
+                                    {card.view_count && card.view_count > 100 && (
+                                      <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full border border-orange-200">
+                                        热门
+                                      </span>
+                                    )}
+                                    {card.tags && card.tags.length > 0 && (
+                                      <div className="flex gap-1 flex-wrap">
+                                        {card.tags.slice(0, 3).map((tag, idx) => (
+                                          <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                            {tag}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <h3 className="font-bold text-lg text-gray-900 mb-2">{card.card_title}</h3>
+                                  <p className="text-sm text-gray-600 line-clamp-2">
+                                    {card.card_summary || "暂无摘要"}
+                                  </p>
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                                <span>更新: {new Date(card.update_time).toLocaleDateString()}</span>
+                                {card.view_count !== undefined && <span>浏览: {card.view_count}次</span>}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </TabsContent>

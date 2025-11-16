@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect, useCallback} from "react";
 import { usePortalAuth } from "@/hooks/usePortalAuth";
 import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
 import { KnowledgeDetailView } from "@/components/doctor/knowledge/KnowledgeDetailView";
@@ -8,6 +8,23 @@ import { KnowledgeDetailView } from "@/components/doctor/knowledge/KnowledgeDeta
 export default function KnowledgePage() {
   const { isLoading } = usePortalAuth("doctor");
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
+
+  useEffect(()=>{
+    console.log("=== [PAGE] selectedKnowledgeId state changed ===");
+    console.log("[PAGE] New value:", selectedKnowledgeId);
+  }, [selectedKnowledgeId]);
+
+  const handleSelectKnowledge = useCallback((id: string) => {
+    console.log("=== [PAGE] handleSelectKnowledge called ===");
+    console.log("[PAGE] Received id:", id);
+    setSelectedKnowledgeId(id);
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    console.log("=== [PAGE] handleClearSelection called ===");
+    setSelectedKnowledgeId(null);
+  }, []);
+
 
   if (isLoading) {
     return (
@@ -17,13 +34,14 @@ export default function KnowledgePage() {
     );
   }
 
+  
   return (
     <div className="h-screen overflow-hidden">
-      {selectedKnowledgeId ? (
-        <KnowledgeDetailView knowledgeId={selectedKnowledgeId} onBack={() => setSelectedKnowledgeId(null)} />
-      ) : (
-        <KnowledgeBaseView onSelectKnowledge={setSelectedKnowledgeId} />
-      )}
+      <KnowledgeBaseView
+        onSelectKnowledge={handleSelectKnowledge} 
+        selectedKnowledgeId={selectedKnowledgeId}
+        onClearSelection={handleClearSelection} 
+      />
     </div>
   );
 }
