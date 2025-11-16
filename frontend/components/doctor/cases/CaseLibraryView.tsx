@@ -1,53 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-interface CaseData {
-  id: string;
-  caseNo: string;
-  diagnosis: string;
-  age: number;
-  gender: string;
-  symptoms: string[];
-  similarity?: number;
-}
-
-const mockCases: CaseData[] = [
-  {
-    id: "1",
-    caseNo: "#0234",
-    diagnosis: "类风湿关节炎",
-    age: 58,
-    gender: "女",
-    symptoms: ["双膝肿痛", "晨僵", "RF阳性"],
-    similarity: 87,
-  },
-  {
-    id: "2",
-    caseNo: "#0156",
-    diagnosis: "系统性红斑狼疮",
-    age: 45,
-    gender: "女",
-    symptoms: ["面部红斑", "关节痛", "ANA阳性"],
-    similarity: 72,
-  },
-  {
-    id: "3",
-    caseNo: "#0189",
-    diagnosis: "强直性脊柱炎",
-    age: 35,
-    gender: "男",
-    symptoms: ["腰背痛", "晨僵", "HLA-B27阳性"],
-  },
-];
+import { medicalCaseService, type MedicalCase } from "@/services/medicalCaseService";
+import { message } from "antd";
 
 const diseaseTypes = ["类风湿", "红斑狼疮", "强直性脊柱炎", "痛风", "骨关节炎", "干燥综合征"];
-const ageRanges = ["<30岁", "30-50岁", "50-70岁", ">70岁"];
+const ageRanges = ["<30", "30-50", "50-70", ">70"];
 
 interface CaseLibraryViewProps {
   activeTab: string;
@@ -59,6 +22,44 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
+  const [selectedAgeRange, setSelectedAgeRange] = useState<string>("");
+  const [selectedGender, setSelectedGender] = useState<string>("");
+  const [cases, setCases] = useState<MedicalCase[]>([]);
+  const [favoriteCases, setFavoriteCases] = useState<MedicalCase[]>([]);
+  const [recentCases, setRecentCases] = useState<MedicalCase[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Load cases based on active tab
+  useEffect(() => {
+    loadCases();
+  }, [activeTab, selectedDiseases, selectedAgeRange, selectedGender, searchQuery]);
+
+  const loadCases = async () => {
+    setLoading(true);
+    try {
+      if (activeTab === 'search') {
+        const result = await medicalCaseService.getList({
+          search: searchQuery,
+          disease_types: selectedDiseases.length > 0 ? selectedDiseases : undefined,
+          age_range: selectedAgeRange || undefined,
+          gender: selectedGender || undefined,
+          limit: 100,
+        });
+        setCases(result.cases || []);
+      } else if (activeTab === 'favorites') {
+        const result = await medicalCaseService.getFavorites();
+        setFavoriteCases(result.cases || []);
+      } else if (activeTab === 'recent') {
+        const result = await medicalCaseService.getRecentCases();
+        setRecentCases(result.cases || []);
+      }
+    } catch (error) {
+      console.error('Failed to load cases:', error);
+      message.error('加载病例失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
@@ -145,18 +146,37 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                       {ageRanges.map((range) => (
                         <button
                           key={range}
-                          className="px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                          onClick={() => setSelectedAgeRange(selectedAgeRange === range ? "" : range)}
+                          className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                            selectedAgeRange === range
+                              ? "bg-[#D94527] text-white"
+                              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                          }`}
                         >
-                          {range}
+                          {range}岁
                         </button>
                       ))}
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-gray-700 w-20">性别:</span>
-                      <button className="px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
+                      <button
+                        onClick={() => setSelectedGender(selectedGender === "男" ? "" : "男")}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                          selectedGender === "男"
+                            ? "bg-[#D94527] text-white"
+                            : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
                         男
                       </button>
-                      <button className="px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
+                      <button
+                        onClick={() => setSelectedGender(selectedGender === "女" ? "" : "女")}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                          selectedGender === "女"
+                            ? "bg-[#D94527] text-white"
+                            : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
                         女
                       </button>
                     </div>
@@ -179,88 +199,150 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
 
             {/* Case Cards Grid - Reference Image 3 Style */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockCases.map((caseItem) => (
-                <Card
-                  key={caseItem.id}
-                  className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
-                  onClick={() => onSelectCase(caseItem.id)}
-                >
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-gray-500">病例 {caseItem.caseNo}</span>
-                      {caseItem.similarity && (
-                        <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                          <Target className="h-3 w-3" />
-                          <span className="text-xs font-semibold">{caseItem.similarity}%</span>
+              {loading ? (
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">加载中...</p>
+                </div>
+              ) : cases.length === 0 ? (
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">暂无病例</p>
+                </div>
+              ) : (
+                cases.map((caseItem) => (
+                  <Card
+                    key={caseItem.case_id}
+                    className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
+                    onClick={() => onSelectCase(caseItem.case_id.toString())}
+                  >
+                    <CardContent className="p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
+                        {caseItem.is_classic && (
+                          <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            <Target className="h-3 w-3" />
+                            <span className="text-xs font-semibold">经典</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
+
+                      <div className="text-sm text-gray-600">
+                        {caseItem.gender} · {caseItem.age}岁
+                      </div>
+
+                      {caseItem.symptoms && caseItem.symptoms.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-xs font-semibold text-gray-500">关键症状:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {caseItem.symptoms.slice(0, 3).map((symptom, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
+                              >
+                                {symptom}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       )}
-                    </div>
 
-                    <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
-
-                    <div className="text-sm text-gray-600">
-                      {caseItem.gender} · {caseItem.age}岁
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-xs font-semibold text-gray-500">关键症状:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {caseItem.symptoms.map((symptom, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
-                          >
-                            {symptom}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {caseItem.similarity && (
-                      <div className="pt-2 border-t border-gray-100 text-xs text-gray-500">
-                        匹配点: 双膝肿痛、晨僵、RF阳性
-                      </div>
-                    )}
-
-                    <Button
-                      variant="outline"
-                      className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
-                    >
-                      查看详情
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      <Button
+                        variant="outline"
+                        className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
+                      >
+                        查看详情
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="favorites" className="mt-0">
-            <div className="text-center py-12">
-              <p className="text-gray-500">您还没有收藏任何病例</p>
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">加载中...</p>
+              </div>
+            ) : favoriteCases.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">您还没有收藏任何病例</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {favoriteCases.map((caseItem) => (
+                  <Card
+                    key={caseItem.case_id}
+                    className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
+                    onClick={() => onSelectCase(caseItem.case_id.toString())}
+                  >
+                    <CardContent className="p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
+                      <div className="text-sm text-gray-600">
+                        {caseItem.gender} · {caseItem.age}岁
+                      </div>
+                      {caseItem.symptoms && caseItem.symptoms.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-xs font-semibold text-gray-500">关键症状:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {caseItem.symptoms.slice(0, 3).map((symptom, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
+                              >
+                                {symptom}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
+                      >
+                        查看详情
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="recent" className="mt-0">
-            <div className="space-y-3">
-              {mockCases.slice(0, 2).map((caseItem) => (
-                <Card
-                  key={caseItem.id}
-                  className="bg-white border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => onSelectCase(caseItem.id)}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm font-bold text-gray-500">病例 {caseItem.caseNo}</div>
-                      <div className="font-bold text-gray-900">{caseItem.diagnosis}</div>
-                      <div className="text-sm text-gray-500">
-                        {caseItem.gender} · {caseItem.age}岁
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">加载中...</p>
+              </div>
+            ) : recentCases.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">暂无最近浏览记录</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentCases.map((caseItem) => (
+                  <Card
+                    key={caseItem.case_id}
+                    className="bg-white border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => onSelectCase(caseItem.case_id.toString())}
+                  >
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</div>
+                        <div className="font-bold text-gray-900">{caseItem.diagnosis}</div>
+                        <div className="text-sm text-gray-500">
+                          {caseItem.gender} · {caseItem.age}岁
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs text-gray-400">2小时前浏览</div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
