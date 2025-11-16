@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { App } from "antd";
 import patientService from "@/services/patientService";
 import type { Patient } from "@/types/patient";
+import { CreatePatientDialog } from "./CreatePatientDialog";
 
 const filterOptions = [
   { id: "all", label: "全部患者" },
@@ -27,6 +28,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Load patients on mount and when filter changes
   useEffect(() => {
@@ -90,7 +92,10 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">患者档案</h1>
-          <Button className="bg-[#D94527] hover:bg-[#C23E21] text-white h-14">
+          <Button
+            className="bg-[#D94527] hover:bg-[#C23E21] text-white h-14"
+            onClick={() => setCreateDialogOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             新建档案
           </Button>
@@ -198,6 +203,13 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
           )}
         </div>
       </div>
+
+      {/* Create Patient Dialog */}
+      <CreatePatientDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={loadPatients}
+      />
     </div>
   );
 }
