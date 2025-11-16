@@ -103,7 +103,16 @@ export async function listPatients(params?: {
       try {
         const errorData = await response.json();
         if (errorData.detail) {
-          errorMessage = `Failed to list patients (${response.status}): ${errorData.detail}`;
+          // Handle FastAPI validation errors (422) - detail is an array
+          if (Array.isArray(errorData.detail)) {
+            const errors = errorData.detail.map((err: any) => {
+              const field = err.loc ? err.loc.join('.') : 'unknown';
+              return `${field}: ${err.msg}`;
+            }).join('; ');
+            errorMessage = `Failed to list patients (${response.status}): ${errors}`;
+          } else {
+            errorMessage = `Failed to list patients (${response.status}): ${errorData.detail}`;
+          }
         } else if (errorData.message) {
           errorMessage = `Failed to list patients (${response.status}): ${errorData.message}`;
         } else {
