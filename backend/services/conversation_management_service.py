@@ -298,34 +298,39 @@ def update_conversation_title(conversation_id: int, title: str, user_id: str = N
     return success
 
 
-def create_new_conversation(title: str, user_id: str) -> Dict[str, Any]:
+def create_new_conversation(title: str, user_id: str, portal_type: str = 'general') -> Dict[str, Any]:
     """
     Create a new conversation
 
     Args:
         title: Conversation title
         user_id: User ID
+        portal_type: Portal type ('doctor', 'student', 'patient', 'admin', or 'general')
 
     Returns:
         Dict containing conversation data
     """
     try:
-        conversation_data = create_conversation(title, user_id)
+        conversation_data = create_conversation(title, user_id, portal_type)
         return conversation_data
     except Exception as e:
         logging.error(f"Failed to create conversation: {str(e)}")
         raise Exception(str(e))
 
 
-def get_conversation_list_service(user_id: str) -> List[Dict[str, Any]]:
+def get_conversation_list_service(user_id: str, portal_type: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Get all conversation list
+
+    Args:
+        user_id: User ID
+        portal_type: Optional portal type filter
 
     Returns:
         List of conversation data
     """
     try:
-        conversations = get_conversation_list(user_id)
+        conversations = get_conversation_list(user_id, portal_type)
         return conversations
     except Exception as e:
         logging.error(f"Failed to get conversation list: {str(e)}")

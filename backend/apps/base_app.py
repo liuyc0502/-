@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from apps.agent_app import router as agent_router
 from apps.config_sync_app import router as config_sync_router
 from apps.conversation_management_app import router as conversation_management_router
+from apps.doctor_knowledge_app import router as doctor_knowledge_router
 from apps.elasticsearch_app import router as elasticsearch_router
 from apps.file_management_app import router as file_manager_router
 from apps.image_app import router as proxy_router
@@ -15,6 +16,9 @@ from apps.memory_config_app import router as memory_router
 from apps.me_model_managment_app import router as me_model_manager_router
 from apps.mock_user_management_app import router as mock_user_management_router
 from apps.model_managment_app import router as model_manager_router
+from apps.patient_app import router as patient_router
+from apps.medical_case_app import router as medical_case_router
+from apps.portal_agent_assignment_app import router as portal_agent_assignment_router
 from apps.prompt_app import router as prompt_router
 from apps.remote_mcp_app import router as remote_mcp_router
 from apps.tenant_config_app import router as tenant_config_router
@@ -44,7 +48,11 @@ app.include_router(model_manager_router)
 app.include_router(memory_router)
 app.include_router(config_sync_router)
 app.include_router(agent_router)
+app.include_router(portal_agent_assignment_router)
 app.include_router(conversation_management_router)
+app.include_router(doctor_knowledge_router)
+app.include_router(patient_router)
+app.include_router(medical_case_router)
 app.include_router(elasticsearch_router)
 app.include_router(voice_router)
 app.include_router(file_manager_router)

@@ -23,6 +23,8 @@ export interface Agent {
   business_logic_model_id?: number;
   is_available?: boolean;
   sub_agent_id_list?: number[];
+  agent_category?: string; // 'portal_main' or 'tool'
+  portal_type?: string | null; // 'doctor', 'student', 'patient' or null
 }
 
 export interface Tool {
@@ -123,6 +125,8 @@ export interface AgentSetupOrchestratorProps {
   setAgentDescription?: (value: string) => void;
   agentDisplayName?: string;
   setAgentDisplayName?: (value: string) => void;
+  agentCategory?: string;
+  setAgentCategory?: (value: string) => void;
   isGeneratingAgent?: boolean;
   onDebug?: () => void;
   getCurrentAgentId?: () => number | undefined;

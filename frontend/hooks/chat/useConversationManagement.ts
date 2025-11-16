@@ -33,9 +33,9 @@ export const useConversationManagement = () => {
   }, [selectedConversationId]);
 
   // Fetch conversation list
-  const fetchConversationList = async (): Promise<ConversationListItem[]> => {
+  const fetchConversationList = async (portalType?: string): Promise<ConversationListItem[]> => {
     try {
-      const dialogHistory = await conversationService.getList();
+      const dialogHistory = await conversationService.getList(portalType);
       // Sort by creation time, newest first
       dialogHistory.sort((a, b) => b.create_time - a.create_time);
       setConversationList(dialogHistory);

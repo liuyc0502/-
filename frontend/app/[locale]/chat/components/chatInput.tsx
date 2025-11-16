@@ -1,6 +1,17 @@
 import { useState, useRef, useEffect } from "react";
+import type { ComponentType, SVGProps } from "react";
 import { useTranslation } from "react-i18next";
-import { Paperclip, Mic, MicOff, Square, X, AlertCircle } from "lucide-react";
+import {
+  Paperclip,
+  Mic,
+  MicOff,
+  Square,
+  X,
+  AlertCircle,
+  Plus,
+  SlidersHorizontal,
+  Clock3,
+} from "lucide-react";
 import {
   AiFillFileImage,
   AiFillFilePdf,
@@ -26,12 +37,23 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { conversationService } from "@/services/conversationService";
 import { useConfig } from "@/hooks/useConfig";
-import { extractColorsFromUri } from "@/lib/avatar";
 import log from "@/lib/logger";
 import { chatConfig } from "@/const/chatConfig";
 import { FilePreview } from "@/types/chat";
+import type { PortalChatConfig } from "@/const/portalChatConfig";
 
 import { ChatAgentSelector } from "./chatAgentSelector";
+
+const getTimeGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return "Good morning";
+  }
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+  return "Good evening";
+};
 
 // Image viewer component
 function ImageViewer({
@@ -311,6 +333,9 @@ interface ChatInputProps {
   onAttachmentsChange?: (attachments: FilePreview[]) => void;
   selectedAgentId?: number | null;
   onAgentSelect?: (agentId: number | null) => void;
+  portalConfig?: PortalChatConfig;
+  userDisplayName?: string;
+  hideAgentSelector?: boolean;
 }
 
 export function ChatInput({
@@ -329,6 +354,9 @@ export function ChatInput({
   onAttachmentsChange,
   selectedAgentId = null,
   onAgentSelect,
+  portalConfig,
+  userDisplayName,
+  hideAgentSelector = false,
 }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState<
@@ -349,8 +377,22 @@ export function ChatInput({
   const { t } = useTranslation("common");
 
   // Use the configuration hook to get the application avatar
-  const { appConfig, getAppAvatarUrl } = useConfig();
-  const avatarUrl = getAppAvatarUrl(40); // Avatar size is 40 in initial mode
+  const { appConfig } = useConfig();
+  const accentColor = portalConfig?.accentColor || "#D94527";
+  const placeholderText =
+    portalConfig?.inputPlaceholder ||
+    t("chatInput.sendMessageTo", {
+      appName: appConfig.appName,
+    });
+  const heroIcon = portalConfig?.heroIcon || "✺";
+  const greetingText = portalConfig?.heroGreeting || getTimeGreeting();
+  const heroSubheading =
+    portalConfig?.heroSubheading || t("chatInput.introMessage");
+  const quickActions = portalConfig?.quickActions || [];
+  const displayName =
+    userDisplayName ||
+    portalConfig?.defaultUserName ||
+    t("chatInput.friend", { defaultValue: "朋友" });
 
   // When the recording status changes, notify the parent component
   useEffect(() => {
@@ -486,8 +528,8 @@ export function ChatInput({
         return;
       }
 
-      // Check if agent is selected
-      if (!selectedAgentId) {
+      // Check if agent is selected (skip check if agent selector is hidden)
+      if (!hideAgentSelector && !selectedAgentId) {
         setErrorMessage(t("agentSelector.pleaseSelectAgent"));
         setTimeout(() => setErrorMessage(null), 3000);
         return;
@@ -874,11 +916,11 @@ export function ChatInput({
     if (attachments.length === 0) return null;
 
     return (
-      <div className="px-5 pb-2 pt-3">
+      <div className="pb-2">
         <div
           className="max-h-[156px] overflow-y-auto pr-1"
           style={{
-            scrollbarWidth: "thin" as "thin",
+            scrollbarWidth: "thin" as const,
             scrollbarColor: "#d1d5db transparent",
           }}
         >
@@ -961,17 +1003,17 @@ export function ChatInput({
     if (!isDragging) return null;
 
     return (
-      <div className="absolute inset-0 bg-blue-50 bg-opacity-90 border-2 border-dashed border-blue-500 rounded-3xl z-10 flex flex-col items-center justify-center">
+      <div className="absolute inset-0 bg-[#FDF8F2]/95 border-2 border-dashed border-[#E5D8C6] rounded-[28px] z-10 flex flex-col items-center justify-center">
         <div className="p-4 max-w-md text-center">
-          <div className="flex justify-center mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <AiOutlineUpload className="h-5 w-5 text-blue-500" />
+          <div className="flex justify-center mb-3">
+            <div className="w-12 h-12 bg-[#F7EDE2] rounded-full flex items-center justify-center">
+              <AiOutlineUpload className="h-5 w-5 text-[#B87345]" />
             </div>
           </div>
-          <h3 className="text-base font-medium mb-1 text-blue-700">
+          <h3 className="text-base font-semibold mb-1 text-[#B87345]">
             {t("chatInput.dragAndDropFilesHere")}
           </h3>
-          <p className="text-xs text-blue-600">
+          <p className="text-xs text-[#7A6A58]">
             {t("chatInput.supportedFileFormats")}
           </p>
         </div>
@@ -991,182 +1033,236 @@ export function ChatInput({
     );
   };
 
-  const renderInputArea = () => (
-    <>
-      {renderDragOverlay()}
-      {renderAttachments()}
-      <div
-        className="max-h-[300px] overflow-y-auto pt-3"
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "#d1d5db transparent",
-        }}
+  const handleQuickAction = (prefill: string) => {
+    onInputChange(prefill);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  const renderInputArea = () => {
+    const fileInputId = isInitialMode ? "file-upload-initial" : "file-upload-regular";
+    const toolbarButton = (
+      IconComponent: ComponentType<SVGProps<SVGSVGElement>>,
+      label: string,
+      onClick?: () => void,
+      disabled?: boolean
+    ) => (
+      <button
+        type="button"
+        className="h-11 w-11 rounded-2xl border border-[#E8E2D6] text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#D9CFC0] transition disabled:opacity-50"
+        title={label}
+        onClick={onClick}
+        disabled={disabled}
       >
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={t("chatInput.sendMessageTo", {
-            appName: appConfig.appName,
-          })}
-          className="px-5 pb-3 pt-0 text-xl resize-none bg-slate-100 border-0 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
-          rows={1}
-          style={{
-            minHeight: "60px",
-            overflow: "auto",
-            fontSize: "18px",
-          }}
-        />
-      </div>
-      <div className="h-12 bg-slate-100 relative">
-        {/* Agent selector on the left */}
-        <div className="absolute left-5 top-[40%] -translate-y-1/2">
-          <ChatAgentSelector
-            selectedAgentId={selectedAgentId}
-            onAgentSelect={onAgentSelect || (() => {})}
-            disabled={isLoading || isStreaming}
-            isInitialMode={isInitialMode}
-          />
-        </div>
+        <IconComponent className="h-5 w-5 mx-auto" />
+      </button>
+    );
 
-        <div className="absolute right-3 top-[40%] -translate-y-1/2 flex items-center space-x-1">
-          {/* Voice to text button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 text-slate-700 flex items-center justify-center rounded-full border border-slate-300 hover:bg-slate-200 transition-colors"
-                  onClick={toggleRecording}
-                  disabled={recordingStatus === "connecting" || isStreaming}
-                >
-                  {isRecording ? (
-                    <MicOff className="h-5 w-5" />
-                  ) : (
-                    <Mic className="h-5 w-5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isRecording
-                  ? t("chatInput.stopRecording")
-                  : t("chatInput.startRecording")}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Upload file button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 text-slate-700 flex items-center justify-center rounded-full border border-slate-300 hover:bg-slate-200 transition-colors"
-                  onClick={() =>
-                    document.getElementById("file-upload-regular")?.click()
-                  }
-                >
-                  <Paperclip className="h-5 w-5" />
-                  <Input
-                    type="file"
-                    id="file-upload-regular"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                    accept={`image/*,${Object.values(chatConfig.fileIcons).flat().map(ext => `.${ext}`).join(',')}`}
-                    multiple
+    return (
+      <div ref={dropAreaRef} className="relative">
+        {renderDragOverlay()}
+        <div className="rounded-[28px] border border-[#E8E2D6] bg-white shadow-[0px_24px_60px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-col gap-4 p-4 md:p-6">
+            <div className="flex flex-col gap-3 border-b border-[#F0E8DE] pb-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-2">
+                {toolbarButton(Plus, t("chatInput.uploadFiles"), () =>
+                  document.getElementById(fileInputId)?.click()
+                )}
+                {toolbarButton(
+                  SlidersHorizontal,
+                  t("chatInput.comingSoon", { defaultValue: "更多功能即将上线" }),
+                  undefined,
+                  true
+                )}
+                {toolbarButton(
+                  Clock3,
+                  t("chatLeftSidebar.recentConversations"),
+                  undefined,
+                  true
+                )}
+              </div>
+              {!hideAgentSelector && (
+                <div className="flex justify-end">
+                  <ChatAgentSelector
+                    selectedAgentId={selectedAgentId}
+                    onAgentSelect={onAgentSelect || (() => {})}
+                    disabled={isLoading || isStreaming}
+                    isInitialMode={isInitialMode}
                   />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("chatInput.uploadFiles")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                </div>
+              )}
+            </div>
 
-          {isStreaming ? (
-            <TooltipProvider>
-              <Tooltip open={showStopTooltip} onOpenChange={setShowStopTooltip}>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={onStop}
-                    size="icon"
-                    className="h-10 w-10 bg-red-500 hover:bg-red-600 text-white rounded-full"
-                  >
-                    <Square className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("chatInput.stopGenerating")}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading || !selectedAgentId}
-              size="icon"
-              className={`h-10 w-10 ${
-                hasUnsupportedFiles || !selectedAgentId
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              } text-white rounded-full flex items-center justify-center`}
-              title={
-                hasUnsupportedFiles
-                  ? t("chatInput.unsupportedFileTypeSimple")
-                  : !selectedAgentId
-                  ? t("agentSelector.pleaseSelectAgent")
-                  : t("chatInput.send")
-              }
+            {renderAttachments()}
+
+            <div
+              className="max-h-[300px] overflow-y-auto"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "#d1d5db transparent",
+              }}
             >
-              <svg
-                width="14"
-                height="16"
-                viewBox="0 0 14 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M7 16c-.595 0-1.077-.462-1.077-1.032V1.032C5.923.462 6.405 0 7 0s1.077.462 1.077 1.032v13.936C8.077 15.538 7.595 16 7 16z"
-                  fill="currentColor"
-                ></path>
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M.315 7.44a1.002 1.002 0 0 1 0-1.46L6.238.302a1.11 1.11 0 0 1 1.523 0c.421.403.421 1.057 0 1.46L1.838 7.44a1.11 1.11 0 0 1-1.523 0z"
-                  fill="currentColor"
-                ></path>
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M13.685 7.44a1.11 1.11 0 0 1-1.523 0L6.238 1.762a1.002 1.002 0 0 1 0-1.46 1.11 1.11 0 0 1 1.523 0l5.924 5.678c.42.403.42 1.056 0 1.46z"
-                  fill="currentColor"
-                ></path>
-              </svg>
-            </Button>
-          )}
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholderText}
+                className="px-1 py-2 text-lg resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
+                rows={1}
+                style={{
+                  minHeight: "60px",
+                  overflow: "auto",
+                  fontSize: "18px",
+                }}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-11 w-11 rounded-full border border-[#E8E2D6] text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#D9CFC0] transition"
+                        onClick={toggleRecording}
+                        disabled={recordingStatus === "connecting" || isStreaming}
+                      >
+                        {isRecording ? (
+                          <MicOff className="h-5 w-5 mx-auto" />
+                        ) : (
+                          <Mic className="h-5 w-5 mx-auto" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isRecording
+                        ? t("chatInput.stopRecording")
+                        : t("chatInput.startRecording")}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-11 w-11 rounded-full border border-[#E8E2D6] text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#D9CFC0] transition"
+                        onClick={() =>
+                          document.getElementById(fileInputId)?.click()
+                        }
+                      >
+                        <Paperclip className="h-5 w-5 mx-auto" />
+                        <Input
+                          type="file"
+                          id={fileInputId}
+                          className="hidden"
+                          onChange={handleFileUpload}
+                          accept={`image/*,${Object.values(chatConfig.fileIcons)
+                            .flat()
+                            .map((ext) => `.${ext}`)
+                            .join(",")}`}
+                          multiple
+                        />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t("chatInput.uploadFiles")}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {isStreaming ? (
+                  <TooltipProvider>
+                    <Tooltip open={showStopTooltip} onOpenChange={setShowStopTooltip}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={onStop}
+                          size="icon"
+                          className="h-11 w-11 text-white rounded-full"
+                          style={{ backgroundColor: "#DC4B36" }}
+                        >
+                          <Square className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t("chatInput.stopGenerating")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading || (!hideAgentSelector && !selectedAgentId)}
+                    size="icon"
+                    className="h-11 w-11 text-white rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        hasUnsupportedFiles || (!hideAgentSelector && !selectedAgentId)
+                          ? "#D4D4D4"
+                          : accentColor,
+                    }}
+                    title={
+                      hasUnsupportedFiles
+                        ? t("chatInput.unsupportedFileTypeSimple")
+                        : (!hideAgentSelector && !selectedAgentId)
+                        ? t("agentSelector.pleaseSelectAgent")
+                        : t("chatInput.send")
+                    }
+                  >
+                    <svg
+                      width="14"
+                      height="16"
+                      viewBox="0 0 14 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M7 16c-.595 0-1.077-.462-1.077-1.032V1.032C5.923.462 6.405 0 7 0s1.077.462 1.077 1.032v13.936C8.077 15.538 7.595 16 7 16z"
+                        fill="currentColor"
+                      ></path>
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M.315 7.44a1.002 1.002 0 0 1 0-1.46L6.238.302a1.11 1.11 0 0 1 1.523 0c.421.403.421 1.057 0 1.46L1.838 7.44a1.11 1.11 0 0 1-1.523 0z"
+                        fill="currentColor"
+                      ></path>
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M13.685 7.44a1.11 1.11 0 0 1-1.523 0L6.238 1.762a1.002 1.002 0 0 1 0-1.46 1.11 1.11 0 0 1 1.523 0l5.924 5.678c.42.403.42 1.056 0 1.46z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="text-xs text-[#9A9288]">
+              {recordingStatus === "recording" ? (
+                <span className="text-red-500">{t("chatInput.recording")}</span>
+              ) : recordingStatus === "error" ? (
+                <span className="text-red-500">
+                  {t("chatInput.recordingError")}
+                </span>
+              ) : (
+                t("chatInterface.aiGeneratedContentWarning")
+              )}
+            </div>
+          </div>
         </div>
       </div>
-      <div className="mt-1 flex items-center justify-center text-xs text-muted-foreground">
-        <div>
-          {recordingStatus === "recording" ? (
-            <span className="text-red-500">{t("chatInput.recording")}</span>
-          ) : recordingStatus === "error" ? (
-            <span className="text-red-500">
-              {t("chatInput.recordingError")}
-            </span>
-          ) : (
-            ""
-          )}
-        </div>
-      </div>
-    </>
-  );
+    );
+  };
 
   // Stop recording before sending a message
   const handleSend = () => {
-    // Check if agent is selected
-    if (!selectedAgentId) {
+    // Check if agent is selected (skip check if agent selector is hidden)
+    if (!hideAgentSelector && !selectedAgentId) {
       setErrorMessage(t("agentSelector.pleaseSelectAgent"));
       setTimeout(() => setErrorMessage(null), 3000);
       return;
@@ -1228,70 +1324,42 @@ export function ChatInput({
 
       {/* Chat input part */}
       {isInitialMode ? (
-        <div className="flex flex-col items-center justify-center h-full w-full max-w-5xl mx-auto mt-[-80px]">
-          <div className="flex flex-col items-center mb-4">
-            <div className="flex items-center mb-6">
-              <div className="h-16 w-16 rounded-full overflow-hidden mr-4">
-                <img
-                  src={avatarUrl}
-                  alt={appConfig.appName}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <h1
-                className="text-4xl font-bold bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: (() => {
-                    const colors = extractColorsFromUri(
-                      appConfig.avatarUri || ""
-                    );
-                    const mainColor = colors.mainColor || "273746";
-                    const secondaryColor = colors.secondaryColor || mainColor;
-                    return `linear-gradient(180deg, #${mainColor} 0%, #${secondaryColor} 100%)`;
-                  })(),
-                }}
-              >
-                {t("chatInput.helloIm", { appName: appConfig.appName })}
-              </h1>
+        <div className="flex flex-col items-center text-center gap-8 w-full max-w-4xl mx-auto">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-[#B1997B]">
+              <span className="text-2xl">{heroIcon}</span>
+              <span>{portalConfig?.brandName || appConfig.appName}</span>
             </div>
-            <p className="text-left text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              {appConfig.appDescription || t("chatInput.introMessage")}
-            </p>
+            <h1 className="text-4xl md:text-5xl font-serif text-[#1A1A1A]">
+              {`${greetingText}, ${displayName}`}
+            </h1>
+            <p className="text-base text-[#6B6B6B]">{heroSubheading}</p>
           </div>
-          <div
-            ref={dropAreaRef}
-            className="relative w-full max-w-4xl rounded-3xl shadow-sm border border-slate-200 bg-slate-100 overflow-hidden"
-          >
-            {renderInputArea()}
-          </div>
+          <div className="w-full">{renderInputArea()}</div>
+          {quickActions.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-3">
+              {quickActions.map((action) => {
+                const ActionIcon = action.icon;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={() =>
+                      handleQuickAction(action.prefill || action.label)
+                    }
+                    className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-[#E8E2D6] bg-white text-sm text-[#6B6B6B] hover:border-[#D9CFC0] transition"
+                  >
+                    <ActionIcon className="h-4 w-4" />
+                    {action.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="border-t-0 border-transparent bg-background">
-          <div className="max-w-3xl mx-auto">
-            <div
-              ref={dropAreaRef}
-              className="relative rounded-3xl shadow-sm border border-slate-200 bg-slate-100 overflow-hidden"
-            >
-              {renderInputArea()}
-            </div>
-          </div>
-        </div>
+        <div className="w-full max-w-3xl mx-auto">{renderInputArea()}</div>
       )}
-      {/* Footer */}
-      <div className="flex-shrink-0 mt-auto">
-        <div
-          className="text-center text-sm py-1"
-          style={{
-            color: "rgb(163, 163, 163)",
-            position: "sticky",
-            bottom: 0,
-            backgroundColor: "white",
-            width: "100%",
-          }}
-        >
-          {t("chatInterface.aiGeneratedContentWarning")}
-        </div>
-      </div>
     </>
   );
 }

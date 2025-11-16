@@ -61,10 +61,18 @@ def handle_model_config(tenant_id: str, user_id: str, config_key: str, model_id:
         user_id, tenant_id, config_key, model_id)
 
 
-async def save_config_impl(config, tenant_id, user_id):
+async def save_config_impl(config, tenant_id, user_id, portal="all"):
     config_dict = config.model_dump(exclude_none=False)
     env_config = {}
     tenant_config_dict = tenant_config_manager.load_config(tenant_id)
+
+    # Add portal prefix to config keys for portal-specific configs
+    def get_portal_key(key: str, portal_id: str = "all") -> str:
+        """Generate portal-specific config key"""
+        if portal_id == "all":
+            return key
+        return f"{portal_id}_{key}"
+
     # Process app configuration - use key names directly without prefix
     for key, value in config_dict.get("app", {}).items():
         env_key = get_env_key(key)
@@ -84,14 +92,17 @@ async def save_config_impl(config, tenant_id, user_id):
                                            DEFAULT_APP_DESCRIPTION_EN]:
                 tenant_config_manager.set_single_config(
                     user_id, tenant_id, env_key, safe_value(value))
-    # Process model configuration
+    # Process model configuration with portal support
     for model_type, model_config in config_dict.get("models", {}).items():
         if not model_config:
             continue
 
         model_display_name = model_config.get("displayName")
 
-        config_key = get_env_key(model_type) + "_ID"
+        # Add portal prefix to config key
+        base_config_key = get_env_key(model_type) + "_ID"
+        config_key = get_portal_key(base_config_key, portal)
+
         model_id = get_model_id_by_display_name(
             model_display_name, tenant_id)
 
@@ -109,15 +120,15 @@ async def save_config_impl(config, tenant_id, user_id):
     logger.info("Configuration saved successfully")
 
 
-async def load_config_impl(language: str, tenant_id: str):
+async def load_config_impl(language: str, tenant_id: str, portal: str = "all"):
     try:
         config = {
             "app": build_app_config(language, tenant_id),
-            "models": build_models_config(tenant_id)
+            "models": build_models_config(tenant_id, portal)
         }
         return config
     except Exception as e:
-        logger.error(f"Failed to load config for tenant {tenant_id}: {e}")
+        logger.error(f"Failed to load config for tenant {tenant_id}, portal {portal}: {e}")
         raise Exception(f"Failed to load config for tenant {tenant_id}.")
 
 
@@ -138,13 +149,28 @@ def build_app_config(language: str, tenant_id: str) -> dict:
     }
 
 
-def build_models_config(tenant_id: str) -> dict:
+def build_models_config(tenant_id: str, portal: str = "all") -> dict:
     models_config = {}
+
+    # Add portal prefix to config keys for portal-specific configs
+    def get_portal_key(key: str, portal_id: str = "all") -> str:
+        """Generate portal-specific config key"""
+        if portal_id == "all":
+            return key
+        return f"{portal_id}_{key}"
 
     for model_key, config_key in MODEL_CONFIG_MAPPING.items():
         try:
+            # Try portal-specific config first, fall back to "all" config
+            portal_config_key = get_portal_key(config_key, portal)
             model_config = tenant_config_manager.get_model_config(
-                config_key, tenant_id=tenant_id)
+                portal_config_key, tenant_id=tenant_id)
+
+            # If portal-specific config is empty and not "all", try fallback to "all"
+            if not model_config and portal != "all":
+                model_config = tenant_config_manager.get_model_config(
+                    config_key, tenant_id=tenant_id)
+
             models_config[model_key] = build_model_config(model_config)
         except Exception as e:
             logger.warning(f"Failed to get config for {config_key}: {e}")

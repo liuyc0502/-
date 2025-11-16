@@ -1,4 +1,7 @@
 import { chatConfig } from "@/const/chatConfig";
+import type { PortalChatConfig } from "@/const/portalChatConfig";
+
+export type PortalNavItemId = PortalChatConfig["navItems"][number]["id"];
 
 // Step related types
 export interface StepSection {
@@ -169,6 +172,9 @@ export interface ChatStreamMainProps {
   shouldScrollToBottom?: boolean;
   selectedAgentId?: number | null;
   onAgentSelect?: (agentId: number | null) => void;
+  portalConfig: PortalChatConfig;
+  userDisplayName?: string;
+  hideAgentSelector?: boolean;
 }
 
 // Card item type for task window
@@ -275,6 +281,10 @@ export interface ChatSidebarProps {
   userEmail: string | undefined;
   userAvatarUrl: string | undefined;
   userRole: string | undefined;
+  userName?: string;
+  portalConfig: PortalChatConfig;
+  onNavItemClick?: (itemId: PortalNavItemId) => void;
+  activeNavItem?: PortalNavItemId;
 }
 
 // Image item type for chat right panel

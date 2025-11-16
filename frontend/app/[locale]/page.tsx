@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PORTAL_ROUTES } from "@/types/portal";
 
 // Portal type definition
-type PortalType = "doctor" | "student" | "patient" | "admin";
+type PortalType = "doctor" | "patient" | "admin";
 
 interface Portal {
   id: PortalType;
@@ -37,14 +37,6 @@ const portals: Portal[] = [
     buttonText: "进入医生端",
     loginTitle: "病理医生端",
     color: "#1e293b",
-  },
-  {
-    id: "student",
-    title: "智研病理",
-    subtitle: "AI启蒙",
-    buttonText: "进入学生端",
-    loginTitle: "医学生端",
-    color: "#0f172a",
   },
   {
     id: "patient",
@@ -99,12 +91,6 @@ export default function Home() {
   }, [expandedPortal]);
 
   const handlePortalClick = (portalId: PortalType, e: React.MouseEvent<HTMLButtonElement>) => {
-    // Admin portal: direct navigation to setup page
-    if (portalId === "admin") {
-      router.push("/setup");
-      return;
-    }
-
     // For other portals: show login form
     const button = e.currentTarget;
     const rect = button.getBoundingClientRect();

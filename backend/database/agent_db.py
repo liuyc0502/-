@@ -143,6 +143,27 @@ def query_all_agent_info_by_tenant_id(tenant_id: str):
         return [as_dict(agent) for agent in agents]
 
 
+def get_portal_main_agent(portal_type: str, tenant_id: str):
+    """
+    Get the main agent for a specific portal type
+
+    Args:
+        portal_type: Portal type ('doctor', 'student', 'patient')
+        tenant_id: Tenant ID
+
+    Returns:
+        Agent info dict or None if not found
+    """
+    with get_db_session() as session:
+        agent = session.query(AgentInfo).filter(
+            AgentInfo.agent_role_category == 'portal_main',
+            AgentInfo.portal_type == portal_type,
+            AgentInfo.tenant_id == tenant_id,
+            AgentInfo.delete_flag != 'Y'
+        ).first()
+        return as_dict(agent) if agent else None
+
+
 def insert_related_agent(parent_agent_id: int, child_agent_id: int, tenant_id: str) -> bool:
     try:
         relation_info = {

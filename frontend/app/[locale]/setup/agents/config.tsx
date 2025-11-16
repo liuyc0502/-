@@ -70,6 +70,7 @@ export default function AgentConfig() {
   const [agentName, setAgentName] = useState("");
   const [agentDescription, setAgentDescription] = useState("");
   const [agentDisplayName, setAgentDisplayName] = useState("");
+  const [agentCategory, setAgentCategory] = useState("");
 
   // Add state for business logic and action buttons
   const [isGeneratingAgent, setIsGeneratingAgent] = useState(false);
@@ -221,6 +222,7 @@ export default function AgentConfig() {
         setFewShotsContent("");
         setAgentName("");
         setAgentDescription("");
+        setAgentCategory("");
         // Notify AgentManagementConfig to refresh agent list
         window.dispatchEvent(
           new CustomEvent("refreshAgentList") as AgentRefreshEvent
@@ -301,6 +303,7 @@ export default function AgentConfig() {
           setAgentName("");
           setAgentDescription("");
           setAgentDisplayName("");
+          setAgentCategory("");
         }
       } else {
         message.error(result.message || t("agent.error.fetchAgentList"));
@@ -364,11 +367,13 @@ export default function AgentConfig() {
     if (isEditing && agent) {
       setAgentName(agent.name || "");
       setAgentDescription(agent.description || "");
+      setAgentCategory(agent.category || "");
     } else if (!isEditing) {
       // When stopping editing, clear name description box
       setAgentName("");
       setAgentDescription("");
       setAgentDisplayName("");
+      setAgentCategory("");
     }
   };
 
@@ -388,6 +393,7 @@ export default function AgentConfig() {
     setFewShotsContent("");
     setAgentName("");
     setAgentDescription("");
+    setAgentCategory("");
   };
 
   // Refresh tool list
@@ -408,22 +414,8 @@ export default function AgentConfig() {
 
   return (
     <App>
-      <div
-        className="w-full mx-auto"
-        style={{
-          maxWidth: SETUP_PAGE_CONTAINER.MAX_WIDTH,
-          height: SETUP_PAGE_CONTAINER.MAIN_CONTENT_HEIGHT,
-        }}
-      >
-        <div
-          className={STANDARD_CARD.BASE_CLASSES}
-          style={{
-            height: "100%",
-            ...STANDARD_CARD.CONTENT_SCROLL,
-          }}
-        >
-          <div style={{ padding: STANDARD_CARD.PADDING, height: "100%" }}>
-            <AgentSetupOrchestrator
+      <div className="w-full h-full bg-white overflow-hidden">
+        <AgentSetupOrchestrator
               businessLogic={businessLogic}
               setBusinessLogic={(value) => {
                 setBusinessLogic(value);
@@ -497,6 +489,13 @@ export default function AgentConfig() {
                   setAgentDisplayName(value);
                 }
               }}
+              agentCategory={agentCategory}
+              setAgentCategory={(value) => {
+                setAgentCategory(value);
+                if (isCreatingNewAgent) {
+                  setAgentCategory(value);
+                }
+              }}
               isGeneratingAgent={isGeneratingAgent}
               // SystemPromptDisplay related props
               onDebug={() => {
@@ -510,8 +509,6 @@ export default function AgentConfig() {
               onExitCreation={handleExitCreation}
               isEmbeddingConfigured={isEmbeddingConfigured}
             />
-          </div>
-        </div>
       </div>
 
       {/* Debug drawer */}

@@ -9,18 +9,35 @@ import { useTranslation } from "react-i18next";
 
 import { ROLE_ASSISTANT } from "@/const/agentConfig";
 import { chatConfig } from "@/const/chatConfig";
+import {
+  portalChatConfigs,
+  type PortalChatVariant,
+} from "@/const/portalChatConfig";
 import { USER_ROLES } from "@/const/modelConfig";
 import { useConfig } from "@/hooks/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { conversationService } from "@/services/conversationService";
 import { storageService } from "@/services/storageService";
 import { useConversationManagement } from "@/hooks/chat/useConversationManagement";
+import { getPortalMainAgent } from "@/services/portalAgentAssignmentService";
 
 import { ChatSidebar } from "../components/chatLeftSidebar";
-import { FilePreview } from "@/types/chat";
+import type { FilePreview, PortalNavItemId } from "@/types/chat";
 import { ChatHeader } from "../components/chatHeader";
 import { ChatRightPanel } from "../components/chatRightPanel";
 import { ChatStreamMain } from "../streaming/chatStreamMain";
+
+import AdminAgentConfig from "../../admin/components/AdminAgentConfig";
+import AgentAssignment from "../../admin/components/AgentAssignment";
+import ModelConfig from "../../setup/models/config";
+import KnowledgeConfig from "../../setup/knowledges/config";
+
+// Doctor portal components
+import { PatientListView } from "@/components/doctor/patients/PatientListView";
+import { PatientDetailView } from "@/components/doctor/patients/PatientDetailView";
+import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
+import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
+import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
 
 import {
   preprocessAttachments,
@@ -59,7 +76,11 @@ const getI18nKeyByType = (type: string): string => {
   return typeToKeyMap[type] || "";
 };
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  variant?: PortalChatVariant;
+}
+
+export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const router = useRouter();
   const { user } = useAuth(); // Get user information
   const [input, setInput] = useState("");
@@ -70,7 +91,20 @@ export function ChatInterface() {
   const [isSwitchedConversation, setIsSwitchedConversation] = useState(false); // Add conversation switching tracking state
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation("common");
-  
+  const portalConfig = portalChatConfigs[variant] || portalChatConfigs.general;
+  const displayName =
+    user?.email?.split("@")[0] ||
+    portalConfig.defaultUserName ||
+    "朋友";
+
+  const [activeView, setActiveView] = useState<PortalNavItemId>("chats");
+
+  // Doctor portal state management
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
+  const [caseLibraryTab, setCaseLibraryTab] = useState("search");
+
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -137,6 +171,29 @@ export function ChatInterface() {
 
   // Add agent selection state
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+  const [portalMainAgentId, setPortalMainAgentId] = useState<number | null>(null);
+
+  // Auto-load portal main agent for doctor/patient portals
+  useEffect(() => {
+    const loadPortalMainAgent = async () => {
+      // Only auto-load for specific portal types, not for admin or general
+      if (variant === "doctor" || variant === "patient") {
+        try {
+          const mainAgent = await getPortalMainAgent(variant);
+          if (mainAgent && mainAgent.agent_id) {
+            setPortalMainAgentId(mainAgent.agent_id);
+            setSelectedAgentId(mainAgent.agent_id); // Auto-select the main agent
+          } else {
+            log.warn(`No main agent configured for portal: ${variant}`);
+          }
+        } catch (error) {
+          log.error("Failed to load portal main agent:", error);
+        }
+      }
+    };
+
+    loadPortalMainAgent();
+  }, [variant]);
 
   // Reset scroll to bottom state
   useEffect(() => {
@@ -188,7 +245,7 @@ export function ChatInterface() {
       conversationManagement.initialized.current = true;
 
       // Get conversation history list, but don't auto-select the latest conversation
-      conversationManagement.fetchConversationList()
+      conversationManagement.fetchConversationList(variant)
         .then((dialogData) => {
           // Create new conversation by default regardless of history
           handleNewConversation();
@@ -317,7 +374,8 @@ export function ChatInterface() {
         // If no session ID or ID is -1, create new conversation first
         try {
           const createData = await conversationService.create(
-            t("chatInterface.newConversation")
+            t("chatInterface.newConversation"),
+            variant
           );
           currentConversationId = createData.conversation_id;
 
@@ -339,7 +397,7 @@ export function ChatInterface() {
 
           // Refresh conversation list
           try {
-            const dialogList = await conversationManagement.fetchConversationList();
+            const dialogList = await conversationManagement.fetchConversationList(variant);
             const newDialog = dialogList.find(
               (dialog) => dialog.conversation_id === currentConversationId
             );
@@ -1050,7 +1108,7 @@ export function ChatInterface() {
             }, 1000);
 
             // Refresh history list
-            conversationManagement.fetchConversationList().catch((err) => {
+            conversationManagement.fetchConversationList(variant).catch((err) => {
               log.error(
                 t("chatInterface.refreshDialogListFailedButContinue"),
                 err
@@ -1182,7 +1240,7 @@ export function ChatInterface() {
           }, 1000);
 
           // Refresh history list
-          conversationManagement.fetchConversationList().catch((err) => {
+          conversationManagement.fetchConversationList(variant).catch((err) => {
             log.error(
               t("chatInterface.refreshDialogListFailedButContinue"),
               err
@@ -1262,7 +1320,7 @@ export function ChatInterface() {
   const handleConversationRename = async (dialogId: number, title: string) => {
     try {
       await conversationService.rename(dialogId, title);
-      await conversationManagement.fetchConversationList();
+      await conversationManagement.fetchConversationList(variant);
 
       if (conversationManagement.selectedConversationId === dialogId) {
         conversationManagement.setConversationTitle(title);
@@ -1314,7 +1372,7 @@ export function ChatInterface() {
       }
 
       await conversationService.delete(dialogId);
-      await conversationManagement.fetchConversationList();
+      await conversationManagement.fetchConversationList(variant);
 
       if (conversationManagement.selectedConversationId === dialogId) {
         conversationManagement.setSelectedConversationId(null);
@@ -1515,7 +1573,7 @@ export function ChatInterface() {
   // Add event listener for conversation list updates
   useEffect(() => {
     const handleConversationListUpdate = () => {
-      conversationManagement.fetchConversationList().catch((err) => {
+      conversationManagement.fetchConversationList(variant).catch((err) => {
         log.error(t("chatInterface.failedToUpdateConversationList"), err);
       });
     };
@@ -1577,7 +1635,10 @@ export function ChatInterface() {
 
   return (
     <>
-      <div className="flex h-screen">
+      <div
+        className="flex h-screen text-[#1A1A1A]"
+        style={{ backgroundColor: portalConfig.backgroundColor }}
+      >
         <ChatSidebar
           conversationList={conversationManagement.conversationList}
           selectedConversationId={conversationManagement.selectedConversationId}
@@ -1598,56 +1659,124 @@ export function ChatInterface() {
           userEmail={user?.email}
           userAvatarUrl={user?.avatar_url}
           userRole={user?.role}
+          userName={displayName}
+          portalConfig={portalConfig}
+          onNavItemClick={setActiveView}
+          activeNavItem={activeView}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex flex-1 overflow-hidden">
-            <div className="flex-1 flex flex-col">
-              <ChatHeader
-                title={conversationManagement.conversationTitle}
-                onRename={handleTitleRename}
-              />
+        {activeView === "chats" ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex flex-1 overflow-hidden">
+              <div className="flex-1 flex flex-col">
+                <ChatHeader
+                  title={conversationManagement.conversationTitle}
+                  onRename={handleTitleRename}
+                  portalConfig={portalConfig}
+                />
 
-              <ChatStreamMain
+                <ChatStreamMain
+                  messages={currentMessages}
+                  input={input}
+                  isLoading={isLoading}
+                  isStreaming={isCurrentConversationStreaming}
+                  isLoadingHistoricalConversation={
+                    isLoadingHistoricalConversation
+                  }
+                  conversationLoadError={
+                    conversationManagement.conversationLoadError[conversationManagement.selectedConversationId || 0]
+                  }
+                  onInputChange={(value: string) => setInput(value)}
+                  onSend={handleSend}
+                  onStop={handleStop}
+                  onKeyDown={handleKeyDown}
+                  onSelectMessage={handleMessageSelect}
+                  selectedMessageId={selectedMessageId}
+                  onImageClick={handleImageClick}
+                  attachments={attachments}
+                  onAttachmentsChange={handleAttachmentsChange}
+                  onFileUpload={handleFileUpload}
+                  onImageUpload={handleImageUpload}
+                  onOpinionChange={handleOpinionChange}
+                  currentConversationId={conversationManagement.conversationId}
+                  shouldScrollToBottom={shouldScrollToBottom}
+                  selectedAgentId={selectedAgentId}
+                  onAgentSelect={setSelectedAgentId}
+                  portalConfig={portalConfig}
+                  userDisplayName={displayName}
+                  hideAgentSelector={variant === "doctor" || variant === "patient"}
+                />
+              </div>
+
+              <ChatRightPanel
                 messages={currentMessages}
-                input={input}
-                isLoading={isLoading}
-                isStreaming={isCurrentConversationStreaming}
-                isLoadingHistoricalConversation={
-                  isLoadingHistoricalConversation
-                }
-                conversationLoadError={
-                  conversationManagement.conversationLoadError[conversationManagement.selectedConversationId || 0]
-                }
-                onInputChange={(value: string) => setInput(value)}
-                onSend={handleSend}
-                onStop={handleStop}
-                onKeyDown={handleKeyDown}
-                onSelectMessage={handleMessageSelect}
+                onImageError={handleImageError}
+                maxInitialImages={14}
+                isVisible={showRightPanel}
+                toggleRightPanel={toggleRightPanel}
                 selectedMessageId={selectedMessageId}
-                onImageClick={handleImageClick}
-                attachments={attachments}
-                onAttachmentsChange={handleAttachmentsChange}
-                onFileUpload={handleFileUpload}
-                onImageUpload={handleImageUpload}
-                onOpinionChange={handleOpinionChange}
-                currentConversationId={conversationManagement.conversationId}
-                shouldScrollToBottom={shouldScrollToBottom}
-                selectedAgentId={selectedAgentId}
-                onAgentSelect={setSelectedAgentId}
               />
             </div>
-
-            <ChatRightPanel
-              messages={currentMessages}
-              onImageError={handleImageError}
-              maxInitialImages={14}
-              isVisible={showRightPanel}
-              toggleRightPanel={toggleRightPanel}
-              selectedMessageId={selectedMessageId}
-            />
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 overflow-hidden">
+            {variant === "admin" ? (
+              <>
+                {activeView === "agents" && <AdminAgentConfig />}
+                {activeView === "agent-assignment" && <AgentAssignment />}
+                {activeView === "models" && <ModelConfig />}
+                {activeView === "knowledge" && <KnowledgeConfig />}
+                {activeView === "system" && (
+                  <div className="p-8 text-slate-600">
+                    {t("chatInterface.systemSettingsComingSoon", {
+                      defaultValue: "System Settings - Coming Soon",
+                    })}
+                  </div>
+                )}
+              </>
+            ) : variant === "doctor" ? (
+              <>
+                {activeView === "patients" && (
+                  selectedPatientId ? (
+                    <PatientDetailView
+                      patientId={selectedPatientId}
+                      onBack={() => setSelectedPatientId(null)}
+                    />
+                  ) : (
+                    <PatientListView onSelectPatient={setSelectedPatientId} />
+                  )
+                )}
+                {activeView === "cases" && (
+                  selectedCaseId ? (
+                    <CaseDetailView
+                      caseId={selectedCaseId}
+                      onBack={() => setSelectedCaseId(null)}
+                    />
+                  ) : (
+                    <CaseLibraryView
+                      activeTab={caseLibraryTab}
+                      onTabChange={setCaseLibraryTab}
+                      onSelectCase={setSelectedCaseId}
+                    />
+                  )
+                )}
+                {activeView === "knowledge" && (
+                  <KnowledgeBaseView 
+                  onSelectKnowledge={setSelectedKnowledgeId}
+                  selectedKnowledgeId={selectedKnowledgeId}
+                  onClearSelection={() => setSelectedKnowledgeId(null)}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="p-8 text-slate-600">
+                {t("chatInterface.sectionComingSoon", {
+                  defaultValue: "This section is coming soon.",
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <TooltipProvider>
         <Tooltip open={false}>

@@ -35,18 +35,21 @@ async def create_new_conversation_endpoint(request: ConversationRequest, authori
     Args:
         request: ConversationRequest object containing:
             - title: Conversation title, default is "New Conversation"
+            - portal_type: Portal type ('doctor', 'student', 'patient', 'admin', or 'general')
         authorization: Authorization header
 
     Returns:
         ConversationResponse object containing:
             - conversation_id: Conversation ID
             - conversation_title: Conversation title
+            - portal_type: Portal type
             - create_time: Creation timestamp (milliseconds)
             - update_time: Update timestamp (milliseconds)
     """
     try:
         user_id, tenant_id = get_current_user_id(authorization)
-        conversation_data = create_new_conversation(request.title, user_id)
+        portal_type = getattr(request, 'portal_type', 'general')
+        conversation_data = create_new_conversation(request.title, user_id, portal_type)
         return ConversationResponse(code=0, message="success", data=conversation_data)
     except Exception as e:
         logging.error(f"Failed to create conversation: {str(e)}")
@@ -54,11 +57,12 @@ async def create_new_conversation_endpoint(request: ConversationRequest, authori
 
 
 @router.get("/list", response_model=ConversationResponse)
-async def list_conversations_endpoint(authorization: Optional[str] = Header(None)):
+async def list_conversations_endpoint(portal_type: Optional[str] = None, authorization: Optional[str] = Header(None)):
     """
     Get all conversation list
 
     Args:
+        portal_type: Optional portal type filter ('doctor', 'student', 'patient', 'admin', or 'general')
         authorization: Authorization header
 
     Returns:
@@ -68,7 +72,7 @@ async def list_conversations_endpoint(authorization: Optional[str] = Header(None
         user_id, tenant_id = get_current_user_id(authorization)
         if not user_id:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Unauthorized access, Please login first")
-        conversations = get_conversation_list_service(user_id)
+        conversations = get_conversation_list_service(user_id, portal_type)
         return ConversationResponse(code=0, message="success", data=conversations)
     except Exception as e:
         logging.error(f"Failed to get conversation list: {str(e)}")

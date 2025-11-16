@@ -30,6 +30,8 @@ import DocumentStatus from "./DocumentStatus";
 import UploadArea from "../upload/UploadArea";
 import { useKnowledgeBaseContext } from "../../contexts/KnowledgeBaseContext";
 import { useDocumentContext } from "../../contexts/DocumentContext";
+import { CardEditDialog } from "../card/CardEditDialog";
+import { doctorKnowledgeService } from "@/services/doctorKnowledgeService";
 
 interface DocumentListProps {
   documents: Document[];
@@ -135,6 +137,8 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
     const [selectedModel, setSelectedModel] = useState<number>(0);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [isLoadingModels, setIsLoadingModels] = useState(false);
+    const [cardDialogVisible, setCardDialogVisible] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<{path: string, name: string, knowledgeId: number} | null>(null);
     const {} = useKnowledgeBaseContext();
     const { t } = useTranslation();
 
@@ -287,6 +291,41 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
         setIsSaving(false);
         setShowDetail(false);
       }
+    };
+
+    // Handle customize card
+    const handleCustomizeCard = async (filePath: string, fileName: string) => {
+      try {
+        // Get knowledge_id from knowledge base name
+        const kbs = await doctorKnowledgeService.getKnowledgeBases();
+        const kb = kbs.find(k => k.name === knowledgeBaseName);
+
+        if (!kb) {
+          message.error("Knowledge base not found");
+          return;
+        }
+
+        setSelectedFile({
+          path: filePath,
+          name: fileName,
+          knowledgeId: kb.id
+        });
+        setCardDialogVisible(true);
+      } catch (error) {
+        log.error("Failed to get knowledge base info:", error);
+        message.error("Failed to open card editor");
+      }
+    };
+
+    const handleCardDialogClose = () => {
+      setCardDialogVisible(false);
+      setSelectedFile(null);
+    };
+
+    const handleCardSaveSuccess = () => {
+      message.success("Card saved successfully");
+      setCardDialogVisible(false);
+      setSelectedFile(null);
     };
 
     // Refactored: Style is embedded within the component
@@ -524,20 +563,38 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
                         {new Date(doc.create_time).toLocaleString()}
                       </td>
                       <td className={LAYOUT.CELL_PADDING}>
-                        <button
-                          onClick={() => onDelete(doc.id)}
-                          className={LAYOUT.ACTION_TEXT}
-                          disabled={
-                            doc.status ===
-                              DOCUMENT_STATUS.WAIT_FOR_PROCESSING ||
-                            doc.status === DOCUMENT_STATUS.PROCESSING ||
-                            doc.status ===
-                              DOCUMENT_STATUS.WAIT_FOR_FORWARDING ||
-                            doc.status === DOCUMENT_STATUS.FORWARDING
-                          }
-                        >
-                          {t("common.delete")}
-                        </button>
+                        <div className="flex gap-2">
+                          {doc.name.endsWith('.md') && (
+                            <button
+                              onClick={() => handleCustomizeCard(doc.id, doc.name)}
+                              className={`${LAYOUT.ACTION_TEXT} text-blue-600 hover:text-blue-700`}
+                              disabled={
+                                doc.status ===
+                                  DOCUMENT_STATUS.WAIT_FOR_PROCESSING ||
+                                doc.status === DOCUMENT_STATUS.PROCESSING ||
+                                doc.status ===
+                                  DOCUMENT_STATUS.WAIT_FOR_FORWARDING ||
+                                doc.status === DOCUMENT_STATUS.FORWARDING
+                              }
+                            >
+                              自定义卡片
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onDelete(doc.id)}
+                            className={LAYOUT.ACTION_TEXT}
+                            disabled={
+                              doc.status ===
+                                DOCUMENT_STATUS.WAIT_FOR_PROCESSING ||
+                              doc.status === DOCUMENT_STATUS.PROCESSING ||
+                              doc.status ===
+                                DOCUMENT_STATUS.WAIT_FOR_FORWARDING ||
+                              doc.status === DOCUMENT_STATUS.FORWARDING
+                            }
+                          >
+                            {t("common.delete")}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -573,6 +630,18 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
             indexName={knowledgeBaseName}
             newKnowledgeBaseName={isCreatingMode ? knowledgeBaseName : ""}
             modelMismatch={modelMismatch}
+          />
+        )}
+
+        {/* Card Edit Dialog */}
+        {selectedFile && (
+          <CardEditDialog
+            visible={cardDialogVisible}
+            onClose={handleCardDialogClose}
+            filePath={selectedFile.path}
+            fileName={selectedFile.name}
+            knowledgeId={selectedFile.knowledgeId}
+            onSuccess={handleCardSaveSuccess}
           />
         )}
       </div>

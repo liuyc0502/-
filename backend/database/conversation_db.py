@@ -52,26 +52,28 @@ class ConversationHistory(TypedDict):
     image_records: List[ImageRecord]
 
 
-def create_conversation(conversation_title: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+def create_conversation(conversation_title: str, user_id: Optional[str] = None, portal_type: str = 'general') -> Dict[str, Any]:
     """
     Create a new conversation record
 
     Args:
         conversation_title: Conversation title
         user_id: Reserved parameter for created_by and updated_by fields
+        portal_type: Portal type ('doctor', 'student', 'patient', 'admin', or 'general')
 
     Returns:
         Dict[str, Any]: Dictionary containing complete information of the newly created conversation
     """
     with get_db_session() as session:
         # Prepare data dictionary
-        data = {"conversation_title": conversation_title, "delete_flag": 'N'}
+        data = {"conversation_title": conversation_title, "portal_type": portal_type, "delete_flag": 'N'}
         if user_id:
             data = add_creation_tracking(data, user_id)
 
         stmt = insert(ConversationRecord).values(**data).returning(
             ConversationRecord.conversation_id,
             ConversationRecord.conversation_title,
+            ConversationRecord.portal_type,
             (func.extract('epoch', ConversationRecord.create_time)
              * 1000).label('create_time'),
             (func.extract('epoch', ConversationRecord.update_time)
@@ -84,6 +86,7 @@ def create_conversation(conversation_title: str, user_id: Optional[str] = None) 
         result_dict = {
             "conversation_id": record.conversation_id,
             "conversation_title": record.conversation_title,
+            "portal_type": record.portal_type,
             "create_time": int(record.create_time),
             "update_time": int(record.update_time)
         }
@@ -269,12 +272,13 @@ def get_message_units(message_id: int) -> List[Dict[str, Any]]:
         return list(map(as_dict, records))
 
 
-def get_conversation_list(user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_conversation_list(user_id: Optional[str] = None, portal_type: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Get list of all undeleted conversations, sorted by creation time in descending order
 
     Args:
         user_id: Reserved parameter for filtering conversations created by this user
+        portal_type: Portal type to filter conversations ('doctor', 'student', 'patient', 'admin', or 'general')
 
     Returns:
         List[Dict[str, Any]]: List of conversations, each containing id, title and timestamp information
@@ -284,6 +288,7 @@ def get_conversation_list(user_id: Optional[str] = None) -> List[Dict[str, Any]]
         stmt = select(
             ConversationRecord.conversation_id,
             ConversationRecord.conversation_title,
+            ConversationRecord.portal_type,
             (func.extract('epoch', ConversationRecord.create_time)
              * 1000).label('create_time'),
             (func.extract('epoch', ConversationRecord.update_time)
@@ -297,6 +302,10 @@ def get_conversation_list(user_id: Optional[str] = None) -> List[Dict[str, Any]]
         # If user_id is provided, additional filter conditions can be added here
         if user_id:
             stmt = stmt.where(ConversationRecord.created_by == user_id)
+
+        # Filter by portal type if provided
+        if portal_type:
+            stmt = stmt.where(ConversationRecord.portal_type == portal_type)
 
         # Execute the query
         records = session.execute(stmt)

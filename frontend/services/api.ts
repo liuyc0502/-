@@ -155,6 +155,32 @@ export const API_ENDPOINTS = {
       clear: `${API_BASE_URL}/memory/clear`,
     },
   },
+  portalAgentAssignment: {
+    getMainAgent: (portalType: string) =>
+      `${API_BASE_URL}/portal_agent_assignment/get_main_agent/${portalType}`,
+    getAgents: (portalType: string) =>
+      `${API_BASE_URL}/portal_agent_assignment/get_agents/${portalType}`,
+    assign: `${API_BASE_URL}/portal_agent_assignment/assign`,
+    remove: `${API_BASE_URL}/portal_agent_assignment/remove`,
+    setAgents: `${API_BASE_URL}/portal_agent_assignment/set_agents`,
+  },
+  medicalCase: {
+    list: `${API_BASE_URL}/medical_case/list`,
+    create: `${API_BASE_URL}/medical_case/create`,
+    detail: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
+    byCaseNo: (caseNo: string) => `${API_BASE_URL}/medical_case/by_case_no/${caseNo}`,
+    search: `${API_BASE_URL}/medical_case/search`,
+    update: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
+    delete: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
+    favorite: {
+      toggle: `${API_BASE_URL}/medical_case/favorite/toggle`,
+      list: `${API_BASE_URL}/medical_case/favorite/list`,
+    },
+    recent: {
+      list: `${API_BASE_URL}/medical_case/recent/list`,
+    },
+    detailCreate: `${API_BASE_URL}/medical_case/detail/create`,
+  },
 };
 
 // Common error handling
