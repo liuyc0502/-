@@ -375,3 +375,138 @@ class PartnerMappingId(TableBase):
         30), doc="Type of the external - internal mapping, value set: CONVERSATION")
     tenant_id = Column(String(100), doc="Tenant ID")
     user_id = Column(String(100), doc="User ID")
+
+
+ 
+class PatientInfo(TableBase):
+    """
+    Patient basic information table
+    """
+    __tablename__ = "patient_info_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    patient_id = Column(Integer, Sequence("patient_info_t_patient_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Patient ID, primary key")
+    name = Column(String(100), doc="Patient name")
+    gender = Column(String(10), doc="Gender: 男/女")
+    age = Column(Integer, doc="Age")
+    date_of_birth = Column(String(20), doc="Date of birth (YYYY-MM-DD)")
+    medical_record_no = Column(String(50), doc="Medical record number")
+    phone = Column(String(20), doc="Phone number")
+    address = Column(String(500), doc="Address")
+    allergies = Column(JSON, doc="Allergies (JSON array)")
+    family_history = Column(Text, doc="Family medical history")
+    past_medical_history = Column(JSON, doc="Past medical history (JSON array)")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+ 
+class PatientTimeline(TableBase):
+    """
+    Patient treatment timeline main table
+    """
+    __tablename__ = "patient_timeline_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    timeline_id = Column(Integer, Sequence("patient_timeline_t_timeline_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Timeline ID, primary key")
+    patient_id = Column(Integer, doc="Patient ID, foreign key")
+    stage_type = Column(String(50), doc="Stage type: 初诊/检查/确诊/治疗/随访")
+    stage_date = Column(String(20), doc="Stage date (YYYY-MM-DD)")
+    stage_title = Column(String(200), doc="Stage title")
+    diagnosis = Column(String(500), doc="Diagnosis")
+    status = Column(String(20), doc="Status: completed/current/pending")
+    display_order = Column(Integer, doc="Display order")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+
+class PatientTimelineDetail(TableBase):
+    """
+    Patient timeline detail table
+    """
+    __tablename__ = "patient_timeline_detail_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    detail_id = Column(Integer, Sequence("patient_timeline_detail_t_detail_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Detail ID, primary key")
+    timeline_id = Column(Integer, doc="Timeline ID, foreign key")
+    doctor_notes = Column(Text, doc="Doctor observation notes")
+    pathology_findings = Column(Text, doc="Pathology findings")
+    medications = Column(JSON, doc="Medication regimen (JSON array)")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+ 
+class PatientMedicalImage(TableBase):
+    """
+    Patient medical image table
+    """
+    __tablename__ = "patient_medical_image_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    image_id = Column(Integer, Sequence("patient_medical_image_t_image_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Image ID, primary key")
+    timeline_id = Column(Integer, doc="Timeline ID, foreign key")
+    image_type = Column(String(50), doc="Image type: 病理切片/X光/CT/MRI/临床照片/超声")
+    image_label = Column(String(200), doc="Image label/description")
+    image_url = Column(String(500), doc="Image storage path (MinIO)")
+    thumbnail_url = Column(String(500), doc="Thumbnail URL")
+    display_order = Column(Integer, doc="Display order")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+ 
+class PatientMetrics(TableBase):
+    """
+    Patient examination metrics table
+    """
+    __tablename__ = "patient_metrics_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    metric_id = Column(Integer, Sequence("patient_metrics_t_metric_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Metric ID, primary key")
+    timeline_id = Column(Integer, doc="Timeline ID, foreign key")
+    metric_name = Column(String(50), doc="Metric name: ESR/CRP/RF etc.")
+    metric_full_name = Column(String(200), doc="Metric full name")
+    metric_value = Column(String(50), doc="Metric value")
+    metric_unit = Column(String(20), doc="Unit")
+    metric_trend = Column(String(20), doc="Trend: up/down/stable/abnormal/normal")
+    metric_status = Column(String(20), doc="Status: normal/warning/error/improving")
+    normal_range_min = Column(Numeric(10, 2), doc="Normal range minimum")
+    normal_range_max = Column(Numeric(10, 2), doc="Normal range maximum")
+    percentage = Column(Integer, doc="Progress bar percentage (0-100)")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+ 
+class PatientAttachment(TableBase):
+    """
+    Patient attachment table
+    """
+    __tablename__ = "patient_attachment_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    attachment_id = Column(Integer, Sequence("patient_attachment_t_attachment_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Attachment ID, primary key")
+    timeline_id = Column(Integer, doc="Timeline ID, foreign key")
+    file_name = Column(String(200), doc="File name")
+    file_type = Column(String(50), doc="File type: pdf/excel/dicom/zip")
+    file_url = Column(String(500), doc="File path (MinIO)")
+    file_size = Column(Integer, doc="File size (bytes)")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+
+class PatientTodo(TableBase):
+    """
+    Patient todo/task table
+    """
+    __tablename__ = "patient_todo_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    todo_id = Column(Integer, Sequence("patient_todo_t_todo_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Todo ID, primary key")
+    patient_id = Column(Integer, doc="Patient ID, foreign key")
+    todo_title = Column(String(200), doc="Todo title")
+    todo_description = Column(Text, doc="Todo description")
+    todo_type = Column(String(50), doc="Type: 复查/用药/检查/随访")
+    due_date = Column(String(20), doc="Due date (YYYY-MM-DD)")
+    priority = Column(String(20), doc="Priority: high/medium/low")
+    status = Column(String(20), doc="Status: pending/completed/overdue")
+    assigned_doctor = Column(String(100), doc="Assigned doctor user ID")
+    tenant_id = Column(String(100), doc="Tenant ID")

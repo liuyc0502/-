@@ -3,7 +3,7 @@
 import { getAuthHeaders, fetchWithAuth } from "@/lib/auth";
 import log from "@/lib/logger";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5010/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5010/api";
 
 // @ts-ignore
 const fetch: typeof fetchWithAuth = fetchWithAuth;
