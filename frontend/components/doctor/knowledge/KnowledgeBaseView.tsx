@@ -151,6 +151,8 @@ export function KnowledgeBaseView({
       setKnowledgeCards(cards);
     } catch (error) {
       message.error("加载知识卡片失败");
+      console.error("Failed to load knowledge cards:", error);
+    } finally {
       setCardsLoading(false);
     }
   };
@@ -175,6 +177,8 @@ export function KnowledgeBaseView({
       setFileName(name);
     } catch (error) {
       console.error("Failed to load file:", filePath, error);
+      message.error(`文件不存在或已被删除`);
+    } finally {
       setFileLoading(false);
     }
   };

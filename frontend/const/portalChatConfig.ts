@@ -116,7 +116,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     newChatDescription: "快速开始一次病例讨论",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
-      { id: "patients", label: "病人档案", icon: Users },
+      { id: "patients", label: "患者档案", icon: Users },
       { id: "cases", label: "病例库", icon: FolderKanban },
       { id: "knowledge", label: "病理知识库", icon: BookOpen },
     ],
@@ -144,7 +144,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     searchPlaceholder: "搜索健康话题或对话",
     recentLabel: "Recents",
     quickActionHeading: "患者常用快捷提问",
-    defaultUserName: "沉宸",
+    defaultUserName: "沅宸",
   },
   admin: {
     accentColor: "#7C3AED",
@@ -165,6 +165,6 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     searchPlaceholder: "搜索配置或对话",
     recentLabel: "Recents",
     quickActionHeading: "管理员常用快捷提问",
-    defaultUserName: "沉宸",
+    defaultUserName: "沅宸",
   },
 };
