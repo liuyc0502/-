@@ -1,73 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, Edit, Trash2 } from "lucide-react";
+import { App } from "antd";
+import patientService from "@/services/patientService";
+import type { PatientTodo } from "@/types/patient";
 
 interface PatientTodosProps {
   patientId: string;
 }
 
-interface TodoItem {
-  id: string;
-  title: string;
-  description: string;
-  deadline: string;
-  priority: "urgent" | "high" | "normal";
-  completed: boolean;
-}
-
-const mockTodos: TodoItem[] = [
-  {
-    id: "1",
-    title: "完善RF检查",
-    description: "医生建议：需确认类风湿诊断",
-    deadline: "明天 17:00",
-    priority: "urgent",
-    completed: false,
-  },
-  {
-    id: "2",
-    title: "审核影像报告",
-    description: "关节X光片已上传，等待审核",
-    deadline: "后天 12:00",
-    priority: "urgent",
-    completed: false,
-  },
-  {
-    id: "3",
-    title: "调整用药方案",
-    description: "根据最新检查结果优化治疗方案",
-    deadline: "本周五",
-    priority: "high",
-    completed: false,
-  },
-  {
-    id: "4",
-    title: "安排下次复查",
-    description: "预约下次门诊时间",
-    deadline: "下周一",
-    priority: "normal",
-    completed: false,
-  },
-  {
-    id: "5",
-    title: "更新患者档案",
-    description: "录入最新就诊信息",
-    deadline: "下周三",
-    priority: "normal",
-    completed: true,
-  },
-];
-
 export function PatientTodos({ patientId }: PatientTodosProps) {
-  const [todos, setTodos] = useState<TodoItem[]>(mockTodos);
+  const { message } = App.useApp();
+  const [todos, setTodos] = useState<PatientTodo[]>([]);
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showCompleted, setShowCompleted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const getPriorityColor = (priority: string) => {
+  useEffect(() => {
+    loadTodos();
+  }, [patientId, filter]);
+
+  const loadTodos = async () => {
+    try {
+      setLoading(true);
+      const status = filter === "all" ? undefined : filter;
+      const data = await patientService.getPatientTodos(parseInt(patientId), status);
+      setTodos(data);
+    } catch (error) {
+      message.error("加载待办事项失败");
+      console.error("Failed to load todos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case "urgent":
         return "border-l-4 border-l-red-500 bg-red-50";
@@ -78,20 +49,46 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
     }
   };
 
-  const filteredTodos = todos.filter((todo) => {
-    if (filter === "pending") return !todo.completed;
-    if (filter === "completed") return todo.completed;
-    return true;
-  });
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '未设置';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-  const urgentTodos = filteredTodos.filter((todo) => !todo.completed && todo.priority === "urgent");
-  const highTodos = filteredTodos.filter((todo) => !todo.completed && todo.priority === "high");
-  const normalTodos = filteredTodos.filter((todo) => !todo.completed && todo.priority === "normal");
-  const completedTodos = filteredTodos.filter((todo) => todo.completed);
-
-  const toggleTodo = (id: string) => {
-    setTodos(todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)));
+    if (diffDays === 0) return '今天';
+    if (diffDays === 1) return '明天';
+    if (diffDays === 2) return '后天';
+    if (diffDays > 0 && diffDays <= 7) return `${diffDays}天后`;
+    return date.toLocaleDateString('zh-CN');
   };
+
+  const urgentTodos = todos.filter((todo) => todo.status !== "completed" && todo.priority === "urgent");
+  const highTodos = todos.filter((todo) => todo.status !== "completed" && todo.priority === "high");
+  const normalTodos = todos.filter((todo) => todo.status !== "completed" && (todo.priority === "medium" || !todo.priority));
+  const completedTodos = todos.filter((todo) => todo.status === "completed");
+
+  const toggleTodo = async (todoId: number, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === "completed" ? "pending" : "completed";
+      await patientService.updateTodoStatus(todoId, { status: newStatus });
+      // Reload todos after update
+      loadTodos();
+    } catch (error) {
+      message.error("更新待办状态失败");
+      console.error("Failed to update todo:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <p className="text-gray-500">加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -154,7 +151,7 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             </button>
           </div>
           <span className="text-sm text-gray-600">
-            共 {todos.length} 项，待处理 {todos.filter((t) => !t.completed).length} 项
+            共 {todos.length} 项，待处理 {todos.filter((t) => t.status !== "completed").length} 项
           </span>
         </div>
       </div>
@@ -167,18 +164,22 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             紧急待办
           </h3>
           {urgentTodos.map((todo) => (
-            <Card key={todo.id} className={getPriorityColor(todo.priority)}>
+            <Card key={todo.todo_id} className={getPriorityColor(todo.priority)}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
-                    checked={todo.completed}
-                    onCheckedChange={() => toggleTodo(todo.id)}
+                    checked={todo.status === "completed"}
+                    onCheckedChange={() => toggleTodo(todo.todo_id, todo.status)}
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{todo.title}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                    <p className="text-sm text-red-600 font-medium mt-2">截止：{todo.deadline}</p>
+                    <h4 className="font-bold text-gray-900">{todo.todo_title}</h4>
+                    {todo.todo_description && (
+                      <p className="text-sm text-gray-600 mt-1">{todo.todo_description}</p>
+                    )}
+                    <p className="text-sm text-red-600 font-medium mt-2">
+                      截止：{formatDate(todo.due_date)}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -203,18 +204,22 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             本周待办
           </h3>
           {highTodos.map((todo) => (
-            <Card key={todo.id} className={getPriorityColor(todo.priority)}>
+            <Card key={todo.todo_id} className={getPriorityColor(todo.priority)}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
-                    checked={todo.completed}
-                    onCheckedChange={() => toggleTodo(todo.id)}
+                    checked={todo.status === "completed"}
+                    onCheckedChange={() => toggleTodo(todo.todo_id, todo.status)}
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{todo.title}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                    <p className="text-sm text-yellow-600 font-medium mt-2">截止：{todo.deadline}</p>
+                    <h4 className="font-bold text-gray-900">{todo.todo_title}</h4>
+                    {todo.todo_description && (
+                      <p className="text-sm text-gray-600 mt-1">{todo.todo_description}</p>
+                    )}
+                    <p className="text-sm text-yellow-600 font-medium mt-2">
+                      截止：{formatDate(todo.due_date)}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -239,18 +244,22 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             常规待办
           </h3>
           {normalTodos.map((todo) => (
-            <Card key={todo.id} className={getPriorityColor(todo.priority)}>
+            <Card key={todo.todo_id} className={getPriorityColor(todo.priority)}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
-                    checked={todo.completed}
-                    onCheckedChange={() => toggleTodo(todo.id)}
+                    checked={todo.status === "completed"}
+                    onCheckedChange={() => toggleTodo(todo.todo_id, todo.status)}
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{todo.title}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                    <p className="text-sm text-green-600 font-medium mt-2">截止：{todo.deadline}</p>
+                    <h4 className="font-bold text-gray-900">{todo.todo_title}</h4>
+                    {todo.todo_description && (
+                      <p className="text-sm text-gray-600 mt-1">{todo.todo_description}</p>
+                    )}
+                    <p className="text-sm text-green-600 font-medium mt-2">
+                      截止：{formatDate(todo.due_date)}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -280,13 +289,19 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
           </button>
           {showCompleted &&
             completedTodos.map((todo) => (
-              <Card key={todo.id} className="bg-gray-50 border-gray-200 opacity-60">
+              <Card key={todo.todo_id} className="bg-gray-50 border-gray-200 opacity-60">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <Checkbox checked={todo.completed} onCheckedChange={() => toggleTodo(todo.id)} className="mt-1" />
+                    <Checkbox
+                      checked={todo.status === "completed"}
+                      onCheckedChange={() => toggleTodo(todo.todo_id, todo.status)}
+                      className="mt-1"
+                    />
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-700 line-through">{todo.title}</h4>
-                      <p className="text-sm text-gray-500 mt-1 line-through">{todo.description}</p>
+                      <h4 className="font-bold text-gray-700 line-through">{todo.todo_title}</h4>
+                      {todo.todo_description && (
+                        <p className="text-sm text-gray-500 mt-1 line-through">{todo.todo_description}</p>
+                      )}
                     </div>
                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600">
                       <Trash2 className="h-4 w-4" />
@@ -295,6 +310,12 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
                 </CardContent>
               </Card>
             ))}
+        </div>
+      )}
+
+      {todos.length === 0 && (
+        <div className="text-center py-20">
+          <p className="text-gray-500 text-lg">暂无待办事项</p>
         </div>
       )}
     </div>

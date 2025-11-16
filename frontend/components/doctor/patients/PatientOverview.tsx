@@ -1,13 +1,57 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, TestTube, Pill, TrendingDown, AlertCircle, Users } from "lucide-react";
+import { App } from "antd";
+import patientService from "@/services/patientService";
+import type { Patient } from "@/types/patient";
 
 interface PatientOverviewProps {
   patientId: string;
 }
 
 export function PatientOverview({ patientId }: PatientOverviewProps) {
+  const { message } = App.useApp();
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadPatientInfo();
+  }, [patientId]);
+
+  const loadPatientInfo = async () => {
+    try {
+      setLoading(true);
+      const data = await patientService.getPatient(parseInt(patientId));
+      setPatient(data);
+    } catch (error) {
+      message.error("加载患者信息失败");
+      console.error("Failed to load patient:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <p className="text-gray-500">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-gray-500 text-lg">未找到患者信息</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-12 gap-6">
       {/* Left Column - 40% width */}
@@ -21,44 +65,71 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">姓名:</span>
-                <span className="ml-2 font-medium">张三</span>
+                <span className="ml-2 font-medium">{patient.name}</span>
               </div>
               <div>
                 <span className="text-gray-500">性别:</span>
-                <span className="ml-2 font-medium">男</span>
+                <span className="ml-2 font-medium">{patient.gender}</span>
               </div>
               <div>
                 <span className="text-gray-500">年龄:</span>
-                <span className="ml-2 font-medium">58岁</span>
+                <span className="ml-2 font-medium">{patient.age}岁</span>
               </div>
               <div>
                 <span className="text-gray-500">病历号:</span>
-                <span className="ml-2 font-medium">MR202401001</span>
+                <span className="ml-2 font-medium">{patient.medical_record_no}</span>
               </div>
             </div>
-            <div className="pt-3 border-t border-gray-100">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="text-sm font-semibold text-red-700">过敏史:</span>
-                  <span className="ml-2 text-sm text-gray-700">青霉素、头孢类</span>
+            {patient.date_of_birth && (
+              <div className="text-sm">
+                <span className="text-gray-500">出生日期:</span>
+                <span className="ml-2 font-medium">
+                  {new Date(patient.date_of_birth).toLocaleDateString('zh-CN')}
+                </span>
+              </div>
+            )}
+            {patient.phone && (
+              <div className="text-sm">
+                <span className="text-gray-500">联系电话:</span>
+                <span className="ml-2 font-medium">{patient.phone}</span>
+              </div>
+            )}
+            {patient.address && (
+              <div className="text-sm">
+                <span className="text-gray-500">地址:</span>
+                <span className="ml-2 font-medium">{patient.address}</span>
+              </div>
+            )}
+            {patient.allergies && patient.allergies.length > 0 && (
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-sm font-semibold text-red-700">过敏史:</span>
+                    <span className="ml-2 text-sm text-gray-700">{patient.allergies.join("、")}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Users className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-sm font-semibold text-gray-700">家族史:</span>
-                <span className="ml-2 text-sm text-gray-600">父亲有类风湿病史</span>
+            )}
+            {patient.family_history && (
+              <div className="flex items-start gap-2">
+                <Users className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">家族史:</span>
+                  <span className="ml-2 text-sm text-gray-600">{patient.family_history}</span>
+                </div>
               </div>
-            </div>
-            <div className="pt-2">
-              <p className="text-sm font-semibold text-gray-700 mb-2">既往病史:</p>
-              <ul className="text-sm text-gray-600 space-y-1 pl-4 list-disc">
-                <li>2018年确诊类风湿关节炎</li>
-                <li>2020年轻度高血压</li>
-              </ul>
-            </div>
+            )}
+            {patient.past_medical_history && patient.past_medical_history.length > 0 && (
+              <div className="pt-2">
+                <p className="text-sm font-semibold text-gray-700 mb-2">既往病史:</p>
+                <ul className="text-sm text-gray-600 space-y-1 pl-4 list-disc">
+                  {patient.past_medical_history.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
 
