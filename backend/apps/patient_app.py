@@ -175,6 +175,41 @@ async def get_patient(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to get patient: {str(e)}"
         )
+
+
+@router.get("/patient/profile/by_email")
+async def get_patient_by_email(
+    email: str,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Get patient information by email address (for patient portal)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        patient = await patient_service.get_patient_by_email_service(email, tenant_id)
+        if not patient:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Patient profile not found"
+            )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content={"patient": patient}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get patient by email failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get patient by email: {str(e)}"
+        )
                 
 @router.put("/patient/{patient_id}/update")
 async def update_patient(

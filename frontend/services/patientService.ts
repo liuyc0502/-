@@ -67,11 +67,32 @@ export async function getPatient(patientId: number): Promise<Patient> {
     if (!response.ok) {
       throw new Error(`Failed to get patient: ${response.statusText}`);
     }
- 
+
     const data = await response.json();
     return data.patient;
   } catch (error) {
     log.error(`Failed to get patient ${patientId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get patient by email address (for patient portal)
+ */
+export async function getPatientByEmail(email: string): Promise<Patient> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.patient.list}/../profile/by_email?email=${encodeURIComponent(email)}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get patient by email: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.patient;
+  } catch (error) {
+    log.error(`Failed to get patient by email ${email}:`, error);
     throw error;
   }
 }
@@ -440,6 +461,7 @@ const patientService = {
   // Patient
   createPatient,
   getPatient,
+  getPatientByEmail,
   listPatients,
   updatePatient,
   deletePatient,

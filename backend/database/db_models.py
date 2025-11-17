@@ -392,11 +392,13 @@ class PatientInfo(TableBase):
     age = Column(Integer, doc="Age")
     date_of_birth = Column(String(20), doc="Date of birth (YYYY-MM-DD)")
     medical_record_no = Column(String(50), doc="Medical record number")
+    email = Column(String(200), doc="Email address for patient portal login", unique=True, index=True)
     phone = Column(String(20), doc="Phone number")
     address = Column(String(500), doc="Address")
     allergies = Column(JSON, doc="Allergies (JSON array)")
     family_history = Column(Text, doc="Family medical history")
     past_medical_history = Column(JSON, doc="Past medical history (JSON array)")
+    diagnosis = Column(String(500), doc="Current primary diagnosis")
     tenant_id = Column(String(100), doc="Tenant ID")
  
  

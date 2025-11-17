@@ -1,6 +1,7 @@
 import logging
 import os
 from contextlib import contextmanager
+from datetime import date, datetime
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 import boto3
@@ -301,11 +302,27 @@ def get_db_session(db_session=None):
 
 
 def as_dict(obj):
+    """
+    Convert SQLAlchemy model object to dictionary, handling datetime and date serialization
+    """
     if isinstance(obj, TableBase):
-        return {c.key: getattr(obj, c.key) for c in class_mapper(obj.__class__).columns}
+        result = {}
+        for c in class_mapper(obj.__class__).columns:
+            value = getattr(obj, c.key)
+            # Convert datetime and date objects to ISO format strings
+            if isinstance(value, (datetime, date)):
+                result[c.key] = value.isoformat() if value else None
+            else:
+                result[c.key] = value
+        return result
 
     # noinspection PyProtectedMember
-    return dict(obj._mapping)
+    result = dict(obj._mapping)
+    # Handle datetime and date fields in mapping results
+    for key, value in result.items():
+        if isinstance(value, (datetime, date)):
+            result[key] = value.isoformat() if value else None
+    return result
 
 
 def filter_property(data, model_class):

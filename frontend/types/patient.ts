@@ -1,19 +1,17 @@
 export interface Patient {
     patient_id: number;
     name: string;
-    gender: string;  
+    gender: string;
     age: number;
     date_of_birth?: string;
-    medical_record_no: string; 
-    email?: string;
-    phone?: string; 
+    medical_record_no: string;
+    email: string;
+    phone?: string;
     address?: string;
-    emergency_contact?: string;
     allergies?: string[];
     family_history?: string;
     past_medical_history?: string[];
     diagnosis?: string;
-    attending_doctor_id?: string;
     tenant_id: string;
     create_time: string;
     update_time: string;
@@ -27,17 +25,14 @@ export interface Patient {
     gender: string;
     age: number;
     medical_record_no: string;
-    email?: string;
+    email: string;
     phone?: string;
     address?: string;
     date_of_birth?: string;
     allergies?: string[];
     family_history?: string;
-    attending_doctor_id?: string;
-    emergency_contact?: string;
     past_medical_history?: string[];
-    initial_diagnosis?: string;
-    diagnosis_date?: string;
+    diagnosis?: string;
   }
   
   // ============================================================================

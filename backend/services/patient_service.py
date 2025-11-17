@@ -47,6 +47,21 @@ async def get_patient_info(patient_id: int, tenant_id: str) -> Optional[dict]:
         raise AgentRunException(f"Failed to get patient info: {str(e)}")
  
  
+async def get_patient_by_email_service(email: str, tenant_id: str) -> Optional[dict]:
+    """
+    Get patient information by email address
+    """
+    try:
+        patient = patient_db.get_patient_by_email(email, tenant_id)
+        if not patient:
+            return None
+
+        return patient
+    except Exception as e:
+        logger.error(f"Failed to get patient by email: {str(e)}")
+        raise AgentRunException(f"Failed to get patient by email: {str(e)}")
+
+
 async def list_patients_service(tenant_id: str, search_query: Optional[str] = None,
                                 filter_type: Optional[str] = None,
                                 limit: int = 100, offset: int = 0) -> List[dict]:

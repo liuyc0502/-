@@ -26,11 +26,13 @@ def create_patient(patient_data: dict, tenant_id: str, user_id: str) -> dict:
             age=patient_data.get('age'),
             date_of_birth=patient_data.get('date_of_birth'),
             medical_record_no=patient_data.get('medical_record_no'),
+            email=patient_data.get('email'),
             phone=patient_data.get('phone'),
             address=patient_data.get('address'),
             allergies=patient_data.get('allergies', []),
             family_history=patient_data.get('family_history'),
             past_medical_history=patient_data.get('past_medical_history', []),
+            diagnosis=patient_data.get('diagnosis'),
             tenant_id=tenant_id,
             created_by=user_id,
             updated_by=user_id,
@@ -53,6 +55,21 @@ def get_patient_by_id(patient_id: int, tenant_id: str) -> Optional[dict]:
     with get_db_session() as session:
         patient = session.query(PatientInfo).filter(
             PatientInfo.patient_id == patient_id,
+            PatientInfo.tenant_id == tenant_id,
+            PatientInfo.delete_flag != 'Y'
+        ).first()
+        if patient:
+            return as_dict(patient)
+        return None
+
+
+def get_patient_by_email(email: str, tenant_id: str) -> Optional[dict]:
+    """
+    Get patient by email address
+    """
+    with get_db_session() as session:
+        patient = session.query(PatientInfo).filter(
+            PatientInfo.email == email,
             PatientInfo.tenant_id == tenant_id,
             PatientInfo.delete_flag != 'Y'
         ).first()
