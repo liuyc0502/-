@@ -41,48 +41,6 @@ cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrati
 
 ---
 
-## 2025-01-27
-
-### 病例数据库迁移文件创建
-
-**修改文件**:
-- `backend/database/migrations/create_medical_case_tables.sql` (新建)
-- `backend/database/migrations/run_medical_case_migration.py` (更新)
-
-**功能说明**:
-- 🗄️ **创建病例库数据库表结构**：完整实现病例库相关的7个数据表
-  - `medical_case_t` - 病例基本信息表
-  - `medical_case_detail_t` - 病例详细信息表
-  - `medical_case_symptom_t` - 病例症状表
-  - `medical_case_lab_result_t` - 实验室检查结果表
-  - `medical_case_image_t` - 医学影像表
-  - `medical_case_favorite_t` - 用户收藏表
-  - `medical_case_view_history_t` - 浏览历史表
-- 📊 **完整的数据库结构**：
-  - 创建所有必要的序列（sequences）
-  - 创建所有表结构，包含标准字段（create_time, update_time, created_by, updated_by, delete_flag）
-  - 创建索引优化查询性能
-  - 创建触发器自动更新update_time字段
-  - 包含验证查询确保迁移成功
-- 🔧 **迁移脚本优化**：
-  - 更新Python执行脚本，添加验证结果输出
-  - 清理代码格式，符合PEP 8规范
-  - 添加详细的执行日志和错误处理
-
-**技术实现**:
-- 使用PostgreSQL的DO $$块确保幂等性（可重复执行）
-- 所有表使用nexent schema
-- 支持软删除机制（delete_flag字段）
-- 租户隔离支持（tenant_id字段）
-- JSONB字段存储复杂数据结构（tags, medications, physical_examination等）
-
-**执行命令**:
-```bash
-cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrations/run_medical_case_migration.py
-```
-
----
-
 ## 2025-11-07
 
 ### 首页注册功能集成
