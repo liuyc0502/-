@@ -173,19 +173,19 @@ export const API_ENDPOINTS = {
     delete: (patientId: number) => `${API_BASE_URL}/patient/${patientId}`,
     timeline: {
       create: `${API_BASE_URL}/patient/timeline/create`,
-      list: (patientId: number) => `${API_BASE_URL}/patient/timeline/list/${patientId}`,
-      detail: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}`,
-      createDetail: `${API_BASE_URL}/patient/timeline/detail/create`,
+      list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/timeline`,
+      detail: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/detail`,
+      createDetail: `${API_BASE_URL}/patient/timeline/detail/save`,
     },
     image: {
-      create: `${API_BASE_URL}/patient/image/create`,
+      create: `${API_BASE_URL}/patient/timeline/image/create`,
     },
     metrics: {
-      batchCreate: `${API_BASE_URL}/patient/metrics/batch_create`,
+      batchCreate: `${API_BASE_URL}/patient/timeline/metrics/batch`,
     },
     todo: {
       create: `${API_BASE_URL}/patient/todo/create`,
-      list: (patientId: number) => `${API_BASE_URL}/patient/todo/list/${patientId}`,
+      list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/todos`,
       updateStatus: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}/status`,
     },
   },

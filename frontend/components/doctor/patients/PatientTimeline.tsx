@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, App, Button } from "antd";
+import { PlusOutlined, EditOutlined } from "@ant-design/icons";
 import {
   FileText,
   TestTube,
   Pill,
-  Filter,
   ArrowUpDown,
   ArrowDown,
   CheckCircle,
@@ -15,13 +14,33 @@ import {
   Image as ImageIcon,
   Download,
 } from "lucide-react";
-import { App } from "antd";
 import patientService from "@/services/patientService";
 import type { Patient, TimelineStage, TimelineWithDetail } from "@/types/patient";
+import { CreateTimelineModal } from "./CreateTimelineModal";
+import { EditTimelineDetailModal } from "./EditTimelineDetailModal";
+
+// Constants
+const PRIMARY_COLOR = "#D94527";
 
 interface PatientTimelineProps {
   patientId: string;
 }
+
+// Helper Functions
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return "待定";
+  return new Date(dateString).toLocaleDateString("zh-CN");
+};
+
+const getMetricStatusText = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    error: "异常",
+    warning: "偏高",
+    improving: "改善中",
+    normal: "正常",
+  };
+  return statusMap[status] || "正常";
+};
 
 export function PatientTimeline({ patientId }: PatientTimelineProps) {
   const { message } = App.useApp();
@@ -30,6 +49,9 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
   const [selectedTimeline, setSelectedTimeline] = useState<TimelineWithDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [currentTimelineId, setCurrentTimelineId] = useState<number | null>(null);
 
   useEffect(() => {
     loadPatientAndTimeline();
@@ -86,7 +108,10 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <div
+            className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-r-transparent mb-4"
+            style={{ borderColor: PRIMARY_COLOR }}
+          ></div>
           <p className="text-gray-500">加载中...</p>
         </div>
       </div>
@@ -105,15 +130,31 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     <div className="space-y-6">
       {/* Timeline Progress Bar - Always visible */}
       <Card className="bg-white border-gray-200">
-        <CardContent className="p-6">
+        <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">
               {patient?.name || "患者"}的就诊历程
             </h2>
-            <Button variant="outline" size="sm" className="text-gray-600">
-              <Filter className="h-4 w-4 mr-2" />
-              筛选时间
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setCreateModalOpen(true)}
+              >
+                创建节点
+              </Button>
+              {selectedTimeline && (
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    setCurrentTimelineId(selectedTimeline.timeline_id);
+                    setEditModalOpen(true);
+                  }}
+                >
+                  编辑详情
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="relative flex items-center justify-between">
@@ -145,11 +186,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                     >
                       {timeline.stage_title}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {timeline.stage_date
-                        ? new Date(timeline.stage_date).toLocaleDateString("zh-CN")
-                        : "待定"}
-                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{formatDate(timeline.stage_date)}</div>
                   </div>
                   {index < timelines.length - 1 && (
                     <div
@@ -163,16 +200,19 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
               );
             })}
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       {/* Detail Content Area - Changes based on selected stage */}
       {detailLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-2"></div>
-            <p className="text-gray-500 text-sm">加载详情...</p>
-          </div>
+            <div className="text-center">
+              <div
+                className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent mb-2"
+                style={{ borderColor: PRIMARY_COLOR }}
+              ></div>
+              <p className="text-gray-500 text-sm">加载详情...</p>
+            </div>
         </div>
       ) : selectedTimeline ? (
         <div className="space-y-6">
@@ -181,10 +221,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
             <div>
               <h3 className="text-2xl font-bold text-gray-900">{selectedTimeline.stage_title} 阶段详情</h3>
               <p className="text-sm text-gray-500 mt-1">
-                {selectedTimeline.stage_date
-                  ? new Date(selectedTimeline.stage_date).toLocaleDateString("zh-CN")
-                  : "待定"}{" "}
-                | {selectedTimeline.diagnosis || "暂无诊断"}
+                {formatDate(selectedTimeline.stage_date)} | {selectedTimeline.diagnosis || "暂无诊断"}
               </p>
             </div>
           </div>
@@ -195,33 +232,33 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
               {/* Left: Image Gallery */}
               {selectedTimeline.images && selectedTimeline.images.length > 0 && (
                 <div className="col-span-12 lg:col-span-8">
-                  <Card className="bg-white border-gray-200 h-full">
-                    <CardHeader>
-                      <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Card
+                    className="bg-white border-gray-200 h-full"
+                    title={
+                      <div className="text-sm font-bold flex items-center gap-2">
                         <ImageIcon className="h-4 w-4 text-[#D94527]" />
                         影像资料
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-4 overflow-x-auto pb-2">
-                        {selectedTimeline.images.map((image) => (
-                          <div key={image.image_id} className="flex-shrink-0 w-64 group cursor-pointer">
-                            <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#D94527] transition-colors">
-                              <img
-                                src={image.image_url}
-                                alt={image.image_label}
-                                className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
-                              />
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                                <div className="text-xs text-white/90 font-medium">{image.image_type}</div>
-                                <div className="text-sm text-white font-semibold">{image.image_label}</div>
-                              </div>
+                      </div>
+                    }
+                  >
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {selectedTimeline.images.map((image) => (
+                        <div key={image.image_id} className="flex-shrink-0 w-64 group cursor-pointer">
+                          <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#D94527] transition-colors">
+                            <img
+                              src={image.image_url}
+                              alt={image.image_label}
+                              className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                              <div className="text-xs text-white/90 font-medium">{image.image_type}</div>
+                              <div className="text-sm text-white font-semibold">{image.image_label}</div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-3">点击图片可放大查看</p>
-                    </CardContent>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">点击图片可放大查看</p>
                   </Card>
                 </div>
               )}
@@ -234,11 +271,8 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                     : "lg:col-span-12"
                 }`}
               >
-                <Card className="bg-white border-gray-200 h-full">
-                  <CardHeader>
-                    <CardTitle className="text-sm font-bold">关键信息</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm">
+                <Card className="bg-white border-gray-200 h-full" title="关键信息">
+                  <div className="space-y-4 text-sm">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-gray-400" />
@@ -283,7 +317,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                         </div>
                       </div>
                     )}
-                  </CardContent>
+                  </div>
                 </Card>
               </div>
             </div>
@@ -291,15 +325,16 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
 
           {/* Middle Section: Metrics Cards (Horizontal) */}
           {selectedTimeline.metrics && selectedTimeline.metrics.length > 0 && (
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <Card
+              className="bg-white border-gray-200"
+              title={
+                <div className="text-sm font-bold flex items-center gap-2">
                   <TestTube className="h-4 w-4 text-[#D94527]" />
                   检查指标详情
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                </div>
+              }
+            >
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {selectedTimeline.metrics.map((metric, idx) => (
                     <div
                       key={idx}
@@ -349,18 +384,11 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                         </div>
                       )}
                       <div className="text-xs text-gray-500 mt-1">
-                        {metric.metric_status === "error"
-                          ? "异常"
-                          : metric.metric_status === "warning"
-                          ? "偏高"
-                          : metric.metric_status === "improving"
-                          ? "改善中"
-                          : "正常"}
+                        {getMetricStatusText(metric.metric_status || "normal")}
                       </div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
+              </div>
             </Card>
           )}
 
@@ -369,29 +397,19 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left: Doctor Notes */}
               {selectedTimeline.detail.doctor_notes && (
-                <Card className="bg-white border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="text-sm font-bold">👨‍⚕️ 医生观察记录</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {selectedTimeline.detail.doctor_notes}
-                    </p>
-                  </CardContent>
+                <Card className="bg-white border-gray-200" title="👨‍⚕️ 医生观察记录">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {selectedTimeline.detail.doctor_notes}
+                  </p>
                 </Card>
               )}
 
               {/* Right: Pathology Findings */}
               {selectedTimeline.detail.pathology_findings && (
-                <Card className="bg-white border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="text-sm font-bold">📸 病理发现</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {selectedTimeline.detail.pathology_findings}
-                    </p>
-                  </CardContent>
+                <Card className="bg-white border-gray-200" title="📸 病理发现">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {selectedTimeline.detail.pathology_findings}
+                  </p>
                 </Card>
               )}
             </div>
@@ -399,10 +417,30 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
         </div>
       ) : (
         <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-12 text-center">
+          <div className="p-12 text-center">
             <p className="text-gray-500">请选择一个时间点查看详情</p>
-          </CardContent>
+          </div>
         </Card>
+      )}
+
+      {/* Modals */}
+      <CreateTimelineModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        patientId={parseInt(patientId)}
+        onSuccess={loadPatientAndTimeline}
+      />
+
+      {currentTimelineId && (
+        <EditTimelineDetailModal
+          open={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setCurrentTimelineId(null);
+          }}
+          timelineId={currentTimelineId}
+          onSuccess={() => loadTimelineDetail(currentTimelineId)}
+        />
       )}
     </div>
   );

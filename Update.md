@@ -1,5 +1,48 @@
 ## 2025-11-17
 
+### 创建新分支并推送患者门户同步功能更新
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/patient-portal-update-20251117`
+- 📦 **提交更改**: 14 个文件，813 行新增，269 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**后端文件**:
+- `backend/apps/patient_app.py` (更新)
+- `backend/database/client.py` (更新)
+- `backend/database/db_models.py` (更新)
+- `backend/database/patient_db.py` (更新)
+- `backend/services/patient_service.py` (更新)
+
+**前端文件**:
+- `frontend/components/doctor/patients/CreatePatientDialog.tsx` (更新)
+- `frontend/components/patient/profile/BasicInfoTab.tsx` (更新)
+- `frontend/components/patient/profile/DiagnosisHistoryTab.tsx` (更新)
+- `frontend/components/patient/profile/TimelineTab.tsx` (更新)
+- `frontend/services/patientService.ts` (更新)
+- `frontend/types/patient.ts` (更新)
+
+**新增文件**:
+- `PATIENT_PORTAL_SYNC.md` (新建 - 患者门户同步功能文档)
+- `backend/database/migrations/add_email_and_diagnosis_to_patient.sql` (新建 - 数据库迁移脚本)
+- `backend/database/migrations/run_email_migration.py` (新建 - 迁移执行脚本)
+
+**功能说明**:
+- 患者门户同步功能更新，添加邮箱和诊断历史功能
+- 数据库迁移：为患者表添加邮箱和诊断历史字段
+- 前后端数据模型同步更新
+
+**分支信息**:
+- 分支名称: `feature/patient-portal-update-20251117`
+- 远程仓库: `origin/feature/patient-portal-update-20251117`
+- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/patient-portal-update-20251117
+
+---
+
+## 2025-11-17
+
 ### 病例数据库迁移文件
 
 **修改文件**:
