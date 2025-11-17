@@ -1,3 +1,4 @@
+import { API_ENDPOINTS } from "./api";
 import { getAuthHeaders } from "@/lib/auth";
 import log from "@/lib/logger";
 import type {
@@ -21,7 +22,6 @@ import type {
   TodoListResponse,
 } from "@/types/patient";
  
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5010/api";
  
 // ============================================================================
 // Patient Basic Info Services
@@ -33,7 +33,7 @@ export async function createPatient(
   patientData: CreatePatientRequest
 ): Promise<CreatePatientResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/create`, {
+    const response = await fetch(API_ENDPOINTS.patient.create, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -60,7 +60,7 @@ export async function createPatient(
  */
 export async function getPatient(patientId: number): Promise<Patient> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/${patientId}`, {
+    const response = await fetch(API_ENDPOINTS.patient.detail(patientId), {
       headers: getAuthHeaders(),
     });
 
@@ -92,7 +92,7 @@ export async function listPatients(params?: {
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.offset) queryParams.append("offset", params.offset.toString());
  
-    const url = `${API_BASE_URL}/patient/list${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    const url = `${API_ENDPOINTS.patient.list}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
     const response = await fetch(url, {
       headers: getAuthHeaders(),
@@ -146,7 +146,7 @@ export async function updatePatient(
   patientData: Partial<CreatePatientRequest>
 ): Promise<ApiSuccessResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update`, {
+    const response = await fetch(API_ENDPOINTS.patient.update(patientId), {
       method: "PUT",
       headers: {
         ...getAuthHeaders(),
@@ -172,7 +172,7 @@ export async function updatePatient(
  */
 export async function deletePatient(patientId: number): Promise<ApiSuccessResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/delete`, {
+    const response = await fetch(API_ENDPOINTS.patient.delete(patientId), {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
@@ -200,7 +200,7 @@ export async function createTimelineStage(
   timelineData: CreateTimelineRequest
 ): Promise<CreateTimelineResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/timeline/create`, {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.create, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -226,7 +226,7 @@ export async function createTimelineStage(
  */
 export async function getPatientTimeline(patientId: number): Promise<TimelineStage[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/timeline`, {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.list(patientId), {
       headers: getAuthHeaders(),
     });
  
@@ -247,7 +247,7 @@ export async function getPatientTimeline(patientId: number): Promise<TimelineSta
  */
 export async function getTimelineDetail(timelineId: number): Promise<TimelineWithDetail> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/timeline/${timelineId}/detail`, {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.detail(timelineId), {
       headers: getAuthHeaders(),
     });
  
@@ -270,7 +270,7 @@ export async function saveTimelineDetail(
   detailData: CreateTimelineDetailRequest
 ): Promise<ApiSuccessResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/timeline/detail/save`, {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.createDetail, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -302,7 +302,7 @@ export async function createMedicalImage(
   imageData: CreateMedicalImageRequest
 ): Promise<ApiSuccessResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/timeline/image/create`, {
+    const response = await fetch(API_ENDPOINTS.patient.image.create, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -336,7 +336,7 @@ export async function batchCreateMetrics(
   metricsData: BatchCreateMetricsRequest
 ): Promise<ApiSuccessResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/patient/timeline/metrics/batch`, {
+    const response = await fetch(API_ENDPOINTS.patient.metrics.batchCreate, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -376,7 +376,7 @@ export async function createPatientTodo(
 ): Promise<ApiSuccessResponse> {
   try {
     return await jsonRequest<ApiSuccessResponse>(
-      `${API_BASE_URL}/patient/todo/create`,
+      API_ENDPOINTS.patient.todo.create,
       {
         method: "POST",
         headers: getJsonAuthHeaders(),
@@ -397,7 +397,7 @@ export async function getPatientTodos(
   try {
     const statusQuery = status ? `?status=${encodeURIComponent(status)}` : "";
     const data = await jsonRequest<TodoListResponse>(
-      `${API_BASE_URL}/patient/${patientId}/todos${statusQuery}`,
+      API_ENDPOINTS.patient.todo.list(patientId) + statusQuery,
       {
         headers: getAuthHeaders(),
       },
@@ -417,7 +417,7 @@ export async function updateTodoStatus(
 ): Promise<ApiSuccessResponse> {
   try {
     return await jsonRequest<ApiSuccessResponse>(
-      `${API_BASE_URL}/patient/todo/${todoId}/status`,
+      API_ENDPOINTS.patient.todo.updateStatus(todoId),
       {
         method: "PUT",
         headers: getJsonAuthHeaders(),

@@ -39,6 +39,10 @@ import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
 import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
 import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
 
+import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
+import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
+import { KnowledgeView } from "@/components/patient/knowledge/KnowledgeView";
+
 import {
   preprocessAttachments,
   handleFileUpload as preProcessHandleFileUpload,
@@ -1761,12 +1765,18 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   )
                 )}
                 {activeView === "knowledge" && (
-                  <KnowledgeBaseView 
+                  <KnowledgeBaseView
                   onSelectKnowledge={setSelectedKnowledgeId}
                   selectedKnowledgeId={selectedKnowledgeId}
                   onClearSelection={() => setSelectedKnowledgeId(null)}
                   />
                 )}
+              </>
+            ) : variant === "patient" ? (
+              <>
+                {activeView === "profile" && <PatientProfileView />}
+                {activeView === "care-plan" && <CarePlanView />}
+                {activeView === "knowledge" && <KnowledgeView />}
               </>
             ) : (
               <div className="p-8 text-slate-600">

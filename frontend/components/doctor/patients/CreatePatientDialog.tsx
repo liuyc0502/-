@@ -1,12 +1,12 @@
 "use client";
+
 import { useState } from "react";
 import { Modal, Form, Input, InputNumber, Select, DatePicker, App } from "antd";
 import patientService from "@/services/patientService";
 import type { CreatePatientRequest } from "@/types/patient";
 
-
 const { TextArea } = Input;
- 
+
 interface CreatePatientDialogProps {
   open: boolean;
   onClose: () => void;
@@ -22,15 +22,20 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
     try {
       const values = await form.validateFields();
       setLoading(true);
- 
+
       // Format the data
       const patientData: CreatePatientRequest = {
         name: values.name,
         gender: values.gender,
         age: values.age,
         medical_record_no: values.medical_record_no,
+        email: values.email,
         phone: values.phone,
         address: values.address,
+        emergency_contact: values.emergency_contact,
+        attending_doctor_id: values.attending_doctor_id,
+        initial_diagnosis: values.initial_diagnosis,
+        diagnosis_date: values.diagnosis_date ? new Date(values.diagnosis_date).toISOString().split('T')[0] : undefined,
         date_of_birth: values.date_of_birth ? new Date(values.date_of_birth).toISOString().split('T')[0] : undefined,
         allergies: values.allergies ? values.allergies.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
         family_history: values.family_history,
@@ -39,7 +44,6 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
           : [],
       };
 
- 
       await patientService.createPatient(patientData);
       message.success("患者档案创建成功");
       form.resetFields();
@@ -56,7 +60,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
       setLoading(false);
     }
   };
- 
+
   const handleCancel = () => {
     form.resetFields();
     onClose();
@@ -90,7 +94,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
           >
             <Input placeholder="请输入姓名" />
           </Form.Item>
- 
+
           <Form.Item
             label="性别"
             name="gender"
@@ -102,7 +106,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
             </Select>
           </Form.Item>
         </div>
- 
+
         {/* 基本信息 - 第二行 */}
         <div className="grid grid-cols-2 gap-x-8">
           <Form.Item
@@ -120,7 +124,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
               max={150}
             />
           </Form.Item>
- 
+
           <Form.Item
             label="出生日期"
             name="date_of_birth"
@@ -132,7 +136,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
             />
           </Form.Item>
         </div>
- 
+
         {/* 联系信息 - 第三行 */}
         <div className="grid grid-cols-2 gap-x-8">
           <Form.Item
@@ -142,7 +146,21 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
           >
             <Input placeholder="请输入病历号" />
           </Form.Item>
- 
+
+          <Form.Item
+            label="患者邮箱"
+            name="email"
+            rules={[
+              { type: "email", message: "请输入有效的邮箱地址" }
+            ]}
+            extra="患者登录时使用此邮箱"
+          >
+            <Input placeholder="请输入患者邮箱" />
+          </Form.Item>
+        </div>
+
+        {/* 联系信息 - 第四行 */}
+        <div className="grid grid-cols-2 gap-x-8">
           <Form.Item
             label="联系电话"
             name="phone"
@@ -150,7 +168,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
             <Input placeholder="请输入联系电话" />
           </Form.Item>
         </div>
- 
+
         {/* 地址 - 单独一行 */}
         <Form.Item
           label="联系地址"
@@ -160,7 +178,18 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
         >
           <Input placeholder="请输入联系地址" />
         </Form.Item>
- 
+
+        {/* 紧急联系人 - 单独一行 */}
+        <Form.Item
+          label="紧急联系人"
+          name="emergency_contact"
+          extra="格式：姓名 (关系) - 电话，例如：李红 (配偶) - 139****1234"
+          labelCol={{ span: 3 }}
+          wrapperCol={{ span: 21 }}
+        >
+          <Input placeholder="请输入紧急联系人信息" />
+        </Form.Item>
+
         {/* 过敏史 - 单独一行 */}
         <Form.Item
           label="过敏史"
@@ -171,7 +200,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
         >
           <Input placeholder="请输入过敏史" />
         </Form.Item>
- 
+
         {/* 病史信息 - 两列 */}
         <div className="grid grid-cols-2 gap-x-8">
           <Form.Item
@@ -183,7 +212,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
               rows={4}
             />
           </Form.Item>
- 
+
           <Form.Item
             label="既往病史"
             name="past_medical_history"
@@ -195,6 +224,38 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
             />
           </Form.Item>
         </div>
+
+        {/* 诊断信息 - 两列 */}
+        <div className="grid grid-cols-2 gap-x-8">
+          <Form.Item
+            label="主治医生"
+            name="attending_doctor_id"
+          >
+            <Input placeholder="请输入主治医生姓名" />
+          </Form.Item>
+
+          <Form.Item
+            label="初次诊断"
+            name="initial_diagnosis"
+            extra="可选：创建时添加初次诊断"
+          >
+            <Input placeholder="例如：结肠腺癌" />
+          </Form.Item>
+        </div>
+
+        {/* 诊断日期 - 单独一行 */}
+        <Form.Item
+          label="诊断日期"
+          name="diagnosis_date"
+          labelCol={{ span: 3 }}
+          wrapperCol={{ span: 21 }}
+        >
+          <DatePicker
+            placeholder="请选择诊断日期"
+            className="w-full"
+            format="YYYY-MM-DD"
+          />
+        </Form.Item>
       </Form>
     </Modal>
   );

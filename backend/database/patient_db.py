@@ -1,6 +1,4 @@
-"""
-Patient management database operations
-"""
+
 import logging
 from typing import List, Dict, Optional
 from sqlalchemy import and_, or_

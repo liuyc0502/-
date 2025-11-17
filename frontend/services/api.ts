@@ -164,6 +164,49 @@ export const API_ENDPOINTS = {
     remove: `${API_BASE_URL}/portal_agent_assignment/remove`,
     setAgents: `${API_BASE_URL}/portal_agent_assignment/set_agents`,
   },
+  
+  patient: {
+    create: `${API_BASE_URL}/patient/create`,
+    list: `${API_BASE_URL}/patient/list`,
+    detail: (patientId: number) => `${API_BASE_URL}/patient/${patientId}`,
+    update: (patientId: number) => `${API_BASE_URL}/patient/${patientId}`,
+    delete: (patientId: number) => `${API_BASE_URL}/patient/${patientId}`,
+    timeline: {
+      create: `${API_BASE_URL}/patient/timeline/create`,
+      list: (patientId: number) => `${API_BASE_URL}/patient/timeline/list/${patientId}`,
+      detail: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}`,
+      createDetail: `${API_BASE_URL}/patient/timeline/detail/create`,
+    },
+    image: {
+      create: `${API_BASE_URL}/patient/image/create`,
+    },
+    metrics: {
+      batchCreate: `${API_BASE_URL}/patient/metrics/batch_create`,
+    },
+    todo: {
+      create: `${API_BASE_URL}/patient/todo/create`,
+      list: (patientId: number) => `${API_BASE_URL}/patient/todo/list/${patientId}`,
+      updateStatus: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}/status`,
+    },
+  },
+
+  medicalCase: {
+    create: `${API_BASE_URL}/medical_case/create`,
+    list: `${API_BASE_URL}/medical_case/list`,
+    detail: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
+    byCaseNo: (caseNo: string) => `${API_BASE_URL}/medical_case/by_case_no/${caseNo}`,
+    search: `${API_BASE_URL}/medical_case/search`,
+    update: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
+    delete: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
+    favorite: {
+      toggle: `${API_BASE_URL}/medical_case/favorite/toggle`,
+      list: `${API_BASE_URL}/medical_case/favorite/list`,
+    },
+    recent: {
+      list: `${API_BASE_URL}/medical_case/recent/list`,
+    },
+    detailCreate: `${API_BASE_URL}/medical_case/detail/create`,
+  },
 };
 
 // Common error handling

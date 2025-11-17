@@ -510,3 +510,138 @@ class PatientTodo(TableBase):
     status = Column(String(20), doc="Status: pending/completed/overdue")
     assigned_doctor = Column(String(100), doc="Assigned doctor user ID")
     tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class MedicalCase(TableBase):
+    """
+    Medical case basic information table
+    """
+    __tablename__ = "medical_case_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    case_id = Column(Integer, Sequence("medical_case_t_case_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Case ID, primary key")
+    case_no = Column(String(50), nullable=False, doc="Case number (e.g., #0234)")
+    case_title = Column(String(200), doc="Case title")
+    diagnosis = Column(String(500), doc="Primary diagnosis")
+    disease_type = Column(String(100), doc="Disease type/category (e.g., 类风湿, 红斑狼疮)")
+    age = Column(Integer, doc="Patient age")
+    gender = Column(String(10), doc="Patient gender: 男/女")
+    chief_complaint = Column(String(500), doc="Chief complaint")
+    category = Column(String(100), doc="Case category (e.g., classic, rare)")
+    tags = Column(JSON, doc="Case tags (JSON array)")
+    view_count = Column(Integer, default=0, doc="View count")
+    is_classic = Column(Boolean, default=False, doc="Whether this is a classic case")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+ 
+
+ 
+
+class MedicalCaseDetail(TableBase):
+    """
+    Medical case detailed information table
+    """
+    __tablename__ = "medical_case_detail_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    detail_id = Column(Integer, Sequence("medical_case_detail_t_detail_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Detail ID, primary key")
+    case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
+    present_illness_history = Column(Text, doc="Present illness history")
+    past_medical_history = Column(Text, doc="Past medical history")
+    family_history = Column(Text, doc="Family history")
+    physical_examination = Column(JSON, doc="Physical examination results (JSON)")
+    imaging_results = Column(JSON, doc="Imaging examination results (JSON)")
+    diagnosis_basis = Column(Text, doc="Diagnosis basis")
+    treatment_plan = Column(Text, doc="Treatment plan")
+    medications = Column(JSON, doc="Medication regimen (JSON array)")
+    prognosis = Column(Text, doc="Prognosis and follow-up")
+    clinical_notes = Column(Text, doc="Additional clinical notes")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class MedicalCaseSymptom(TableBase):
+    """
+    Medical case symptom table (many-to-many relationship)
+    """
+    __tablename__ = "medical_case_symptom_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    symptom_id = Column(Integer, Sequence("medical_case_symptom_t_symptom_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Symptom ID, primary key")
+    case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
+    symptom_name = Column(String(200), doc="Symptom name")
+    symptom_description = Column(String(500), doc="Symptom description")
+    is_key_symptom = Column(Boolean, default=False, doc="Whether this is a key symptom for diagnosis")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+
+
+class MedicalCaseLabResult(TableBase):
+    """
+    Medical case laboratory test results table
+    """
+    __tablename__ = "medical_case_lab_result_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    lab_result_id = Column(Integer, Sequence("medical_case_lab_result_t_lab_result_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Lab result ID, primary key")
+    case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
+    test_name = Column(String(200), doc="Test name (e.g., RF, CRP, ESR)")
+    test_full_name = Column(String(500), doc="Test full name")
+    test_value = Column(String(100), doc="Test result value")
+    test_unit = Column(String(50), doc="Unit")
+    normal_range = Column(String(100), doc="Normal range")
+    is_abnormal = Column(Boolean, default=False, doc="Whether result is abnormal")
+    abnormal_indicator = Column(String(10), doc="Abnormal indicator: ↑/↓")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+ 
+
+class MedicalCaseImage(TableBase):
+    """
+    Medical case image/imaging table
+    """
+    __tablename__ = "medical_case_image_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    image_id = Column(Integer, Sequence("medical_case_image_t_image_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Image ID, primary key")
+    case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
+    image_type = Column(String(50), doc="Image type: X光/CT/MRI/病理切片")
+    image_description = Column(String(500), doc="Image description/findings")
+    image_url = Column(String(500), doc="Image storage path (MinIO)")
+    thumbnail_url = Column(String(500), doc="Thumbnail URL")
+    display_order = Column(Integer, doc="Display order")
+    tenant_id = Column(String(100), doc="Tenant ID")
+ 
+ 
+class MedicalCaseFavorite(TableBase):
+    """
+    Medical case favorite table
+    """
+    __tablename__ = "medical_case_favorite_t"
+    __table_args__ = {"schema": SCHEMA}
+ 
+    favorite_id = Column(Integer, Sequence("medical_case_favorite_t_favorite_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Favorite ID, primary key")
+    case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
+    user_id = Column(String(100), nullable=False, doc="User ID")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+ 
+
+class MedicalCaseViewHistory(TableBase):
+    """
+    Medical case view history table
+    """
+    __tablename__ = "medical_case_view_history_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    history_id = Column(Integer, Sequence("medical_case_view_history_t_history_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="History ID, primary key")
+    case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
+    user_id = Column(String(100), nullable=False, doc="User ID")
+    view_time = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="View timestamp")
+    tenant_id = Column(String(100), doc="Tenant ID")

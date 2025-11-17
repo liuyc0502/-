@@ -135,10 +135,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     newChatDescription: "获取贴心的健康建议",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
-      { id: "records", label: "健康档案", icon: FileText },
-      { id: "guides", label: "护理指引", icon: LifeBuoy },
-      { id: "insights", label: "康复贴士", icon: Lightbulb },
-      { id: "reports", label: "检查报告", icon: BookOpenCheck },
+      { id: "profile", label: "我的档案", icon: Users },
+      { id: "care-plan", label: "康复计划", icon: LifeBuoy },
+      { id: "knowledge", label: "疾病百科", icon: BookOpen },
     ],
     quickActions: sharedQuickActions,
     searchPlaceholder: "搜索健康话题或对话",
