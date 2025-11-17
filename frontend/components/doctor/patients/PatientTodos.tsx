@@ -124,67 +124,65 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             <Lightbulb className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
               <h3 className="font-bold text-blue-900 mb-2">AI智能建议</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>建议在下次复查前完成肝肾功能检查</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>患者用药已满3个月，建议评估疗效并调整方案</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
-                  <span>关节肿胀有加重趋势，考虑增加物理治疗</span>
-                </li>
-              </ul>
-              <Button
-                type="primary"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={() => setTodoModalOpen(true)}
-              >
-                创建待办
-              </Button>
+              <p className="text-sm text-gray-600">AI会根据患者病情智能生成待办建议</p>
             </div>
           </div>
         </div>
       </Card>
 
-    {/* Filter and Stats Bar */}
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              filter === "all" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            全部
-          </button>
-          <button
-            onClick={() => setFilter("pending")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              filter === "pending" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            待处理
-          </button>
-          <button
-            onClick={() => setFilter("completed")}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-              filter === "completed" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            已完成
-          </button>
+      {/* Filter and Stats Bar */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                filter === "all" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              全部
+            </button>
+            <button
+              onClick={() => setFilter("pending")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                filter === "pending" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              待处理
+            </button>
+            <button
+              onClick={() => setFilter("completed")}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                filter === "completed" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              已完成
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">
+              共 {todos.length} 项，待处理 {todos.filter((t) => t.status !== "completed").length} 项
+            </span>
+            <button
+              onClick={() => setTodoModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-white transition-all shadow-sm hover:shadow-md"
+              style={{
+                backgroundColor: PRIMARY_COLOR,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#C13D1F";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = PRIMARY_COLOR;
+              }}
+            >
+              <PlusOutlined />
+              创建待办
+            </button>
+          </div>
         </div>
-        <span className="text-sm text-gray-600">
-          共 {todos.length} 项，待处理 {todos.filter((t) => t.status !== "completed").length} 项
-        </span>
       </div>
-    </div>
 
       {/* Urgent Todos */}
       {urgentTodos.length > 0 && (

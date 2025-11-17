@@ -127,7 +127,12 @@ export function EditTimelineDetailModal({
                 <>
                   {fields.map((field) => (
                     <div key={field.key} className="flex gap-2 mb-2">
-                      <Form.Item {...field} className="flex-1 mb-0" noStyle>
+                      <Form.Item
+                        name={field.name}
+                        fieldKey={field.name}
+                        className="flex-1 mb-0"
+                        noStyle
+                      >
                         <Input placeholder="例如：甲氨蝶呤 10mg 每周一次" />
                       </Form.Item>
                       <Button
@@ -175,25 +180,25 @@ export function EditTimelineDetailModal({
                   >
                     <div className="grid grid-cols-2 gap-3">
                       <Form.Item
-                        {...field}
-                        label="影像类型"
                         name={[field.name, "image_type"]}
+                        fieldKey={[field.name, "image_type"]}
+                        label="影像类型"
                         className="mb-2"
                       >
                         <Input placeholder="病理切片" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="影像标签"
                         name={[field.name, "image_label"]}
+                        fieldKey={[field.name, "image_label"]}
+                        label="影像标签"
                         className="mb-2"
                       >
                         <Input placeholder="关节X光片" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="影像URL"
                         name={[field.name, "image_url"]}
+                        fieldKey={[field.name, "image_url"]}
+                        label="影像URL"
                         className="col-span-2 mb-0"
                       >
                         <Input placeholder="https://example.com/image.jpg" />
@@ -239,49 +244,49 @@ export function EditTimelineDetailModal({
                   >
                     <div className="grid grid-cols-3 gap-3">
                       <Form.Item
-                        {...field}
-                        label="指标名称"
                         name={[field.name, "metric_name"]}
+                        fieldKey={[field.name, "metric_name"]}
+                        label="指标名称"
                         className="mb-2"
                       >
                         <Input placeholder="RF" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="全称"
                         name={[field.name, "metric_full_name"]}
+                        fieldKey={[field.name, "metric_full_name"]}
+                        label="全称"
                         className="mb-2"
                       >
                         <Input placeholder="类风湿因子" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="数值"
                         name={[field.name, "metric_value"]}
+                        fieldKey={[field.name, "metric_value"]}
+                        label="数值"
                         className="mb-2"
                       >
                         <Input placeholder="125" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="单位"
                         name={[field.name, "metric_unit"]}
+                        fieldKey={[field.name, "metric_unit"]}
+                        label="单位"
                         className="mb-2"
                       >
                         <Input placeholder="IU/mL" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="趋势"
                         name={[field.name, "metric_trend"]}
+                        fieldKey={[field.name, "metric_trend"]}
+                        label="趋势"
                         className="mb-2"
                       >
                         <Input placeholder="up/down/normal/abnormal" />
                       </Form.Item>
                       <Form.Item
-                        {...field}
-                        label="状态"
                         name={[field.name, "metric_status"]}
+                        fieldKey={[field.name, "metric_status"]}
+                        label="状态"
                         className="mb-0"
                       >
                         <Input placeholder="error/warning/normal/improving" />

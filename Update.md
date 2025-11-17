@@ -1,5 +1,79 @@
 ## 2025-11-17
 
+### 修复患者时间线和待办事项 API 端点路径不匹配问题
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/patient-api-fix-20251117`
+- 📦 **提交更改**: 7 个文件，1119 行新增，301 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**前端文件**:
+- `frontend/services/api.ts` (更新 - 修复 API 端点路径)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTodos.tsx` (重构 - 统一使用 Ant Design 组件)
+- `frontend/components/doctor/patients/CreateTimelineModal.tsx` (新建)
+- `frontend/components/doctor/patients/CreateTodoModal.tsx` (新建)
+- `frontend/components/doctor/patients/EditTimelineDetailModal.tsx` (新建)
+
+**功能说明**:
+
+#### 1. API 端点路径修复
+- ✅ **修复 Timeline API 路径**：
+  - 从 `/patient/timeline/list/${patientId}` 改为 `/patient/${patientId}/timeline`
+  - 从 `/patient/timeline/${timelineId}` 改为 `/patient/timeline/${timelineId}/detail`
+  - 从 `/patient/timeline/detail/create` 改为 `/patient/timeline/detail/save`
+- ✅ **修复 Todo API 路径**：
+  - 从 `/patient/todo/list/${patientId}` 改为 `/patient/${patientId}/todos`
+- ✅ **修复 Image API 路径**：
+  - 从 `/patient/image/create` 改为 `/patient/timeline/image/create`
+- ✅ **修复 Metrics API 路径**：
+  - 从 `/patient/metrics/batch_create` 改为 `/patient/timeline/metrics/batch`
+
+#### 2. PatientTodos 组件重构
+- 🎨 **代码结构优化**：
+  - 统一导入语句组织，按类型分组（React → Ant Design → Icons → Services → Types → Components）
+  - 移除 shadcn/ui 组件依赖，统一使用 Ant Design 组件库
+  - 清理多余空行，统一代码格式
+- 🔧 **组件库统一**：
+  - 将 Card、CardContent 从 shadcn/ui 改为 Ant Design Card 组件
+  - 将 Button 从 shadcn/ui 改为 Ant Design Button 组件
+  - 将 Checkbox 从 shadcn/ui 改为 Ant Design Checkbox 组件
+  - 保持与项目中其他组件的一致性
+- ✨ **代码质量提升**：
+  - 提取常量 `PRIMARY_COLOR` 用于主题色管理
+  - 创建 `formatDate` 辅助函数统一日期格式化逻辑
+  - 创建 `getPriorityColor` 辅助函数统一优先级颜色映射
+  - 优化按钮和 Modal 组件的格式，消除格式混乱
+  - 添加注释分组，提高代码可读性
+
+#### 3. 新增 Modal 组件
+- 📝 **CreateTimelineModal**: 创建时间线阶段的弹窗组件
+- 📝 **CreateTodoModal**: 创建待办事项的弹窗组件
+- 📝 **EditTimelineDetailModal**: 编辑时间线详情的弹窗组件
+
+**问题修复**:
+- ❌ **问题**: 前端 API 调用返回 404 Not Found 错误
+- ✅ **原因**: 前端 API 端点路径与后端实际路由不匹配
+- ✅ **解决**: 统一前后端 API 路径，确保完全匹配
+
+**技术改进**:
+- 使用 Ant Design 的 Card 组件替代 shadcn/ui 的 Card 组件
+- 使用 Ant Design 的 Button 组件替代 shadcn/ui 的 Button 组件
+- 使用 Ant Design 的 Checkbox 组件替代 shadcn/ui 的 Checkbox 组件
+- 提取辅助函数减少代码重复
+- 统一代码格式和结构
+
+**分支信息**:
+- 分支名称: `feature/patient-api-fix-20251117`
+- 远程仓库: `origin/feature/patient-api-fix-20251117`
+- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/patient-api-fix-20251117
+
+---
+
+## 2025-11-17
+
 ### 创建新分支并推送患者门户同步功能更新
 
 **操作内容**:

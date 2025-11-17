@@ -11,7 +11,6 @@ import { PatientOverview } from "./PatientOverview";
 import { PatientTimeline } from "./PatientTimeline";
 import { PatientTodos } from "./PatientTodos";
 
-
 interface PatientDetailViewProps {
   patientId: string;
   onBack: () => void;
@@ -39,7 +38,6 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
       setLoading(false);
     }
   };
-
 
   return (
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
@@ -73,25 +71,25 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
       </div>
 
       {/* Tab Navigation - Reference Image 2 Style */}
-      <div className="bg-gray-100 border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-8">
+      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-8 py-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-transparent h-14 p-0 gap-1">
+            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-6 font-bold text-gray-600"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base text-gray-600"
               >
                 患者概览
               </TabsTrigger>
               <TabsTrigger
                 value="timeline"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-6 font-bold text-gray-600"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base text-gray-600"
               >
                 诊疗时间线
               </TabsTrigger>
               <TabsTrigger
                 value="todos"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-6 font-bold text-gray-600"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base text-gray-600"
               >
                 待办事项
               </TabsTrigger>
@@ -103,17 +101,17 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-8 py-5">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsContent value="overview" className="mt-0">
-            <PatientOverview patientId={patientId} />
-          </TabsContent>
-          <TabsContent value="timeline" className="mt-0">
-            <PatientTimeline patientId={patientId} />
-          </TabsContent>
-          <TabsContent value="todos" className="mt-0">
-            <PatientTodos patientId={patientId} />
-          </TabsContent>
-        </Tabs>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="overview" className="mt-0">
+              <PatientOverview patientId={patientId} />
+            </TabsContent>
+            <TabsContent value="timeline" className="mt-0">
+              <PatientTimeline patientId={patientId} />
+            </TabsContent>
+            <TabsContent value="todos" className="mt-0">
+              <PatientTodos patientId={patientId} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

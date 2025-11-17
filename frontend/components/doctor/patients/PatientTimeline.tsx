@@ -120,8 +120,35 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
 
   if (timelines.length === 0) {
     return (
-      <div className="text-center py-20">
-        <p className="text-gray-500 text-lg">暂无时间线数据</p>
+      <div className="space-y-6">
+        <Card className="bg-white border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                {patient?.name || "患者"}的就诊历程
+              </h2>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setCreateModalOpen(true)}
+                style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
+              >
+                创建节点
+              </Button>
+            </div>
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">暂无时间线数据，请创建第一个节点</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Modals */}
+        <CreateTimelineModal
+          open={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          patientId={parseInt(patientId)}
+          onSuccess={loadPatientAndTimeline}
+        />
       </div>
     );
   }
@@ -140,6 +167,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => setCreateModalOpen(true)}
+                style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
               >
                 创建节点
               </Button>
