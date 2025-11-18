@@ -306,3 +306,72 @@ async def batch_add_lab_results(case_id: int, lab_results: List[dict], tenant_id
     except Exception as e:
         logger.error(f"Failed to batch add lab results: {str(e)}")
         raise AgentRunException(f"Failed to batch add lab results: {str(e)}")
+
+
+async def delete_lab_results(case_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete all lab results for a case
+    """
+    try:
+        success = medical_case_db.delete_case_lab_results(case_id, tenant_id, user_id)
+        return {
+            "success": success,
+            "message": "Lab results deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete lab results: {str(e)}")
+        raise AgentRunException(f"Failed to delete lab results: {str(e)}")
+
+
+async def delete_symptoms(case_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete all symptoms for a case
+    """
+    try:
+        success = medical_case_db.delete_case_symptoms(case_id, tenant_id, user_id)
+        return {
+            "success": success,
+            "message": "Symptoms deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete symptoms: {str(e)}")
+        raise AgentRunException(f"Failed to delete symptoms: {str(e)}")
+
+
+# ============================================================================
+# Image Services
+# ============================================================================
+
+async def batch_add_images(case_id: int, images: List[dict], tenant_id: str, user_id: str) -> dict:
+    """
+    Batch add images to a case
+    """
+    try:
+        # Add case_id to each image
+        for image in images:
+            image['case_id'] = case_id
+
+        result = medical_case_db.batch_create_case_images(images, tenant_id, user_id)
+        return {
+            "success": True,
+            "created_count": result['created_count'],
+            "message": f"Added {result['created_count']} images"
+        }
+    except Exception as e:
+        logger.error(f"Failed to batch add images: {str(e)}")
+        raise AgentRunException(f"Failed to batch add images: {str(e)}")
+
+
+async def delete_images(case_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete all images for a case
+    """
+    try:
+        success = medical_case_db.delete_case_images(case_id, tenant_id, user_id)
+        return {
+            "success": success,
+            "message": "Images deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete images: {str(e)}")
+        raise AgentRunException(f"Failed to delete images: {str(e)}")

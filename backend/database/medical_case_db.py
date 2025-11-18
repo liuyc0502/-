@@ -444,6 +444,97 @@ def batch_create_lab_results(lab_results_data: List[dict], tenant_id: str, user_
         return {"created_count": created_count}
 
 
+def delete_case_lab_results(case_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Soft delete all lab results for a case
+    """
+    with get_db_session() as session:
+        lab_results = session.query(MedicalCaseLabResult).filter(
+            MedicalCaseLabResult.case_id == case_id,
+            MedicalCaseLabResult.tenant_id == tenant_id,
+            MedicalCaseLabResult.delete_flag != 'Y'
+        ).all()
+
+        for lab_result in lab_results:
+            lab_result.delete_flag = 'Y'
+            lab_result.updated_by = user_id
+
+        session.commit()
+        logger.info(f"Deleted {len(lab_results)} lab results for case: {case_id}")
+        return True
+
+
+# ============================================================================
+# Image Operations
+# ============================================================================
+
+def batch_create_case_images(images_data: List[dict], tenant_id: str, user_id: str) -> dict:
+    """
+    Batch create case images
+    """
+    with get_db_session() as session:
+        created_count = 0
+        for image_data in images_data:
+            new_image = MedicalCaseImage(
+                case_id=image_data.get('case_id'),
+                image_type=image_data.get('image_type'),
+                image_description=image_data.get('image_description'),
+                image_url=image_data.get('image_url'),
+                thumbnail_url=image_data.get('thumbnail_url'),
+                display_order=image_data.get('display_order', 0),
+                tenant_id=tenant_id,
+                created_by=user_id,
+                updated_by=user_id,
+                delete_flag='N'
+            )
+            session.add(new_image)
+            created_count += 1
+
+        session.commit()
+        logger.info(f"Created {created_count} images")
+        return {"created_count": created_count}
+
+
+def delete_case_images(case_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Soft delete all images for a case
+    """
+    with get_db_session() as session:
+        images = session.query(MedicalCaseImage).filter(
+            MedicalCaseImage.case_id == case_id,
+            MedicalCaseImage.tenant_id == tenant_id,
+            MedicalCaseImage.delete_flag != 'Y'
+        ).all()
+
+        for image in images:
+            image.delete_flag = 'Y'
+            image.updated_by = user_id
+
+        session.commit()
+        logger.info(f"Deleted {len(images)} images for case: {case_id}")
+        return True
+
+
+def delete_case_symptoms(case_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Soft delete all symptoms for a case
+    """
+    with get_db_session() as session:
+        symptoms = session.query(MedicalCaseSymptom).filter(
+            MedicalCaseSymptom.case_id == case_id,
+            MedicalCaseSymptom.tenant_id == tenant_id,
+            MedicalCaseSymptom.delete_flag != 'Y'
+        ).all()
+
+        for symptom in symptoms:
+            symptom.delete_flag = 'Y'
+            symptom.updated_by = user_id
+
+        session.commit()
+        logger.info(f"Deleted {len(symptoms)} symptoms for case: {case_id}")
+        return True
+
+
 # ============================================================================
 # Favorite Operations
 # ============================================================================

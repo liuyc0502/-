@@ -299,7 +299,124 @@ export const medicalCaseService = {
     if (!response.ok) {
       throw new Error('Failed to create case detail');
     }
- 
+
+    return await response.json();
+  },
+
+  /**
+   * Add images to a case
+   */
+  async addImages(caseId: number, images: Array<{
+    image_type?: string;
+    image_description?: string;
+    image_url: string;
+    thumbnail_url?: string;
+    display_order?: number;
+  }>): Promise<{ success: boolean; created_count: number; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.images.add(caseId), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ case_id: caseId, images }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to add images to case: ${caseId}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Delete all images for a case
+   */
+  async deleteImages(caseId: number): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.images.delete(caseId), {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete images for case: ${caseId}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Add symptoms to a case
+   */
+  async addSymptoms(caseId: number, symptoms: Array<{
+    symptom_name: string;
+    symptom_description?: string;
+    is_key_symptom?: boolean;
+  }>): Promise<{ success: boolean; created_count: number; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.symptoms.add(caseId), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ case_id: caseId, symptoms }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to add symptoms to case: ${caseId}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Delete all symptoms for a case
+   */
+  async deleteSymptoms(caseId: number): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.symptoms.delete(caseId), {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete symptoms for case: ${caseId}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Add lab results to a case
+   */
+  async addLabResults(caseId: number, labResults: Array<{
+    test_name: string;
+    test_full_name?: string;
+    test_value: string;
+    test_unit?: string;
+    normal_range?: string;
+    is_abnormal?: boolean;
+    abnormal_indicator?: string;
+  }>): Promise<{ success: boolean; created_count: number; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.labResults.add(caseId), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ case_id: caseId, lab_results: labResults }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to add lab results to case: ${caseId}`);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Delete all lab results for a case
+   */
+  async deleteLabResults(caseId: number): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.labResults.delete(caseId), {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete lab results for case: ${caseId}`);
+    }
+
     return await response.json();
   },
 };
