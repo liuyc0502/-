@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, TestTube, Pill, TrendingDown, AlertCircle, Users } from "lucide-react";
-import { App } from "antd";
+import { Button } from "@/components/ui/button";
+import { FileText, TestTube, Pill, TrendingDown, AlertCircle, Users, Edit, Check, X } from "lucide-react";
+import { App, Input, InputNumber, Select } from "antd";
 import patientService from "@/services/patientService";
 import type { Patient, TimelineStage, PatientTodo } from "@/types/patient";
+
+const { TextArea } = Input;
 
 interface PatientOverviewProps {
   patientId: string;
@@ -17,6 +20,8 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
   const [timelines, setTimelines] = useState<TimelineStage[]>([]);
   const [todos, setTodos] = useState<PatientTodo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
 
   useEffect(() => {
     loadPatientInfo();
@@ -38,6 +43,40 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
       console.error("Failed to load patient:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Edit handlers
+  const handleEdit = (field: string, currentValue: any) => {
+    setEditingField(field);
+    setEditValues({ [field]: currentValue });
+  };
+
+  const handleCancel = () => {
+    setEditingField(null);
+    setEditValues({});
+  };
+
+  const handleSave = async (field: string) => {
+    try {
+      let value = editValues[field];
+
+      // Handle array fields (allergies, past_medical_history)
+      if ((field === "allergies" || field === "past_medical_history") && typeof value === "string") {
+        value = value
+          .split(/[,，、]/) // Support multiple separators
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+      }
+
+      await patientService.updatePatient(parseInt(patientId), { [field]: value });
+      message.success("保存成功");
+      await loadPatientInfo();
+      setEditingField(null);
+      setEditValues({});
+    } catch (error) {
+      message.error("保存失败");
+      console.error("Failed to save patient info:", error);
     }
   };
 
@@ -70,6 +109,89 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
       default:
         return FileText;
     }
+  };
+
+  // EditableField component
+  const EditableField = ({
+    field,
+    value,
+    label,
+    type = "text",
+    rows = 3,
+    options = [],
+  }: {
+    field: string;
+    value: any;
+    label: string;
+    type?: "text" | "textarea" | "number" | "select";
+    rows?: number;
+    options?: Array<{ value: any; label: string }>;
+  }) => {
+    const isEditing = editingField === field;
+    const displayValue = value || <span className="text-gray-400 italic">暂无{label}</span>;
+    return (
+      <div className="group">
+        <div className="flex items-start justify-between gap-2">
+          {!isEditing ? (
+            <>
+              <div className="flex-1 text-sm text-gray-900 font-medium">{displayValue}</div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(field, value)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity h-6 px-2"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            </>
+          ) : (
+            <div className="flex-1 flex items-start gap-2">
+              <div className="flex-1">
+                {type === "textarea" ? (
+                  <TextArea
+                    value={editValues[field]}
+                    onChange={(e) => setEditValues({ ...editValues, [field]: e.target.value })}
+                    rows={rows}
+                    className="w-full"
+                  />
+                ) : type === "number" ? (
+                  <InputNumber
+                    value={editValues[field]}
+                    onChange={(val) => setEditValues({ ...editValues, [field]: val })}
+                    className="w-full"
+                  />
+                ) : type === "select" ? (
+                  <Select
+                    value={editValues[field]}
+                    onChange={(val) => setEditValues({ ...editValues, [field]: val })}
+                    className="w-full"
+                    options={options}
+                  />
+                ) : (
+                  <Input
+                    value={editValues[field]}
+                    onChange={(e) => setEditValues({ ...editValues, [field]: e.target.value })}
+                    className="w-full"
+                  />
+                )}
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  onClick={() => handleSave(field)}
+                  className="bg-green-500 hover:bg-green-600 text-white h-8 px-2"
+                >
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleCancel} className="h-8 px-2">
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Computed values
@@ -145,76 +267,87 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500">姓名:</span>
-                <span className="ml-2 font-medium">{patient.name}</span>
+                <span className="text-gray-500 block mb-1">姓名:</span>
+                <EditableField field="name" value={patient.name} label="姓名" />
               </div>
               <div>
-                <span className="text-gray-500">性别:</span>
-                <span className="ml-2 font-medium">{patient.gender}</span>
+                <span className="text-gray-500 block mb-1">性别:</span>
+                <EditableField
+                  field="gender"
+                  value={patient.gender}
+                  label="性别"
+                  type="select"
+                  options={[
+                    { value: "男", label: "男" },
+                    { value: "女", label: "女" },
+                  ]}
+                />
               </div>
               <div>
-                <span className="text-gray-500">年龄:</span>
-                <span className="ml-2 font-medium">{patient.age}岁</span>
+                <span className="text-gray-500 block mb-1">年龄:</span>
+                <EditableField field="age" value={patient.age} label="年龄" type="number" />
               </div>
               <div>
-                <span className="text-gray-500">病历号:</span>
-                <span className="ml-2 font-medium">{patient.medical_record_no}</span>
+                <span className="text-gray-500 block mb-1">病历号:</span>
+                <EditableField field="medical_record_no" value={patient.medical_record_no} label="病历号" />
               </div>
             </div>
-            {patient.date_of_birth && (
-              <div className="text-sm">
-                <span className="text-gray-500">出生日期:</span>
-                <span className="ml-2 font-medium">{formatDate(patient.date_of_birth)}</span>
-              </div>
-            )}
-            {patient.phone && (
-              <div className="text-sm">
-                <span className="text-gray-500">联系电话:</span>
-                <span className="ml-2 font-medium">{patient.phone}</span>
-              </div>
-            )}
-            {patient.email && (
-              <div className="text-sm">
-                <span className="text-gray-500">邮箱:</span>
-                <span className="ml-2 font-medium">{patient.email}</span>
-              </div>
-            )}
-            {patient.address && (
-              <div className="text-sm">
-                <span className="text-gray-500">地址:</span>
-                <span className="ml-2 font-medium">{patient.address}</span>
-              </div>
-            )}
-            {patient.allergies && patient.allergies.length > 0 && (
-              <div className="pt-3 border-t border-gray-100">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-sm font-semibold text-red-700">过敏史:</span>
-                    <span className="ml-2 text-sm text-gray-700">{patient.allergies.join("、")}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            {patient.family_history && (
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">出生日期:</span>
+              <EditableField field="date_of_birth" value={patient.date_of_birth || ""} label="出生日期" />
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">联系电话:</span>
+              <EditableField field="phone" value={patient.phone || ""} label="联系电话" />
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">邮箱:</span>
+              <EditableField field="email" value={patient.email || ""} label="邮箱" />
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">地址:</span>
+              <EditableField field="address" value={patient.address || ""} label="地址" type="textarea" rows={2} />
+            </div>
+            <div className="pt-3 border-t border-gray-100">
               <div className="flex items-start gap-2">
-                <Users className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="text-sm font-semibold text-gray-700">家族史:</span>
-                  <span className="ml-2 text-sm text-gray-600">{patient.family_history}</span>
+                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <span className="text-sm font-semibold text-red-700 block mb-1">过敏史:</span>
+                  <EditableField
+                    field="allergies"
+                    value={patient.allergies?.join("、") || ""}
+                    label="过敏史"
+                    type="textarea"
+                    rows={2}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">多个过敏项请用顿号（、）或逗号分隔</p>
                 </div>
               </div>
-            )}
-            {patient.past_medical_history && patient.past_medical_history.length > 0 && (
-              <div className="pt-2">
-                <p className="text-sm font-semibold text-gray-700 mb-2">既往病史:</p>
-                <ul className="text-sm text-gray-600 space-y-1 pl-4 list-disc">
-                  {patient.past_medical_history.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
+            </div>
+            <div className="flex items-start gap-2">
+              <Users className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-sm font-semibold text-gray-700 block mb-1">家族史:</span>
+                <EditableField
+                  field="family_history"
+                  value={patient.family_history || ""}
+                  label="家族史"
+                  type="textarea"
+                  rows={2}
+                />
               </div>
-            )}
+            </div>
+            <div className="pt-2">
+              <p className="text-sm font-semibold text-gray-700 mb-1">既往病史:</p>
+              <EditableField
+                field="past_medical_history"
+                value={patient.past_medical_history?.join("、") || ""}
+                label="既往病史"
+                type="textarea"
+                rows={3}
+              />
+              <p className="text-xs text-gray-400 mt-1">多项病史请用顿号（、）或逗号分隔</p>
+            </div>
           </CardContent>
         </Card>
 
