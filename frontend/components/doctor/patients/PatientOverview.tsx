@@ -173,6 +173,12 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
                 <span className="ml-2 font-medium">{patient.phone}</span>
               </div>
             )}
+            {patient.email && (
+              <div className="text-sm">
+                <span className="text-gray-500">邮箱:</span>
+                <span className="ml-2 font-medium">{patient.email}</span>
+              </div>
+            )}
             {patient.address && (
               <div className="text-sm">
                 <span className="text-gray-500">地址:</span>
