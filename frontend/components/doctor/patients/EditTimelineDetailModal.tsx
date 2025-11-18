@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Form, Input, Button, Card, App, Tabs } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import patientService from "@/services/patientService";
@@ -37,6 +37,46 @@ export function EditTimelineDetailModal({
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [dataLoading,setDataLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && timelineId) {
+      loadTimelineData();
+    }
+  }, [open, timelineId]);
+
+
+  const loadTimelineData = async () => {
+    try {
+      setDataLoading(true);
+      const detail = await patientService.getTimelineDetail(timelineId);
+      
+  
+      form.setFieldsValue({
+        doctor_notes: detail.detail?.doctor_notes || "",
+        pathology_findings: detail.detail?.pathology_findings || "",
+        medications: detail.detail?.medications || [],
+        images: detail.images.map(img => ({
+          image_type: img.image_type,
+          image_label: img.image_label,
+          image_url: img.image_url,
+        })),
+        metrics: detail.metrics.map(m => ({
+          metric_name: m.metric_name,
+          metric_full_name: m.metric_full_name,
+          metric_value: m.metric_value,
+          metric_unit: m.metric_unit,
+          metric_trend: m.metric_trend,
+          metric_status: m.metric_status,
+        })),
+      });
+    } catch (error) {
+      message.error("加载数据失败");
+      console.error("Failed to load timeline data:", error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -321,9 +361,16 @@ export function EditTimelineDetailModal({
       okText="保存"
       cancelText="取消"
     >
+      {dataLoading ? (
+        <div className="text-center py-8">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent"></div>
+          <p className="text-gray-500 mt-2">加载中...</p>
+        </div>
+      ) : (
       <Form form={form} layout="vertical">
         <Tabs items={items} />
       </Form>
+      )}
     </Modal>
   );
 }

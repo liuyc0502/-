@@ -1,15 +1,16 @@
 import logging
 from http import HTTPStatus
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Header
 from starlette.responses import JSONResponse
 from pydantic import BaseModel, Field
-from typing import List
 from services import patient_service
 from utils.auth_utils import get_current_user_id
 from consts.exceptions import AgentRunException
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
 # ============================================================================
 # Request/Response Models
 # ============================================================================
@@ -24,6 +25,8 @@ class CreatePatientRequest(BaseModel):
     allergies: Optional[List[str]] = Field(default_factory=list, description="Allergies list")
     family_history: Optional[str] = Field(None, description="Family medical history")
     past_medical_history: Optional[List[str]] = Field(default_factory=list, description="Past medical history")
+
+
 class CreateTimelineRequest(BaseModel):
     patient_id: int = Field(..., description="Patient ID")
     stage_type: str = Field(..., description="Stage type: 初诊/检查/确诊/治疗/随访")
@@ -32,11 +35,15 @@ class CreateTimelineRequest(BaseModel):
     diagnosis: Optional[str] = Field(None, description="Diagnosis")
     status: Optional[str] = Field("pending", description="Status: completed/current/pending")
     display_order: Optional[int] = Field(0, description="Display order")
+
+
 class CreateTimelineDetailRequest(BaseModel):
     timeline_id: int = Field(..., description="Timeline ID")
     doctor_notes: Optional[str] = Field(None, description="Doctor observation notes")
     pathology_findings: Optional[str] = Field(None, description="Pathology findings")
     medications: Optional[List[str]] = Field(default_factory=list, description="Medication list")
+
+
 class CreateMedicalImageRequest(BaseModel):
     timeline_id: int = Field(..., description="Timeline ID")
     image_type: str = Field(..., description="Image type")
@@ -44,6 +51,8 @@ class CreateMedicalImageRequest(BaseModel):
     image_url: str = Field(..., description="Image URL")
     thumbnail_url: Optional[str] = Field(None, description="Thumbnail URL")
     display_order: Optional[int] = Field(0, description="Display order")
+
+
 class MetricData(BaseModel):
     timeline_id: int
     metric_name: str
@@ -55,8 +64,12 @@ class MetricData(BaseModel):
     normal_range_min: Optional[float] = None
     normal_range_max: Optional[float] = None
     percentage: Optional[int] = 0
+
+
 class BatchCreateMetricsRequest(BaseModel):
     metrics: List[MetricData] = Field(..., description="List of metrics to create")
+
+
 class CreateTodoRequest(BaseModel):
     patient_id: int = Field(..., description="Patient ID")
     todo_title: str = Field(..., description="Todo title")
@@ -65,6 +78,8 @@ class CreateTodoRequest(BaseModel):
     due_date: str = Field(..., description="Due date (YYYY-MM-DD)")
     priority: Optional[str] = Field("medium", description="Priority: high/medium/low")
     status: Optional[str] = Field("pending", description="Status: pending/completed/overdue")
+
+
 class UpdateTodoStatusRequest(BaseModel):
     status: str = Field(..., description="Status: pending/completed/overdue")
 # ============================================================================
@@ -210,7 +225,8 @@ async def get_patient_by_email(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to get patient by email: {str(e)}"
         )
-                
+
+
 @router.put("/patient/{patient_id}")
 async def update_patient(
     patient_id: int,
@@ -283,6 +299,8 @@ async def delete_patient(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete patient: {str(e)}"
         )
+
+
 # ============================================================================
 # Patient Timeline Endpoints
 # ============================================================================
@@ -321,6 +339,8 @@ async def create_timeline_stage(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to create timeline: {str(e)}"
         )
+
+
 @router.get("/patient/{patient_id}/timeline")
 async def get_patient_timeline(
     patient_id: int,
@@ -350,6 +370,8 @@ async def get_patient_timeline(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to get timeline: {str(e)}"
         )
+
+
 @router.get("/patient/timeline/{timeline_id}/detail")
 async def get_timeline_detail(
     timeline_id: int,
@@ -386,6 +408,8 @@ async def get_timeline_detail(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to get timeline detail: {str(e)}"
         )
+
+
 @router.post("/patient/timeline/detail/save")
 async def save_timeline_detail(
     request: CreateTimelineDetailRequest,
@@ -421,6 +445,45 @@ async def save_timeline_detail(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to save timeline detail: {str(e)}"
         )
+
+
+@router.delete("/patient/timeline/{timeline_id}")
+async def delete_timeline(
+    timeline_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete a timeline stage (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.delete_timeline_service(
+            timeline_id,
+            tenant_id,
+            user_id
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete timeline failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete timeline: {str(e)}"
+        )
+
+
 # ============================================================================
 # Medical Image Endpoints
 # ============================================================================
@@ -459,6 +522,8 @@ async def create_medical_image(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to create medical image: {str(e)}"
         )
+
+
 # ============================================================================
 # Metrics Endpoints
 # ============================================================================
@@ -498,6 +563,8 @@ async def batch_create_metrics(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to batch create metrics: {str(e)}"
         )
+
+
 # ============================================================================
 # Patient Todo Endpoints
 # ============================================================================
@@ -536,6 +603,8 @@ async def create_patient_todo(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to create todo: {str(e)}"
         )
+
+
 @router.get("/patient/{patient_id}/todos")
 async def get_patient_todos(
     patient_id: int,
@@ -567,6 +636,8 @@ async def get_patient_todos(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to get todos: {str(e)}"
         )
+
+
 @router.put("/patient/todo/{todo_id}/status")
 async def update_todo_status(
     todo_id: int,
@@ -603,4 +674,41 @@ async def update_todo_status(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to update todo status: {str(e)}"
+        )
+
+
+@router.delete("/patient/todo/{todo_id}")
+async def delete_patient_todo(
+    todo_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete a patient todo item (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.delete_patient_todo_service(
+            todo_id,
+            tenant_id,
+            user_id
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete todo failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete todo: {str(e)}"
         )

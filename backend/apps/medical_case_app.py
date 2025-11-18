@@ -30,6 +30,19 @@ class CreateMedicalCaseRequest(BaseModel):
     tags: Optional[List[str]] = Field(default_factory=list, description="Case tags")
 
 
+class UpdateMedicalCaseRequest(BaseModel):
+    case_no: Optional[str] = Field(None, description="Case number (e.g., #0234)")
+    case_title: Optional[str] = Field(None, description="Case title")
+    diagnosis: Optional[str] = Field(None, description="Primary diagnosis")
+    disease_type: Optional[str] = Field(None, description="Disease type/category")
+    age: Optional[int] = Field(None, description="Patient age")
+    gender: Optional[str] = Field(None, description="Patient gender")
+    chief_complaint: Optional[str] = Field(None, description="Chief complaint")
+    category: Optional[str] = Field(None, description="Case category")
+    is_classic: Optional[bool] = Field(None, description="Is this a classic case")
+    tags: Optional[List[str]] = Field(None, description="Case tags")
+
+
 class CreateCaseDetailRequest(BaseModel):
     case_id: int = Field(..., description="Case ID")
     present_illness_history: Optional[str] = Field(None, description="Present illness history")
@@ -254,7 +267,7 @@ async def search_medical_cases(
 @router.put("/medical_case/{case_id}")
 async def update_medical_case(
     case_id: int,
-    request: CreateMedicalCaseRequest,
+    request: UpdateMedicalCaseRequest,
     authorization: Optional[str] = Header(None)
 ):
     """
@@ -268,9 +281,12 @@ async def update_medical_case(
                 detail="Unauthorized"
             )
 
+        # Filter out None values for partial update
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        
         result = await medical_case_service.update_case(
             case_id,
-            request.dict(),
+            update_data,
             tenant_id,
             user_id
         )

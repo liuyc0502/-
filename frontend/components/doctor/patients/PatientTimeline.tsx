@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, App, Button } from "antd";
-import { PlusOutlined, EditOutlined } from "@ant-design/icons";
+import { Card, App, Button, Modal } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
   FileText,
   TestTube,
@@ -98,6 +98,26 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     loadTimelineDetail(timelineId);
   };
 
+  const handleDeleteTimeline = async (timeline: TimelineStage) => {
+    Modal.confirm({
+      title: "确认删除",
+      content: `确定要删除时间线节点"${timeline.stage_title}"吗？`,
+      okText: "确认",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await patientService.deleteTimeline(timeline.timeline_id);
+          message.success("删除成功");
+          loadPatientAndTimeline();
+        } catch (error) {
+          message.error("删除失败");
+          console.error("Failed to delete timeline:", error);
+        }
+      },
+    });
+  };
+
   const getStageStatus = (timeline: TimelineStage) => {
     if (timeline.status === "completed") return "completed";
     if (timeline.status === "current") return "current";
@@ -172,15 +192,29 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                 创建节点
               </Button>
               {selectedTimeline && (
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => {
-                    setCurrentTimelineId(selectedTimeline.timeline_id);
-                    setEditModalOpen(true);
-                  }}
-                >
-                  编辑详情
-                </Button>
+                <>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                      setCurrentTimelineId(selectedTimeline.timeline_id);
+                      setEditModalOpen(true);
+                    }}
+                  >
+                    编辑详情
+                  </Button>
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      const timeline = timelines.find((t) => t.timeline_id === selectedTimeline.timeline_id);
+                      if (timeline) {
+                        handleDeleteTimeline(timeline);
+                      }
+                    }}
+                  >
+                    删除节点
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -234,13 +268,13 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
       {/* Detail Content Area - Changes based on selected stage */}
       {detailLoading ? (
         <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div
-                className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent mb-2"
-                style={{ borderColor: PRIMARY_COLOR }}
-              ></div>
-              <p className="text-gray-500 text-sm">加载详情...</p>
-            </div>
+          <div className="text-center">
+            <div
+              className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-r-transparent mb-2"
+              style={{ borderColor: PRIMARY_COLOR }}
+            ></div>
+            <p className="text-gray-500 text-sm">加载详情...</p>
+          </div>
         </div>
       ) : selectedTimeline ? (
         <div className="space-y-6">
@@ -253,28 +287,26 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
               </p>
             </div>
           </div>
-
-          {/* Top Section: Image Gallery (70%) + Key Info (30%) */}
-          {(selectedTimeline.images && selectedTimeline.images.length > 0) || selectedTimeline.detail ? (
-            <div className="grid grid-cols-12 gap-6">
-              {/* Left: Image Gallery */}
-              {selectedTimeline.images && selectedTimeline.images.length > 0 && (
-                <div className="col-span-12 lg:col-span-8">
-                  <Card
-                    className="bg-white border-gray-200 h-full"
-                    title={
-                      <div className="text-sm font-bold flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4 text-[#D94527]" />
-                        影像资料
-                      </div>
-                    }
-                  >
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left: Image Gallery - 始终显示 */}
+            <div className="col-span-12 lg:col-span-8">
+              <Card
+                className="bg-white border-gray-200 h-full"
+                title={
+                  <div className="text-sm font-bold flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-[#D94527]" />
+                    影像资料
+                  </div>
+                }
+              >
+                {selectedTimeline.images && selectedTimeline.images.length > 0 ? (
+                  <>
                     <div className="flex gap-4 overflow-x-auto pb-2">
                       {selectedTimeline.images.map((image) => (
                         <div key={image.image_id} className="flex-shrink-0 w-64 group cursor-pointer">
                           <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#D94527] transition-colors">
                             <img
-                              src={image.image_url}
+                              src={image.thumbnail_url || image.image_url}
                               alt={image.image_label}
                               className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
                             />
@@ -287,70 +319,71 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                       ))}
                     </div>
                     <p className="text-xs text-gray-500 mt-3">点击图片可放大查看</p>
-                  </Card>
-                </div>
-              )}
-
-              {/* Right: Key Info */}
-              <div
-                className={`col-span-12 ${
-                  selectedTimeline.images && selectedTimeline.images.length > 0
-                    ? "lg:col-span-4"
-                    : "lg:col-span-12"
-                }`}
-              >
-                <Card className="bg-white border-gray-200 h-full" title="关键信息">
-                  <div className="space-y-4 text-sm">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-gray-400" />
-                        <span className="font-semibold text-gray-700">诊断:</span>
-                      </div>
-                      <p className="text-gray-900 ml-6">{selectedTimeline.diagnosis || "暂无诊断"}</p>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                    <ImageIcon className="h-16 w-16 text-gray-400 mb-3" />
+                    <p className="text-gray-500 text-sm">暂无影像资料</p>
+                    <p className="text-gray-400 text-xs mt-1">点击"编辑详情"可添加影像</p>
+                  </div>
+                )}
+              </Card>
+            </div>
+ 
+            {/* Right: Key Info - 始终显示 */}
+            <div className="col-span-12 lg:col-span-4">
+              <Card className="bg-white border-gray-200 h-full" title="关键信息">
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-4 w-4 text-gray-400" />
+                      <span className="font-semibold text-gray-700">诊断:</span>
                     </div>
+                    <p className="text-gray-900 ml-6">
+                      {selectedTimeline.diagnosis || <span className="text-gray-400">暂无诊断</span>}
+                    </p>
+                  </div>
 
-                    {selectedTimeline.detail?.medications &&
-                      selectedTimeline.detail.medications.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Pill className="h-4 w-4 text-green-600" />
-                            <span className="font-semibold text-gray-700">用药方案:</span>
-                          </div>
-                          <ul className="space-y-1 text-gray-600 ml-6">
-                            {selectedTimeline.detail.medications.map((med, idx) => (
-                              <li key={idx} className="text-sm">
-                                • {med}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                    {selectedTimeline.attachments && selectedTimeline.attachments.length > 0 && (
-                      <div className="pt-3 border-t border-gray-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Download className="h-4 w-4 text-gray-400" />
-                          <span className="font-semibold text-gray-700">附件:</span>
-                        </div>
-                        <div className="space-y-2 ml-6">
-                          {selectedTimeline.attachments.map((file) => (
-                            <button
-                              key={file.attachment_id}
-                              className="flex items-center gap-2 text-xs text-[#D94527] hover:underline"
-                            >
-                              <FileText className="h-3 w-3" />
-                              {file.file_name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Pill className="h-4 w-4 text-green-600" />
+                      <span className="font-semibold text-gray-700">用药方案:</span>
+                    </div>
+                    {selectedTimeline.detail?.medications && selectedTimeline.detail.medications.length > 0 ? (
+                      <ul className="space-y-1 text-gray-600 ml-6">
+                        {selectedTimeline.detail.medications.map((med, idx) => (
+                          <li key={idx} className="text-sm">• {med}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-400 text-sm ml-6">暂无用药记录</p>
                     )}
                   </div>
-                </Card>
-              </div>
+ 
+                  {selectedTimeline.attachments && selectedTimeline.attachments.length > 0 && (
+                    <div className="pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Download className="h-4 w-4 text-gray-400" />
+                        <span className="font-semibold text-gray-700">附件:</span>
+                      </div>
+                      <div className="space-y-2 ml-6">
+                        {selectedTimeline.attachments.map((file) => (
+                          <button
+                            key={file.attachment_id}
+                            className="flex items-center gap-2 text-xs text-[#D94527] hover:underline"
+                          >
+                            <FileText className="h-3 w-3" />
+                            {file.file_name}
+                            <span className="text-gray-400">({file.file_type}, {(file.file_size / 1024).toFixed(1)}KB)</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
             </div>
-          ) : null}
-
+          </div>
           {/* Middle Section: Metrics Cards (Horizontal) */}
           {selectedTimeline.metrics && selectedTimeline.metrics.length > 0 && (
             <Card
@@ -420,28 +453,65 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
             </Card>
           )}
 
-          {/* Bottom Section: Doctor Notes (50%) + Pathology Findings (50%) */}
-          {selectedTimeline.detail && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left: Doctor Notes */}
-              {selectedTimeline.detail.doctor_notes && (
-                <Card className="bg-white border-gray-200" title="👨‍⚕️ 医生观察记录">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {selectedTimeline.detail.doctor_notes}
-                  </p>
-                </Card>
-              )}
+           {/* Bottom Section: Doctor Notes (50%) + Pathology Findings (50%) - 始终显示 */}
 
-              {/* Right: Pathology Findings */}
-              {selectedTimeline.detail.pathology_findings && (
-                <Card className="bg-white border-gray-200" title="📸 病理发现">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {selectedTimeline.detail.pathology_findings}
-                  </p>
-                </Card>
-              )}
-            </div>
-          )}
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+{/* Left: Doctor Notes */}
+
+<Card className="bg-white border-gray-200" title="👨‍⚕️ 医生观察记录">
+
+  {selectedTimeline.detail?.doctor_notes ? (
+
+    <p className="text-sm text-gray-700 leading-relaxed">
+
+      {selectedTimeline.detail.doctor_notes}
+
+    </p>
+
+  ) : (
+
+    <div className="text-center py-8">
+
+      <p className="text-gray-400 text-sm">暂无观察记录</p>
+
+      <p className="text-gray-400 text-xs mt-1">点击"编辑详情"可添加</p>
+
+    </div>
+
+  )}
+
+</Card>
+
+
+
+{/* Right: Pathology Findings */}
+
+<Card className="bg-white border-gray-200" title="📸 病理发现">
+
+  {selectedTimeline.detail?.pathology_findings ? (
+
+    <p className="text-sm text-gray-700 leading-relaxed">
+
+      {selectedTimeline.detail.pathology_findings}
+
+    </p>
+
+  ) : (
+
+    <div className="text-center py-8">
+
+      <p className="text-gray-400 text-sm">暂无病理发现</p>
+
+      <p className="text-gray-400 text-xs mt-1">点击"编辑详情"可添加</p>
+
+    </div>
+
+  )}
+
+</Card>
+
+</div>
         </div>
       ) : (
         <Card className="bg-gray-50 border-gray-200">

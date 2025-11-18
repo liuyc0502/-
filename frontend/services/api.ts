@@ -176,6 +176,7 @@ export const API_ENDPOINTS = {
       list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/timeline`,
       detail: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/detail`,
       createDetail: `${API_BASE_URL}/patient/timeline/detail/save`,
+      delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}`,
     },
     image: {
       create: `${API_BASE_URL}/patient/timeline/image/create`,
@@ -187,6 +188,7 @@ export const API_ENDPOINTS = {
       create: `${API_BASE_URL}/patient/todo/create`,
       list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/todos`,
       updateStatus: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}/status`,
+      delete: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}`,
     },
   },
 
@@ -206,6 +208,13 @@ export const API_ENDPOINTS = {
       list: `${API_BASE_URL}/medical_case/recent/list`,
     },
     detailCreate: `${API_BASE_URL}/medical_case/detail/create`,
+  },
+  learningRecord: {
+    recordView: `${API_BASE_URL}/learning_record/record_view`,
+    list: `${API_BASE_URL}/learning_record/list`,
+    stats: `${API_BASE_URL}/learning_record/stats`,
+    delete: (recordId: number) => `${API_BASE_URL}/learning_record/${recordId}`,
+    clearAll: `${API_BASE_URL}/learning_record/clear_all`,
   },
 };
 

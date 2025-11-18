@@ -424,6 +424,56 @@ def update_todo_status(todo_id: int, status: str, tenant_id: str, user_id: str) 
         todo.status = status
         todo.updated_by = user_id
         session.commit()
- 
+
         logger.info(f"Updated todo status: {todo_id} to {status}")
+        return True
+
+ 
+
+ 
+
+def delete_timeline(timeline_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Soft delete timeline (set delete_flag='Y')
+    """
+    with get_db_session() as session:
+        timeline = session.query(PatientTimeline).filter(
+            PatientTimeline.timeline_id == timeline_id,
+            PatientTimeline.tenant_id == tenant_id,
+            PatientTimeline.delete_flag != 'Y'
+        ).first()
+
+        if not timeline:
+            return False
+
+        timeline.delete_flag = 'Y'
+        timeline.updated_by = user_id
+        session.commit()
+
+        logger.info(f"Deleted timeline: {timeline_id}")
+        return True
+
+ 
+
+ 
+
+def delete_patient_todo(todo_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Soft delete patient todo (set delete_flag='Y')
+    """
+    with get_db_session() as session:
+        todo = session.query(PatientTodo).filter(
+            PatientTodo.todo_id == todo_id,
+            PatientTodo.tenant_id == tenant_id,
+            PatientTodo.delete_flag != 'Y'
+        ).first()
+
+        if not todo:
+            return False
+
+        todo.delete_flag = 'Y'
+        todo.updated_by = user_id
+        session.commit()
+
+        logger.info(f"Deleted patient todo: {todo_id}")
         return True

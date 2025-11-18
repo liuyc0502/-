@@ -16,6 +16,8 @@ import {
   StickyNote,
   Check,
   X,
+  Image as ImageIcon,
+  Tag as TagIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +31,12 @@ interface CaseDetailViewProps {
   onBack: () => void;
 }
 const diseaseTypes = ["类风湿", "红斑狼疮", "强直性脊柱炎", "痛风", "骨关节炎", "干燥综合征", "其他"];
+const caseCategories = [
+  { value: "classic", label: "经典病例" },
+  { value: "rare", label: "罕见病例" },
+  { value: "typical", label: "典型病例" },
+  { value: "complex", label: "复杂病例" },
+];
 export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
   const [caseData, setCaseData] = useState<MedicalCaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,9 +70,38 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
   };
   const handleSave = async (field: string) => {
     try {
-      const value = editValues[field];
+      let value = editValues[field];
+      
+      // Helper function to parse JSON string to object
+      const parseJsonField = (val: string | undefined): Record<string, any> => {
+        if (!val || val.trim() === "") {
+          return {};
+        }
+        try {
+          const parsed = JSON.parse(val);
+          return typeof parsed === "object" && parsed !== null ? parsed : {};
+        } catch (e) {
+          // If not valid JSON, treat as plain text and wrap in an object
+          return { text: val };
+        }
+      };
+
+      // Parse JSON fields for detail updates
+      if (field === "physical_examination" || field === "imaging_results") {
+        value = parseJsonField(value);
+      }
+
       // Determine if it's a basic field or detail field
-      const basicFields = ["diagnosis", "disease_type", "age", "gender", "chief_complaint", "category", "is_classic"];
+      const basicFields = [
+        "case_title",
+        "diagnosis",
+        "disease_type",
+        "age",
+        "gender",
+        "chief_complaint",
+        "category",
+        "is_classic",
+      ];
       if (basicFields.includes(field)) {
         // Update basic case info
         await medicalCaseService.update(parseInt(caseId), { [field]: value });
@@ -209,10 +246,31 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{caseData.diagnosis}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {caseData.case_title || caseData.diagnosis || "病例详情"}
+              </h1>
               <p className="text-sm text-gray-500 mt-1">
-                病例编号: {caseData.case_no} · {caseData.gender} · {caseData.age}岁
+                诊断: {caseData.diagnosis || "未填写"} · 病例编号: {caseData.case_no} · {caseData.gender} ·{" "}
+                {caseData.age}岁
               </p>
+              {(caseData.category || (caseData.tags && caseData.tags.length > 0)) && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {caseData.category && (
+                    <span className="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">
+                      {caseCategories.find((c) => c.value === caseData.category)?.label || caseData.category}
+                    </span>
+                  )}
+                  {caseData.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full flex items-center gap-1"
+                    >
+                      <TagIcon className="h-3 w-3" />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -263,7 +321,29 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-gray-500 text-sm mb-1 block">病例标题</span>
+                          <EditableField field="case_title" value={caseData.case_title} label="病例标题" />
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm mb-1 block">病例编号</span>
+                          <p className="text-sm text-gray-900 font-semibold bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            {caseData.case_no}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm mb-1 block">病例类别</span>
+                          <EditableField
+                            field="category"
+                            value={caseData.category}
+                            label="病例类别"
+                            type="select"
+                            options={caseCategories}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <span className="text-gray-500 text-sm mb-1 block">性别</span>
                           <EditableField
@@ -293,6 +373,24 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                         </div>
                       </div>
                       <div className="pt-4 border-t border-gray-100">
+                        <span className="text-gray-500 text-sm mb-2 block">病例标签</span>
+                        {caseData.tags && caseData.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {caseData.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full flex items-center gap-1"
+                              >
+                                <TagIcon className="h-3 w-3" />
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-400 italic">暂无标签，您可以在后台录入</p>
+                        )}
+                      </div>
+                      <div className="pt-4 border-t border-gray-100">
                         <span className="text-gray-500 text-sm mb-2 block">主诉</span>
                         <EditableField
                           field="chief_complaint"
@@ -310,6 +408,52 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                           </span>
                         </div>
                       )}
+                    </CardContent>
+                  </Card>
+                  {/* Image Gallery Card */}
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <ImageIcon className="h-5 w-5 text-[#D94527]" />
+                        影像资料
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {caseData.images && caseData.images.length > 0 ? (
+                        <div className="flex gap-4 overflow-x-auto pb-2">
+                          {caseData.images.map((image) => (
+                            <div key={image.image_id} className="flex-shrink-0 w-64 group cursor-pointer">
+                              <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#D94527] transition-colors">
+                                <img
+                                  src={image.thumbnail_url || image.image_url}
+                                  alt={image.image_description || image.image_type || "影像资料"}
+                                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+                                />
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                                  <div className="text-xs text-white/90 font-medium">{image.image_type || "影像"}</div>
+                                  <div className="text-sm text-white font-semibold">
+                                    {image.image_description || "点击查看"}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {[0, 1, 2].map((slot) => (
+                            <div
+                              key={slot}
+                              className="h-48 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center bg-gray-50 text-gray-400"
+                            >
+                              <ImageIcon className="h-8 w-8 mb-3" />
+                              <p className="text-sm font-semibold">待上传影像</p>
+                              <p className="text-xs text-center text-gray-400 px-4">支持 X光 / CT / MRI 等检查图片</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-3">您可以在编辑面板中上传或替换影像资料</p>
                     </CardContent>
                   </Card>
                   {/* Diagnosis Card */}

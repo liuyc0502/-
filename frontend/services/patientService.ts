@@ -81,7 +81,7 @@ export async function getPatient(patientId: number): Promise<Patient> {
  */
 export async function getPatientByEmail(email: string): Promise<Patient> {
   try {
-    const response = await fetch(`${API_ENDPOINTS.patient.list}/../profile/by_email?email=${encodeURIComponent(email)}`, {
+    const response = await fetch(`${API_ENDPOINTS.patient.list.replace('/list', '/profile/by_email')}?email=${encodeURIComponent(email)}`, {
       headers: getAuthHeaders(),
     });
 
@@ -303,7 +303,7 @@ export async function saveTimelineDetail(
     if (!response.ok) {
       throw new Error(`Failed to save timeline detail: ${response.statusText}`);
     }
- 
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -311,11 +311,37 @@ export async function saveTimelineDetail(
     throw error;
   }
 }
+
+ 
+
+/**
+ * Delete a timeline stage
+ */
+
+export async function deleteTimeline(timelineId: number): Promise<ApiSuccessResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.delete(timelineId), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+ 
+    if (!response.ok) {
+      throw new Error(`Failed to delete timeline: ${response.statusText}`);
+    }
+
+ 
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete timeline ${timelineId}:`, error);
+    throw error;
+  }
+}
  
 // ============================================================================
 // Medical Image Services
 // ============================================================================
- 
 /**
  * Create a medical image record
  */
@@ -335,7 +361,6 @@ export async function createMedicalImage(
     if (!response.ok) {
       throw new Error(`Failed to create medical image: ${response.statusText}`);
     }
-
 
     const data = await response.json();
     return data;
@@ -377,6 +402,11 @@ export async function batchCreateMetrics(
     throw error;
   }
 }
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
 const getJsonAuthHeaders = () => ({
   ...getAuthHeaders(),
   "Content-Type": "application/json",
@@ -391,6 +421,10 @@ async function jsonRequest<T>(url: string, init: RequestInit, errorPrefix: strin
 
   return response.json();
 }
+
+// ============================================================================
+// Todo Services
+// ============================================================================
 
 export async function createPatientTodo(
   todoData: CreateTodoRequest
@@ -452,6 +486,21 @@ export async function updateTodoStatus(
   }
 }
 
+export async function deletePatientTodo(todoId: number): Promise<ApiSuccessResponse> {
+  try {
+    return await jsonRequest<ApiSuccessResponse>(
+      API_ENDPOINTS.patient.todo.delete(todoId),
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+      "Failed to delete todo"
+    );
+  } catch (error) {
+    log.error(`Failed to delete todo ${todoId}:`, error);
+    throw error;
+  }
+}
 
 // ============================================================================
 // Export all services
@@ -471,6 +520,7 @@ const patientService = {
   getPatientTimeline,
   getTimelineDetail,
   saveTimelineDetail,
+  deleteTimeline,
 
   // Medical Images
   createMedicalImage,
@@ -478,12 +528,11 @@ const patientService = {
   // Metrics
   batchCreateMetrics,
 
-
   // Todos
   createPatientTodo,
   getPatientTodos,
   updateTodoStatus,
+  deletePatientTodo,
 };
-
 
 export default patientService;

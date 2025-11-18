@@ -20,7 +20,9 @@ const formatDate = (dateString?: string): string => {
   if (!dateString) return "未设置";
   const date = new Date(dateString);
   const now = new Date();
-  const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil(
+    (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (diffDays === 0) return "今天";
   if (diffDays === 1) return "明天";
@@ -57,7 +59,10 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
     try {
       setLoading(true);
       const status = filter === "all" ? undefined : filter;
-      const data = await patientService.getPatientTodos(parseInt(patientId), status);
+      const data = await patientService.getPatientTodos(
+        parseInt(patientId),
+        status,
+      );
       setTodos(data);
     } catch (error) {
       message.error("加载待办事项失败");
@@ -68,9 +73,17 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
   };
 
   // Filter todos by priority and status
-  const urgentTodos = todos.filter((todo) => todo.status !== "completed" && todo.priority === "high");
-  const highTodos = todos.filter((todo) => todo.status !== "completed" && todo.priority === "medium");
-  const normalTodos = todos.filter((todo) => todo.status !== "completed" && (todo.priority === "low" || !todo.priority));
+  const urgentTodos = todos.filter(
+    (todo) => todo.status !== "completed" && todo.priority === "high",
+  );
+  const highTodos = todos.filter(
+    (todo) => todo.status !== "completed" && todo.priority === "medium",
+  );
+  const normalTodos = todos.filter(
+    (todo) =>
+      todo.status !== "completed" &&
+      (todo.priority === "low" || !todo.priority),
+  );
   const completedTodos = todos.filter((todo) => todo.status === "completed");
 
   const toggleTodo = async (todoId: number, currentStatus: string) => {
@@ -97,9 +110,14 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
       cancelText: "取消",
       okButtonProps: { danger: true },
       onOk: async () => {
-        message.warning("删除功能需要后端支持deleteTodo接口");
-        // await patientService.deletePatientTodo(todo.todo_id);
-        // loadTodos();
+        try {
+          await patientService.deletePatientTodo(todo.todo_id);
+          message.success("删除成功");
+          loadTodos();
+        } catch (error) {
+          message.error("删除失败");
+          console.error("Failed to delete todo:", error);
+        }
       },
     });
   };
@@ -124,7 +142,9 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             <Lightbulb className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
               <h3 className="font-bold text-blue-900 mb-2">AI智能建议</h3>
-              <p className="text-sm text-gray-600">AI会根据患者病情智能生成待办建议</p>
+              <p className="text-sm text-gray-600">
+                AI会根据患者病情智能生成待办建议
+              </p>
             </div>
           </div>
         </div>
@@ -137,7 +157,9 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             <button
               onClick={() => setFilter("all")}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === "all" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filter === "all"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               全部
@@ -145,7 +167,9 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             <button
               onClick={() => setFilter("pending")}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === "pending" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filter === "pending"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               待处理
@@ -153,7 +177,9 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             <button
               onClick={() => setFilter("completed")}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === "completed" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filter === "completed"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               已完成
@@ -162,7 +188,8 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">
-              共 {todos.length} 项，待处理 {todos.filter((t) => t.status !== "completed").length} 项
+              共 {todos.length} 项，待处理{" "}
+              {todos.filter((t) => t.status !== "completed").length} 项
             </span>
             <button
               onClick={() => setTodoModalOpen(true)}
@@ -192,7 +219,10 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             紧急待办
           </h3>
           {urgentTodos.map((todo) => (
-            <Card key={todo.todo_id} className={getPriorityColor(todo.priority)}>
+            <Card
+              key={todo.todo_id}
+              className={getPriorityColor(todo.priority)}
+            >
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
@@ -201,9 +231,18 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{todo.todo_title}</h4>
+                    <h4 className="font-bold text-gray-900">
+                      {todo.todo_title}
+                    </h4>
                     {todo.todo_description && (
-                      <p className="text-sm text-gray-600 mt-1">{todo.todo_description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {todo.todo_description}
+                      </p>
+                    )}
+                    {todo.assigned_doctor && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        负责医生: {todo.assigned_doctor}
+                      </p>
                     )}
                     <p className="text-sm text-red-600 font-medium mt-2">
                       截止：{formatDate(todo.due_date)}
@@ -237,7 +276,10 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             本周待办
           </h3>
           {highTodos.map((todo) => (
-            <Card key={todo.todo_id} className={getPriorityColor(todo.priority)}>
+            <Card
+              key={todo.todo_id}
+              className={getPriorityColor(todo.priority)}
+            >
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
@@ -246,9 +288,18 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{todo.todo_title}</h4>
+                    <h4 className="font-bold text-gray-900">
+                      {todo.todo_title}
+                    </h4>
                     {todo.todo_description && (
-                      <p className="text-sm text-gray-600 mt-1">{todo.todo_description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {todo.todo_description}
+                      </p>
+                    )}
+                    {todo.assigned_doctor && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        负责医生: {todo.assigned_doctor}
+                      </p>
                     )}
                     <p className="text-sm text-yellow-600 font-medium mt-2">
                       截止：{formatDate(todo.due_date)}
@@ -282,7 +333,10 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
             常规待办
           </h3>
           {normalTodos.map((todo) => (
-            <Card key={todo.todo_id} className={getPriorityColor(todo.priority)}>
+            <Card
+              key={todo.todo_id}
+              className={getPriorityColor(todo.priority)}
+            >
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
@@ -291,9 +345,18 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{todo.todo_title}</h4>
+                    <h4 className="font-bold text-gray-900">
+                      {todo.todo_title}
+                    </h4>
                     {todo.todo_description && (
-                      <p className="text-sm text-gray-600 mt-1">{todo.todo_description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {todo.todo_description}
+                      </p>
+                    )}
+                    {todo.assigned_doctor && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        负责医生: {todo.assigned_doctor}
+                      </p>
                     )}
                     <p className="text-sm text-green-600 font-medium mt-2">
                       截止：{formatDate(todo.due_date)}
@@ -319,7 +382,6 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
         </div>
       )}
 
-
       {/* Completed Todos (Collapsible) */}
       {completedTodos.length > 0 && (
         <div className="space-y-3">
@@ -333,7 +395,10 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
           </button>
           {showCompleted &&
             completedTodos.map((todo) => (
-              <Card key={todo.todo_id} className="bg-gray-50 border-gray-200 opacity-60">
+              <Card
+                key={todo.todo_id}
+                className="bg-gray-50 border-gray-200 opacity-60"
+              >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
                     <Checkbox
@@ -342,9 +407,13 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
                       className="mt-1"
                     />
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-700 line-through">{todo.todo_title}</h4>
+                      <h4 className="font-bold text-gray-700 line-through">
+                        {todo.todo_title}
+                      </h4>
                       {todo.todo_description && (
-                        <p className="text-sm text-gray-500 mt-1 line-through">{todo.todo_description}</p>
+                        <p className="text-sm text-gray-500 mt-1 line-through">
+                          {todo.todo_description}
+                        </p>
                       )}
                     </div>
                     <Button
