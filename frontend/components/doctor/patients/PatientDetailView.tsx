@@ -10,6 +10,7 @@ import type { Patient } from "@/types/patient";
 import { PatientOverview } from "./PatientOverview";
 import { PatientTimeline } from "./PatientTimeline";
 import { PatientTodos } from "./PatientTodos";
+import { PatientCarePlans } from "./PatientCarePlans";
 
 interface PatientDetailViewProps {
   patientId: string;
@@ -87,6 +88,12 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
               >
                 待办事项
               </TabsTrigger>
+              <TabsTrigger
+                value="careplans"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+              >
+                康复计划
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -104,6 +111,9 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
             </TabsContent>
             <TabsContent value="todos" className="mt-0">
               <PatientTodos patientId={patientId} />
+            </TabsContent>
+            <TabsContent value="careplans" className="mt-0">
+              <PatientCarePlans patientId={patientId} />
             </TabsContent>
           </Tabs>
         </div>

@@ -223,6 +223,30 @@ export const API_ENDPOINTS = {
       delete: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/lab_results`,
     },
   },
+  carePlan: {
+    create: `${API_BASE_URL}/care_plan/create`,
+    list: (patientId: number) => `${API_BASE_URL}/care_plan/list/${patientId}`,
+    detail: (planId: number) => `${API_BASE_URL}/care_plan/get/${planId}`,
+    update: (planId: number) => `${API_BASE_URL}/care_plan/update/${planId}`,
+    delete: (planId: number) => `${API_BASE_URL}/care_plan/delete/${planId}`,
+    medication: {
+      add: `${API_BASE_URL}/care_plan/medication/add`,
+      delete: (medicationId: number) => `${API_BASE_URL}/care_plan/medication/delete/${medicationId}`,
+    },
+    task: {
+      add: `${API_BASE_URL}/care_plan/task/add`,
+      delete: (taskId: number) => `${API_BASE_URL}/care_plan/task/delete/${taskId}`,
+    },
+    precaution: {
+      add: `${API_BASE_URL}/care_plan/precaution/add`,
+      delete: (precautionId: number) => `${API_BASE_URL}/care_plan/precaution/delete/${precautionId}`,
+    },
+    completion: {
+      record: `${API_BASE_URL}/care_plan/completion/record`,
+    },
+    today: (patientId: number) => `${API_BASE_URL}/care_plan/today/${patientId}`,
+    weeklyProgress: (patientId: number) => `${API_BASE_URL}/care_plan/weekly_progress/${patientId}`,
+  },
   learningRecord: {
     recordView: `${API_BASE_URL}/learning_record/record_view`,
     list: `${API_BASE_URL}/learning_record/list`,

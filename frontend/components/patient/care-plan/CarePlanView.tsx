@@ -1,85 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Pill, Activity, AlertCircle, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
-
-// Mock data
-const mockTodayPlan = {
-  date: "2025-11-17",
-  medications: [
-    {
-      id: "1",
-      name: "奥美拉唑肠溶胶囊",
-      dosage: "20mg",
-      time: "08:00",
-      completed: true,
-      notes: "饭前30分钟服用"
-    },
-    {
-      id: "2",
-      name: "复合维生素片",
-      dosage: "1片",
-      time: "12:00",
-      completed: false,
-      notes: "饭后服用"
-    },
-    {
-      id: "3",
-      name: "奥美拉唑肠溶胶囊",
-      dosage: "20mg",
-      time: "20:00",
-      completed: false,
-      notes: "饭前30分钟服用"
-    }
-  ],
-  tasks: [
-    {
-      id: "1",
-      title: "步行30分钟",
-      description: "在小区内慢走，注意不要剧烈运动",
-      completed: true,
-      category: "运动"
-    },
-    {
-      id: "2",
-      title: "伤口换药",
-      description: "保持伤口清洁干燥，观察有无红肿",
-      completed: false,
-      category: "护理"
-    },
-    {
-      id: "3",
-      title: "记录体温",
-      description: "早晚各测量一次，如超过37.5℃及时就医",
-      completed: false,
-      category: "监测"
-    }
-  ],
-  precautions: [
-    "避免剧烈运动，以散步为主",
-    "饮食清淡，避免辛辣刺激食物",
-    "保持伤口清洁干燥",
-    "如有发热、疼痛加剧等情况及时就医"
-  ]
-};
-
-const mockWeeklyProgress = {
-  completionRate: 85,
-  medicationCompliance: 90,
-  taskCompletion: 80,
-  weekData: [
-    { day: "周一", completion: 90 },
-    { day: "周二", completion: 85 },
-    { day: "周三", completion: 80 },
-    { day: "周四", completion: 85 },
-    { day: "周五", completion: 90 },
-    { day: "周六", completion: 75 },
-    { day: "周日", completion: 85 }
-  ]
-};
+import { App } from "antd";
+import { useAuth } from "@/hooks/useAuth";
+import patientService from "@/services/patientService";
+import carePlanService from "@/services/carePlanService";
+import type { TodayPlanResponse, WeeklyProgressResponse } from "@/types/carePlan";
+import type { Patient } from "@/types/patient";
 
 const getCategoryColor = (category: string) => {
   const colors: Record<string, string> = {
@@ -92,19 +23,118 @@ const getCategoryColor = (category: string) => {
 };
 
 export function CarePlanView() {
+  const { user } = useAuth();
+  const { message } = App.useApp();
+  const [patient, setPatient] = useState<Patient | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [medicationStates, setMedicationStates] = useState<Record<string, boolean>>(
-    Object.fromEntries(mockTodayPlan.medications.map(m => [m.id, m.completed]))
-  );
-  const [taskStates, setTaskStates] = useState<Record<string, boolean>>(
-    Object.fromEntries(mockTodayPlan.tasks.map(t => [t.id, t.completed]))
-  );
+  const [todayPlan, setTodayPlan] = useState<TodayPlanResponse | null>(null);
+  const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgressResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const completedMedications = Object.values(medicationStates).filter(Boolean).length;
-  const completedTasks = Object.values(taskStates).filter(Boolean).length;
-  const totalItems = mockTodayPlan.medications.length + mockTodayPlan.tasks.length;
+  // Load patient profile first
+  useEffect(() => {
+    const loadPatientProfile = async () => {
+      if (!user?.email) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const data = await patientService.getPatientByEmail(user.email);
+        setPatient(data);
+      } catch (error: any) {
+        console.error("Failed to load patient profile:", error);
+        message.error("加载患者档案失败");
+        setLoading(false);
+      }
+    };
+
+    loadPatientProfile();
+  }, [user?.email, message]);
+
+  // Load care plan data when patient is loaded
+  useEffect(() => {
+    if (patient?.patient_id) {
+      loadTodayPlan();
+      loadWeeklyProgress();
+    }
+  }, [patient?.patient_id, selectedDate]);
+
+  const loadTodayPlan = async () => {
+    if (!patient?.patient_id) return;
+
+    try {
+      setLoading(true);
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const plan = await carePlanService.getTodayPlan(patient.patient_id, dateStr);
+      setTodayPlan(plan);
+    } catch (error) {
+      message.error("加载康复计划失败");
+      console.error("Failed to load today's plan:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadWeeklyProgress = async () => {
+    if (!patient?.patient_id) return;
+
+    try {
+      const progress = await carePlanService.getWeeklyProgress(patient.patient_id);
+      setWeeklyProgress(progress);
+    } catch (error) {
+      console.error("Failed to load weekly progress:", error);
+    }
+  };
+
+  const handleCompletionChange = async (
+    itemType: 'medication' | 'task',
+    itemId: number,
+    completed: boolean
+  ) => {
+    if (!todayPlan || !patient?.patient_id) return;
+
+    try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      await carePlanService.recordCompletion({
+        plan_id: todayPlan.plan_id,
+        patient_id: patient.patient_id,
+        record_date: dateStr,
+        item_type: itemType,
+        item_id: itemId,
+        completed,
+      });
+
+      // Update local state
+      if (itemType === 'medication') {
+        setTodayPlan({
+          ...todayPlan,
+          medications: todayPlan.medications.map(med =>
+            med.medication_id === itemId ? { ...med, completed } : med
+          ),
+        });
+      } else {
+        setTodayPlan({
+          ...todayPlan,
+          tasks: todayPlan.tasks.map(task =>
+            task.task_id === itemId ? { ...task, completed } : task
+          ),
+        });
+      }
+
+      // Reload weekly progress to reflect changes
+      loadWeeklyProgress();
+    } catch (error) {
+      message.error("保存失败，请重试");
+      console.error("Failed to record completion:", error);
+    }
+  };
+
+  const completedMedications = todayPlan?.medications.filter(m => m.completed).length || 0;
+  const completedTasks = todayPlan?.tasks.filter(t => t.completed).length || 0;
+  const totalItems = (todayPlan?.medications.length || 0) + (todayPlan?.tasks.length || 0);
   const completedItems = completedMedications + completedTasks;
-  const todayCompletionRate = Math.round((completedItems / totalItems) * 100);
+  const todayCompletionRate = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
   return (
     <div className="h-full flex flex-col bg-[#F4FBF7] overflow-hidden">
@@ -127,7 +157,7 @@ export function CarePlanView() {
                 <div className="text-center">
                   <div className="text-lg font-bold text-gray-900 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-[#10B981]" />
-                    {mockTodayPlan.date} (今天)
+                    {todayPlan?.date || selectedDate.toISOString().split('T')[0]} (今天)
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     完成度: <span className="font-bold text-[#10B981]">{todayCompletionRate}%</span>
@@ -152,50 +182,59 @@ export function CarePlanView() {
                       用药提醒
                     </h2>
                     <div className="text-sm text-gray-600">
-                      {completedMedications}/{mockTodayPlan.medications.length} 已完成
+                      {completedMedications}/{todayPlan?.medications.length || 0} 已完成
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {mockTodayPlan.medications.map((med) => (
-                      <div
-                        key={med.id}
-                        className={`p-4 rounded-lg border transition-all ${
-                          medicationStates[med.id]
-                            ? "bg-green-50 border-green-200"
-                            : "bg-gray-50 border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={medicationStates[med.id]}
-                            onCheckedChange={(checked) =>
-                              setMedicationStates(prev => ({ ...prev, [med.id]: checked as boolean }))
-                            }
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className={`font-bold ${medicationStates[med.id] ? "text-gray-500 line-through" : "text-gray-900"}`}>
-                                {med.name}
-                              </h3>
-                              <div className="text-sm font-semibold text-gray-600">
-                                {med.time}
+                  {loading ? (
+                    <div className="text-center py-8 text-gray-500">加载中...</div>
+                  ) : !todayPlan || todayPlan.medications.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">今日暂无用药安排</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {todayPlan.medications.map((med) => (
+                        <div
+                          key={med.medication_id}
+                          className={`p-4 rounded-lg border transition-all ${
+                            med.completed
+                              ? "bg-green-50 border-green-200"
+                              : "bg-gray-50 border-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={med.completed || false}
+                              onCheckedChange={(checked) =>
+                                handleCompletionChange('medication', med.medication_id, checked as boolean)
+                              }
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className={`font-bold ${med.completed ? "text-gray-500 line-through" : "text-gray-900"}`}>
+                                  {med.medication_name}
+                                </h3>
+                                {med.time_slots && med.time_slots.length > 0 && (
+                                  <div className="text-sm font-semibold text-gray-600">
+                                    {med.time_slots.join(', ')}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              剂量: {med.dosage}
-                            </div>
-                            {med.notes && (
-                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                {med.notes}
+                              <div className="text-sm text-gray-600">
+                                剂量: {med.dosage} · 频率: {med.frequency}
                               </div>
-                            )}
+                              {med.notes && (
+                                <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {med.notes}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  )}
                   </div>
 
                   <Button
@@ -216,42 +255,51 @@ export function CarePlanView() {
                       康复任务
                     </h2>
                     <div className="text-sm text-gray-600">
-                      {completedTasks}/{mockTodayPlan.tasks.length} 已完成
+                      {completedTasks}/{todayPlan?.tasks.length || 0} 已完成
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {mockTodayPlan.tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`p-4 rounded-lg border transition-all ${
-                          taskStates[task.id]
-                            ? "bg-green-50 border-green-200"
-                            : "bg-gray-50 border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={taskStates[task.id]}
-                            onCheckedChange={(checked) =>
-                              setTaskStates(prev => ({ ...prev, [task.id]: checked as boolean }))
-                            }
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className={`font-bold ${taskStates[task.id] ? "text-gray-500 line-through" : "text-gray-900"}`}>
-                                {task.title}
-                              </h3>
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(task.category)}`}>
-                                {task.category}
-                              </span>
+                  {loading ? (
+                    <div className="text-center py-8 text-gray-500">加载中...</div>
+                  ) : !todayPlan || todayPlan.tasks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">今日暂无康复任务</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {todayPlan.tasks.map((task) => (
+                        <div
+                          key={task.task_id}
+                          className={`p-4 rounded-lg border transition-all ${
+                            task.completed
+                              ? "bg-green-50 border-green-200"
+                              : "bg-gray-50 border-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={task.completed || false}
+                              onCheckedChange={(checked) =>
+                                handleCompletionChange('task', task.task_id, checked as boolean)
+                              }
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className={`font-bold ${task.completed ? "text-gray-500 line-through" : "text-gray-900"}`}>
+                                  {task.task_title}
+                                </h3>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(task.task_category)}`}>
+                                  {task.task_category}
+                                </span>
+                              </div>
+                              {task.task_description && (
+                                <p className="text-sm text-gray-600">{task.task_description}</p>
+                              )}
                             </div>
-                            <p className="text-sm text-gray-600">{task.description}</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  )}
                   </div>
 
                   <Button
@@ -274,52 +322,58 @@ export function CarePlanView() {
                     本周进度
                   </h3>
 
-                  <div className="space-y-3">
-                    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
-                      <div className="text-3xl font-bold text-[#10B981]">
-                        {mockWeeklyProgress.completionRate}%
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">平均完成率</div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">用药依从性</span>
-                        <span className="font-bold text-gray-900">{mockWeeklyProgress.medicationCompliance}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-[#10B981] h-2 rounded-full" style={{ width: `${mockWeeklyProgress.medicationCompliance}%` }}></div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">任务完成率</span>
-                        <span className="font-bold text-gray-900">{mockWeeklyProgress.taskCompletion}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${mockWeeklyProgress.taskCompletion}%` }}></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Week Chart */}
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="text-xs text-gray-500 mb-2">每日完成度</div>
-                    <div className="flex items-end justify-between gap-1 h-24">
-                      {mockWeeklyProgress.weekData.map((day, index) => (
-                        <div key={index} className="flex-1 flex flex-col items-center gap-1">
-                          <div className="w-full bg-gray-200 rounded-t flex items-end" style={{ height: "80px" }}>
-                            <div
-                              className="w-full bg-[#10B981] rounded-t transition-all"
-                              style={{ height: `${day.completion}%` }}
-                            ></div>
+                  {weeklyProgress ? (
+                    <>
+                      <div className="space-y-3">
+                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
+                          <div className="text-3xl font-bold text-[#10B981]">
+                            {weeklyProgress.completionRate}%
                           </div>
-                          <div className="text-xs text-gray-500">{day.day.slice(1)}</div>
+                          <div className="text-sm text-gray-600 mt-1">平均完成率</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">用药依从性</span>
+                            <span className="font-bold text-gray-900">{weeklyProgress.medicationCompliance}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-[#10B981] h-2 rounded-full" style={{ width: `${weeklyProgress.medicationCompliance}%` }}></div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">任务完成率</span>
+                            <span className="font-bold text-gray-900">{weeklyProgress.taskCompletion}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${weeklyProgress.taskCompletion}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Week Chart */}
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="text-xs text-gray-500 mb-2">每日完成度</div>
+                        <div className="flex items-end justify-between gap-1 h-24">
+                          {weeklyProgress.weekData.map((day, index) => (
+                            <div key={index} className="flex-1 flex flex-col items-center gap-1">
+                              <div className="w-full bg-gray-200 rounded-t flex items-end" style={{ height: "80px" }}>
+                                <div
+                                  className="w-full bg-[#10B981] rounded-t transition-all"
+                                  style={{ height: `${day.completion}%` }}
+                                ></div>
+                              </div>
+                              <div className="text-xs text-gray-500">{day.day.slice(1)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">加载中...</div>
+                  )}
 
                   <Button className="w-full bg-[#10B981] hover:bg-[#059669] text-white">
                     查看详细统计
@@ -335,14 +389,18 @@ export function CarePlanView() {
                     注意事项
                   </h3>
 
-                  <ul className="space-y-2">
-                    {mockTodayPlan.precautions.map((item, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                        <span className="text-orange-500 mt-0.5">•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {!todayPlan || todayPlan.precautions.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">暂无注意事项</div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {todayPlan.precautions.map((item, index) => (
+                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                          <span className="text-orange-500 mt-0.5">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                   <Button
                     variant="outline"

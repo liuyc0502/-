@@ -667,3 +667,93 @@ class DoctorLearningRecord(TableBase):
     total_time_spent = Column(Integer, default=0, doc="Total time spent in seconds")
     last_viewed_at = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="Last viewed timestamp")
     first_viewed_at = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="First viewed timestamp")
+
+
+class CarePlan(TableBase):
+    """
+    Care plan main table for patient rehabilitation planning
+    """
+    __tablename__ = "care_plan_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    plan_id = Column(Integer, Sequence("care_plan_t_plan_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Care plan ID, primary key")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID, foreign key")
+    plan_name = Column(String(200), doc="Care plan name/title")
+    plan_description = Column(Text, doc="Care plan description")
+    start_date = Column(String(20), doc="Plan start date (YYYY-MM-DD)")
+    end_date = Column(String(20), doc="Plan end date (YYYY-MM-DD)")
+    status = Column(String(20), default='active', doc="Status: active/completed/paused")
+    doctor_id = Column(String(100), doc="Doctor user ID who created this plan")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class CarePlanMedication(TableBase):
+    """
+    Medication schedule table for care plans
+    """
+    __tablename__ = "care_plan_medication_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    medication_id = Column(Integer, Sequence("care_plan_medication_t_medication_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Medication ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    medication_name = Column(String(200), nullable=False, doc="Medication name")
+    dosage = Column(String(100), doc="Dosage (e.g., 20mg, 1 tablet)")
+    frequency = Column(String(100), doc="Frequency (e.g., daily, twice daily)")
+    time_slots = Column(JSON, doc="Time slots for taking medication (JSON array, e.g., ['08:00', '20:00'])")
+    notes = Column(Text, doc="Administration notes and precautions")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class CarePlanTask(TableBase):
+    """
+    Rehabilitation task table for care plans
+    """
+    __tablename__ = "care_plan_task_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    task_id = Column(Integer, Sequence("care_plan_task_t_task_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Task ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    task_title = Column(String(200), nullable=False, doc="Task title")
+    task_description = Column(Text, doc="Task description and instructions")
+    task_category = Column(String(50), doc="Task category: 运动/护理/监测/饮食")
+    frequency = Column(String(100), doc="Frequency (e.g., daily, 3 times per week)")
+    duration = Column(String(50), doc="Duration (e.g., 30 minutes)")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class CarePlanPrecaution(TableBase):
+    """
+    Precautions and medical advice table for care plans
+    """
+    __tablename__ = "care_plan_precaution_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    precaution_id = Column(Integer, Sequence("care_plan_precaution_t_precaution_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Precaution ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    precaution_content = Column(Text, nullable=False, doc="Precaution content")
+    priority = Column(String(20), doc="Priority: high/medium/low")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class CarePlanCompletion(TableBase):
+    """
+    Care plan completion record table - tracks patient's daily completion status
+    """
+    __tablename__ = "care_plan_completion_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    completion_id = Column(Integer, Sequence("care_plan_completion_t_completion_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Completion ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID, foreign key")
+    record_date = Column(String(20), nullable=False, doc="Record date (YYYY-MM-DD)")
+    item_type = Column(String(20), nullable=False, doc="Item type: medication/task")
+    item_id = Column(Integer, nullable=False, doc="Medication ID or Task ID")
+    completed = Column(Boolean, default=False, doc="Whether the item was completed")
+    completion_time = Column(TIMESTAMP(timezone=False), doc="Actual completion timestamp")
+    notes = Column(Text, doc="Patient notes or observations")
+    tenant_id = Column(String(100), doc="Tenant ID")
