@@ -62,6 +62,45 @@ class ToggleFavoriteRequest(BaseModel):
     action: str = Field(..., description="Action: 'add' or 'remove'")
 
 
+class CaseImageData(BaseModel):
+    image_type: Optional[str] = Field(None, description="Image type: X光/CT/MRI/病理切片")
+    image_description: Optional[str] = Field(None, description="Image description/findings")
+    image_url: str = Field(..., description="Image storage path (MinIO)")
+    thumbnail_url: Optional[str] = Field(None, description="Thumbnail URL")
+    display_order: Optional[int] = Field(0, description="Display order")
+
+
+class BatchAddImagesRequest(BaseModel):
+    case_id: int = Field(..., description="Case ID")
+    images: List[CaseImageData] = Field(..., description="List of images to add")
+
+
+class SymptomData(BaseModel):
+    symptom_name: str = Field(..., description="Symptom name")
+    symptom_description: Optional[str] = Field(None, description="Symptom description")
+    is_key_symptom: Optional[bool] = Field(False, description="Whether this is a key symptom")
+
+
+class BatchAddSymptomsRequest(BaseModel):
+    case_id: int = Field(..., description="Case ID")
+    symptoms: List[SymptomData] = Field(..., description="List of symptoms to add")
+
+
+class LabResultData(BaseModel):
+    test_name: str = Field(..., description="Test name (e.g., RF, CRP, ESR)")
+    test_full_name: Optional[str] = Field(None, description="Test full name")
+    test_value: str = Field(..., description="Test result value")
+    test_unit: Optional[str] = Field(None, description="Unit")
+    normal_range: Optional[str] = Field(None, description="Normal range")
+    is_abnormal: Optional[bool] = Field(False, description="Whether result is abnormal")
+    abnormal_indicator: Optional[str] = Field(None, description="Abnormal indicator: ↑/↓")
+
+
+class BatchAddLabResultsRequest(BaseModel):
+    case_id: int = Field(..., description="Case ID")
+    lab_results: List[LabResultData] = Field(..., description="List of lab results to add")
+
+
 # ============================================================================
 # Case Basic Endpoints
 # ============================================================================
@@ -505,4 +544,265 @@ async def create_case_detail(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to create case detail: {str(e)}"
+        )
+
+
+# ============================================================================
+# Image Endpoints
+# ============================================================================
+
+@router.post("/medical_case/{case_id}/images")
+async def add_case_images(
+    case_id: int,
+    request: BatchAddImagesRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Batch add images to a medical case
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        if case_id != request.case_id:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="Case ID in path does not match request body"
+            )
+
+        images_data = [img.dict() for img in request.images]
+        result = await medical_case_service.batch_add_images(
+            case_id,
+            images_data,
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Add case images failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add case images: {str(e)}"
+        )
+
+
+@router.delete("/medical_case/{case_id}/images")
+async def delete_case_images(
+    case_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete all images for a medical case
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await medical_case_service.delete_images(case_id, tenant_id, user_id)
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete case images failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete case images: {str(e)}"
+        )
+
+
+# ============================================================================
+# Symptom Endpoints
+# ============================================================================
+
+@router.post("/medical_case/{case_id}/symptoms")
+async def add_case_symptoms(
+    case_id: int,
+    request: BatchAddSymptomsRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Batch add symptoms to a medical case
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        if case_id != request.case_id:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="Case ID in path does not match request body"
+            )
+
+        symptoms_data = [symptom.symptom_name for symptom in request.symptoms]
+        result = await medical_case_service.batch_add_symptoms(
+            case_id,
+            symptoms_data,
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Add case symptoms failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add case symptoms: {str(e)}"
+        )
+
+
+@router.delete("/medical_case/{case_id}/symptoms")
+async def delete_case_symptoms(
+    case_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete all symptoms for a medical case
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await medical_case_service.delete_symptoms(case_id, tenant_id, user_id)
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete case symptoms failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete case symptoms: {str(e)}"
+        )
+
+
+# ============================================================================
+# Lab Result Endpoints
+# ============================================================================
+
+@router.post("/medical_case/{case_id}/lab_results")
+async def add_case_lab_results(
+    case_id: int,
+    request: BatchAddLabResultsRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Batch add lab results to a medical case
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        if case_id != request.case_id:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="Case ID in path does not match request body"
+            )
+
+        lab_results_data = [lab.dict() for lab in request.lab_results]
+        result = await medical_case_service.batch_add_lab_results(
+            case_id,
+            lab_results_data,
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Add case lab results failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add case lab results: {str(e)}"
+        )
+
+
+@router.delete("/medical_case/{case_id}/lab_results")
+async def delete_case_lab_results(
+    case_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete all lab results for a medical case
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await medical_case_service.delete_lab_results(case_id, tenant_id, user_id)
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete case lab results failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete case lab results: {str(e)}"
         )

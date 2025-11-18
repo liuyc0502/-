@@ -92,6 +92,9 @@ export function EditTimelineDetailModal({
         medications: medications,
       });
 
+      await patientService.deleteTimelineImages(timelineId);
+      await patientService.deleteTimelineMetrics(timelineId);
+
       // Create images
       if (values.images?.length > 0) {
         for (const [index, img] of values.images.entries()) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Filter, Target, Plus } from "lucide-react";
+import { Search, Filter, Target, Plus,Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,21 +20,37 @@ interface CaseLibraryViewProps {
 }
 
 // Case Card Component
-function CaseCard({ caseItem, onSelect }: { caseItem: MedicalCase; onSelect: (id: string) => void }) {
+function CaseCard({
+  caseItem,
+  onSelect,
+  onDelete
+}: {
+  caseItem: MedicalCase;
+  onSelect: (id: string) => void;
+  onDelete: (caseItem: MedicalCase, e: React.MouseEvent) => void;
+}) {
   return (
     <Card
-      className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
+      className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1 group relative"
       onClick={() => onSelect(caseItem.case_id.toString())}
     >
       <CardContent className="p-5 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
-          {caseItem.is_classic && (
-            <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
-              <Target className="h-3 w-3" />
-              <span className="text-xs font-semibold">经典</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {caseItem.is_classic && (
+              <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                <Target className="h-3 w-3" />
+                <span className="text-xs font-semibold">经典</span>
+              </div>
+            )}
+            <button
+              onClick={(e) => onDelete(caseItem, e)}
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded"
+            >
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </button>
+          </div>
         </div>
 
         <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
@@ -71,7 +87,7 @@ function CaseCard({ caseItem, onSelect }: { caseItem: MedicalCase; onSelect: (id
 }
 
 export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLibraryViewProps) {
-  const { message } = App.useApp();
+  const { message,modal } = App.useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
@@ -115,9 +131,35 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
     loadCases();
   }, [loadCases]);
 
+  const handleDeleteCase = (caseItem: MedicalCase, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+
+    modal.confirm({
+      title: "确认删除",
+      content: `确定要删除病例"${caseItem.diagnosis || caseItem.case_no}"吗？删除后将无法恢复。`,
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await medicalCaseService.delete(caseItem.case_id);
+            message.success("删除成功");
+            await loadCases();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete case:", error);
+            const errorMessage = error instanceof Error ? error.message : '删除失败';
+            message.error(errorMessage);
+            reject(error);
+          }
+        });
+      },
+    });
+  };
+
   return (
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
-  
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">病例库</h1>
@@ -275,7 +317,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                   </div>
                 ) : (
                   cases.map((caseItem) => (
-                    <CaseCard key={caseItem.case_id} caseItem={caseItem} onSelect={onSelectCase} />
+                    <CaseCard key={caseItem.case_id} caseItem={caseItem} onSelect={onSelectCase} onDelete={handleDeleteCase} />
                   ))
                 )}
               </div>
@@ -293,7 +335,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {favoriteCases.map((caseItem) => (
-                    <CaseCard key={caseItem.case_id} caseItem={caseItem} onSelect={onSelectCase} />
+                    <CaseCard key={caseItem.case_id} caseItem={caseItem} onSelect={onSelectCase} onDelete={handleDeleteCase} />
                   ))}
                 </div>
               )}

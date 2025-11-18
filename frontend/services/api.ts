@@ -180,9 +180,11 @@ export const API_ENDPOINTS = {
     },
     image: {
       create: `${API_BASE_URL}/patient/timeline/image/create`,
+      delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/images`,
     },
     metrics: {
       batchCreate: `${API_BASE_URL}/patient/timeline/metrics/batch`,
+      delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/metrics`,
     },
     todo: {
       create: `${API_BASE_URL}/patient/todo/create`,
@@ -208,6 +210,18 @@ export const API_ENDPOINTS = {
       list: `${API_BASE_URL}/medical_case/recent/list`,
     },
     detailCreate: `${API_BASE_URL}/medical_case/detail/create`,
+    images: {
+      add: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/images`,
+      delete: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/images`,
+    },
+    symptoms: {
+      add: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/symptoms`,
+      delete: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/symptoms`,
+    },
+    labResults: {
+      add: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/lab_results`,
+      delete: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}/lab_results`,
+    },
   },
   learningRecord: {
     recordView: `${API_BASE_URL}/learning_record/record_view`,

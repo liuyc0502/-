@@ -331,3 +331,33 @@ async def delete_patient_todo_service(todo_id: int, tenant_id: str, user_id: str
     except Exception as e:
         logger.error(f"Failed to delete todo: {str(e)}")
         raise AgentRunException(f"Failed to delete todo: {str(e)}")
+
+
+async def delete_timeline_images_service(timeline_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete all images for a timeline (soft delete)
+    """
+    try:
+        success = patient_db.delete_timeline_images(timeline_id, tenant_id, user_id)
+        return {
+            "success": True,
+            "message": "Timeline images deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete timeline images: {str(e)}")
+        raise AgentRunException(f"Failed to delete timeline images: {str(e)}")
+ 
+ 
+async def delete_timeline_metrics_service(timeline_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete all metrics for a timeline (soft delete)
+    """
+    try:
+        success = patient_db.delete_timeline_metrics(timeline_id, tenant_id, user_id)
+        return {
+            "success": True,
+            "message": "Timeline metrics deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete timeline metrics: {str(e)}")
+        raise AgentRunException(f"Failed to delete timeline metrics: {str(e)}")

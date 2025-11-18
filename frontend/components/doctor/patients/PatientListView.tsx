@@ -22,7 +22,7 @@ interface PatientListViewProps {
 }
 
 export function PatientListView({ onSelectPatient }: PatientListViewProps) {
-  const { message } = App.useApp();
+  const { message,modal } = App.useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -73,21 +73,35 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
 
   const handleDeletePatient = (patient: Patient, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click event
-    Modal.confirm({
+    console.log('Delete patient clicked:', patient.patient_id);
+ 
+    if (!patient.patient_id) {
+      message.error('患者ID无效，无法删除');
+      return;
+    }
+
+    modal.confirm({
       title: "确认删除",
       content: `确定要删除患者"${patient.name}"的档案吗？删除后将无法恢复。`,
       okText: "确认删除",
       cancelText: "取消",
       okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await patientService.deletePatient(patient.patient_id);
-          message.success("删除成功");
-          loadPatients();
-        } catch (error) {
-          message.error("删除失败");
-          console.error("Failed to delete patient:", error);
-        }
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          console.log('Deleting patient:', patient.patient_id);
+          try {
+            await patientService.deletePatient(patient.patient_id);
+            console.log('Delete patient API success');
+            message.success("删除成功");
+            await loadPatients();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete patient:", error);
+            const errorMessage = error instanceof Error ? error.message : '删除失败';
+            message.error(errorMessage);
+            reject(error);
+          }
+        });
       },
     });
   };
