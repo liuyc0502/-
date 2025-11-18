@@ -4,7 +4,6 @@ from sqlalchemy.sql import func
 
 SCHEMA = "nexent"
 
-
 class TableBase(DeclarativeBase):
     create_time = Column(TIMESTAMP(timezone=False),
                          server_default=func.now(), doc="Creation time")
@@ -15,7 +14,6 @@ class TableBase(DeclarativeBase):
     delete_flag = Column(String(1), default="N",
                          doc="Whether it is deleted. Optional values: Y/N")
     pass
-
 
 class ConversationRecord(TableBase):
     """
@@ -28,7 +26,6 @@ class ConversationRecord(TableBase):
         "conversation_record_t_conversation_id_seq", schema=SCHEMA), primary_key=True, nullable=False)
     conversation_title = Column(String(100), doc="Conversation title")
     portal_type = Column(String(50), doc="Portal type: 'doctor', 'student', 'patient', 'admin', or 'general'", default='general')
-
 
 class ConversationMessage(TableBase):
     """
@@ -51,7 +48,6 @@ class ConversationMessage(TableBase):
     opinion_flag = Column(String(
         1), doc="User evaluation of the conversation. Enumeration value \"Y\" represents a positive review, \"N\" represents a negative review")
 
-
 class ConversationMessageUnit(TableBase):
     """
     Holds the agent's output content in each message
@@ -70,7 +66,6 @@ class ConversationMessageUnit(TableBase):
     unit_type = Column(String(100), doc="Type of the smallest answer unit")
     unit_content = Column(
         String, doc="Complete content of the smallest reply unit")
-
 
 class ConversationSourceImage(TableBase):
     """
@@ -92,7 +87,6 @@ class ConversationSourceImage(TableBase):
         Integer, doc="[Reserved] Citation serial number for precise traceability")
     search_type = Column(String(
         100), doc="[Reserved] Search source type, used to distinguish the retrieval tool from which the record originates. Optional values: web/local")
-
 
 class ConversationSourceSearch(TableBase):
     """
@@ -129,7 +123,6 @@ class ConversationSourceSearch(TableBase):
     tool_sign = Column(String(
         30), doc="Simple tool identifier used to distinguish the index source in the summary text output by the large model")
 
-
 class ModelRecord(TableBase):
     """
     Model list defined by the user on the configuration page
@@ -158,7 +151,6 @@ class ModelRecord(TableBase):
         100), doc="Model connectivity status of the latest detection. Optional values: Detecting, Available, Unavailable")
     tenant_id = Column(String(100), doc="Tenant ID for filtering")
 
-
 class ToolInfo(TableBase):
     """
     Information table for prompt tools
@@ -181,7 +173,6 @@ class ToolInfo(TableBase):
     category = Column(String(100), doc="Tool category description")
     is_available = Column(
         Boolean, doc="Whether the tool can be used under the current main service")
-
 
 class AgentInfo(TableBase):
     """
@@ -213,7 +204,6 @@ class AgentInfo(TableBase):
     agent_role_category = Column(String(50), doc="Agent role category: 'portal_main' for portal main agents, 'tool' for tool agents", default='tool')
     portal_type = Column(String(50), doc="Portal type for main agents: 'doctor', 'student', 'patient', or null for tool agents")
 
-
 class ToolInstance(TableBase):
     """
     Information table for tenant tool configuration.
@@ -230,7 +220,6 @@ class ToolInstance(TableBase):
     tenant_id = Column(String(100), doc="Tenant ID")
     enabled = Column(Boolean, doc="Enabled")
 
-
 class KnowledgeRecord(TableBase):
     """
     Records the description and status information of knowledge bases
@@ -245,7 +234,6 @@ class KnowledgeRecord(TableBase):
     knowledge_sources = Column(String(300), doc="Knowledge base sources")
     embedding_model_name = Column(String(200), doc="Embedding model name, used to record the embedding model used by the knowledge base")
     tenant_id = Column(String(100), doc="Tenant ID")
-
 
 class KnowledgeFileCard(TableBase):
     """
@@ -265,7 +253,6 @@ class KnowledgeFileCard(TableBase):
     view_count = Column(Integer, default=0, doc="View count")
     tenant_id = Column(String(100), doc="Tenant ID")
 
-
 class TenantConfig(TableBase):
     """
     Tenant configuration information table
@@ -281,7 +268,6 @@ class TenantConfig(TableBase):
         100), doc=" the data type of config_value, optional values: single/multi", default="single")
     config_key = Column(String(100), doc="the key of the config")
     config_value = Column(Text, doc="the value of the config")
-
 
 class MemoryUserConfig(TableBase):
     """
@@ -299,7 +285,6 @@ class MemoryUserConfig(TableBase):
     config_key = Column(String(100), doc="the key of the config")
     config_value = Column(String(10000), doc="the value of the config")
 
-
 class McpRecord(TableBase):
     """
     MCP (Model Context Protocol) records table
@@ -316,7 +301,6 @@ class McpRecord(TableBase):
     status = Column(Boolean, default=None,
                     doc="MCP server connection status, True=connected, False=disconnected, None=unknown")
 
-
 class UserTenant(TableBase):
     """
     User and tenant relationship table
@@ -328,7 +312,6 @@ class UserTenant(TableBase):
                             primary_key=True, nullable=False, doc="User tenant relationship ID, unique primary key")
     user_id = Column(String(100), nullable=False, doc="User ID")
     tenant_id = Column(String(100), nullable=False, doc="Tenant ID")
-
 
 class AgentRelation(TableBase):
     """
@@ -343,7 +326,6 @@ class AgentRelation(TableBase):
     parent_agent_id = Column(Integer, doc="Parent agent ID")
     tenant_id = Column(String(100), doc="Tenant ID")
 
-
 class PortalAgentAssignment(TableBase):
     """
     Portal agent assignment table - maps agents to portals (doctor, student, patient)
@@ -356,7 +338,6 @@ class PortalAgentAssignment(TableBase):
     portal_type = Column(String(50), doc="Portal type (doctor, student, patient)")
     agent_id = Column(Integer, doc="Agent ID")
     tenant_id = Column(String(100), doc="Tenant ID")
-
 
 class PartnerMappingId(TableBase):
     """
@@ -376,15 +357,13 @@ class PartnerMappingId(TableBase):
     tenant_id = Column(String(100), doc="Tenant ID")
     user_id = Column(String(100), doc="User ID")
 
-
- 
 class PatientInfo(TableBase):
     """
     Patient basic information table
     """
     __tablename__ = "patient_info_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     patient_id = Column(Integer, Sequence("patient_info_t_patient_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Patient ID, primary key")
     name = Column(String(100), doc="Patient name")
@@ -400,15 +379,14 @@ class PatientInfo(TableBase):
     past_medical_history = Column(JSON, doc="Past medical history (JSON array)")
     diagnosis = Column(String(500), doc="Current primary diagnosis")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
- 
+
 class PatientTimeline(TableBase):
     """
     Patient treatment timeline main table
     """
     __tablename__ = "patient_timeline_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     timeline_id = Column(Integer, Sequence("patient_timeline_t_timeline_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Timeline ID, primary key")
     patient_id = Column(Integer, doc="Patient ID, foreign key")
@@ -419,7 +397,6 @@ class PatientTimeline(TableBase):
     status = Column(String(20), doc="Status: completed/current/pending")
     display_order = Column(Integer, doc="Display order")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
 
 class PatientTimelineDetail(TableBase):
     """
@@ -427,7 +404,7 @@ class PatientTimelineDetail(TableBase):
     """
     __tablename__ = "patient_timeline_detail_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     detail_id = Column(Integer, Sequence("patient_timeline_detail_t_detail_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Detail ID, primary key")
     timeline_id = Column(Integer, doc="Timeline ID, foreign key")
@@ -435,15 +412,14 @@ class PatientTimelineDetail(TableBase):
     pathology_findings = Column(Text, doc="Pathology findings")
     medications = Column(JSON, doc="Medication regimen (JSON array)")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
- 
+
 class PatientMedicalImage(TableBase):
     """
     Patient medical image table
     """
     __tablename__ = "patient_medical_image_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     image_id = Column(Integer, Sequence("patient_medical_image_t_image_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Image ID, primary key")
     timeline_id = Column(Integer, doc="Timeline ID, foreign key")
@@ -453,15 +429,14 @@ class PatientMedicalImage(TableBase):
     thumbnail_url = Column(String(500), doc="Thumbnail URL")
     display_order = Column(Integer, doc="Display order")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
- 
+
 class PatientMetrics(TableBase):
     """
     Patient examination metrics table
     """
     __tablename__ = "patient_metrics_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     metric_id = Column(Integer, Sequence("patient_metrics_t_metric_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Metric ID, primary key")
     timeline_id = Column(Integer, doc="Timeline ID, foreign key")
@@ -476,14 +451,13 @@ class PatientMetrics(TableBase):
     percentage = Column(Integer, doc="Progress bar percentage (0-100)")
     tenant_id = Column(String(100), doc="Tenant ID")
 
- 
 class PatientAttachment(TableBase):
     """
     Patient attachment table
     """
     __tablename__ = "patient_attachment_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     attachment_id = Column(Integer, Sequence("patient_attachment_t_attachment_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Attachment ID, primary key")
     timeline_id = Column(Integer, doc="Timeline ID, foreign key")
@@ -492,7 +466,6 @@ class PatientAttachment(TableBase):
     file_url = Column(String(500), doc="File path (MinIO)")
     file_size = Column(Integer, doc="File size (bytes)")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
 
 class PatientTodo(TableBase):
     """
@@ -500,7 +473,7 @@ class PatientTodo(TableBase):
     """
     __tablename__ = "patient_todo_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     todo_id = Column(Integer, Sequence("patient_todo_t_todo_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Todo ID, primary key")
     patient_id = Column(Integer, doc="Patient ID, foreign key")
@@ -512,7 +485,6 @@ class PatientTodo(TableBase):
     status = Column(String(20), doc="Status: pending/completed/overdue")
     assigned_doctor = Column(String(100), doc="Assigned doctor user ID")
     tenant_id = Column(String(100), doc="Tenant ID")
-
 
 class MedicalCase(TableBase):
     """
@@ -536,10 +508,6 @@ class MedicalCase(TableBase):
     is_classic = Column(Boolean, default=False, doc="Whether this is a classic case")
     tenant_id = Column(String(100), doc="Tenant ID")
 
- 
-
- 
-
 class MedicalCaseDetail(TableBase):
     """
     Medical case detailed information table
@@ -562,7 +530,6 @@ class MedicalCaseDetail(TableBase):
     clinical_notes = Column(Text, doc="Additional clinical notes")
     tenant_id = Column(String(100), doc="Tenant ID")
 
-
 class MedicalCaseSymptom(TableBase):
     """
     Medical case symptom table (many-to-many relationship)
@@ -577,8 +544,6 @@ class MedicalCaseSymptom(TableBase):
     symptom_description = Column(String(500), doc="Symptom description")
     is_key_symptom = Column(Boolean, default=False, doc="Whether this is a key symptom for diagnosis")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
-
 
 class MedicalCaseLabResult(TableBase):
     """
@@ -586,7 +551,7 @@ class MedicalCaseLabResult(TableBase):
     """
     __tablename__ = "medical_case_lab_result_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     lab_result_id = Column(Integer, Sequence("medical_case_lab_result_t_lab_result_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Lab result ID, primary key")
     case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
@@ -599,15 +564,13 @@ class MedicalCaseLabResult(TableBase):
     abnormal_indicator = Column(String(10), doc="Abnormal indicator: ↑/↓")
     tenant_id = Column(String(100), doc="Tenant ID")
 
- 
-
 class MedicalCaseImage(TableBase):
     """
     Medical case image/imaging table
     """
     __tablename__ = "medical_case_image_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     image_id = Column(Integer, Sequence("medical_case_image_t_image_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Image ID, primary key")
     case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
@@ -617,22 +580,19 @@ class MedicalCaseImage(TableBase):
     thumbnail_url = Column(String(500), doc="Thumbnail URL")
     display_order = Column(Integer, doc="Display order")
     tenant_id = Column(String(100), doc="Tenant ID")
- 
- 
+
 class MedicalCaseFavorite(TableBase):
     """
     Medical case favorite table
     """
     __tablename__ = "medical_case_favorite_t"
     __table_args__ = {"schema": SCHEMA}
- 
+
     favorite_id = Column(Integer, Sequence("medical_case_favorite_t_favorite_id_seq",
                         schema=SCHEMA), primary_key=True, nullable=False, doc="Favorite ID, primary key")
     case_id = Column(Integer, nullable=False, doc="Case ID, foreign key")
     user_id = Column(String(100), nullable=False, doc="User ID")
     tenant_id = Column(String(100), doc="Tenant ID")
-
- 
 
 class MedicalCaseViewHistory(TableBase):
     """
@@ -647,7 +607,6 @@ class MedicalCaseViewHistory(TableBase):
     user_id = Column(String(100), nullable=False, doc="User ID")
     view_time = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="View timestamp")
     tenant_id = Column(String(100), doc="Tenant ID")
-
 
 class DoctorLearningRecord(TableBase):
     """
@@ -667,3 +626,80 @@ class DoctorLearningRecord(TableBase):
     total_time_spent = Column(Integer, default=0, doc="Total time spent in seconds")
     last_viewed_at = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="Last viewed timestamp")
     first_viewed_at = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="First viewed timestamp")
+
+class CarePlan(TableBase):
+    """
+    Care plan main table for patient rehabilitation planning
+    """
+    __tablename__ = "care_plan_t"
+    __table_args__ = {"schema": SCHEMA}
+    plan_id = Column(Integer, Sequence("care_plan_t_plan_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Care plan ID, primary key")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID, foreign key")
+    plan_name = Column(String(200), doc="Care plan name/title")
+    plan_description = Column(Text, doc="Care plan description")
+    start_date = Column(String(20), doc="Plan start date (YYYY-MM-DD)")
+    end_date = Column(String(20), doc="Plan end date (YYYY-MM-DD)")
+    status = Column(String(20), default='active', doc="Status: active/completed/paused")
+    doctor_id = Column(String(100), doc="Doctor user ID who created this plan")
+    tenant_id = Column(String(100), doc="Tenant ID")
+class CarePlanMedication(TableBase):
+    """
+    Medication schedule table for care plans
+    """
+    __tablename__ = "care_plan_medication_t"
+    __table_args__ = {"schema": SCHEMA}
+    medication_id = Column(Integer, Sequence("care_plan_medication_t_medication_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Medication ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    medication_name = Column(String(200), nullable=False, doc="Medication name")
+    dosage = Column(String(100), doc="Dosage (e.g., 20mg, 1 tablet)")
+    frequency = Column(String(100), doc="Frequency (e.g., daily, twice daily)")
+    time_slots = Column(JSON, doc="Time slots for taking medication (JSON array, e.g., ['08:00', '20:00'])")
+    notes = Column(Text, doc="Administration notes and precautions")
+    tenant_id = Column(String(100), doc="Tenant ID")
+class CarePlanTask(TableBase):
+    """
+    Rehabilitation task table for care plans
+    """
+    __tablename__ = "care_plan_task_t"
+    __table_args__ = {"schema": SCHEMA}
+    task_id = Column(Integer, Sequence("care_plan_task_t_task_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Task ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    task_title = Column(String(200), nullable=False, doc="Task title")
+    task_description = Column(Text, doc="Task description and instructions")
+    task_category = Column(String(50), doc="Task category: 运动/护理/监测/饮食")
+    frequency = Column(String(100), doc="Frequency (e.g., daily, 3 times per week)")
+    duration = Column(String(50), doc="Duration (e.g., 30 minutes)")
+    tenant_id = Column(String(100), doc="Tenant ID")
+class CarePlanPrecaution(TableBase):
+    """
+    Precautions and medical advice table for care plans
+    """
+    __tablename__ = "care_plan_precaution_t"
+    __table_args__ = {"schema": SCHEMA}
+    precaution_id = Column(Integer, Sequence("care_plan_precaution_t_precaution_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Precaution ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    precaution_content = Column(Text, nullable=False, doc="Precaution content")
+    priority = Column(String(20), doc="Priority: high/medium/low")
+    tenant_id = Column(String(100), doc="Tenant ID")
+class CarePlanCompletion(TableBase):
+    """
+    Care plan completion record table - tracks patient's daily completion status
+    """
+    __tablename__ = "care_plan_completion_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    completion_id = Column(Integer, Sequence("care_plan_completion_t_completion_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Completion ID, primary key")
+    plan_id = Column(Integer, nullable=False, doc="Care plan ID, foreign key")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID, foreign key")
+    record_date = Column(String(20), nullable=False, doc="Record date (YYYY-MM-DD)")
+    item_type = Column(String(20), nullable=False, doc="Item type: medication/task")
+    item_id = Column(Integer, nullable=False, doc="Medication ID or Task ID")
+    completed = Column(Boolean, default=False, doc="Whether the item was completed")
+    completion_time = Column(TIMESTAMP(timezone=False), doc="Actual completion timestamp")
+    notes = Column(Text, doc="Patient notes or observations")
+    tenant_id = Column(String(100), doc="Tenant ID")
