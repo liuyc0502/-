@@ -90,36 +90,88 @@ def get_stats(user_id: str, tenant_id: str) -> dict:
     Get learning statistics for a user
     """
     with get_db_session() as session:
+        from datetime import datetime, timedelta
+
+        # Calculate date ranges
+        now = datetime.now()
+        week_ago = now - timedelta(days=7)
+        twenty_eight_days_ago = now - timedelta(days=28)
+
         # Get total records count
         total_records = session.query(DoctorLearningRecord).filter(
             DoctorLearningRecord.user_id == user_id,
             DoctorLearningRecord.tenant_id == tenant_id,
             DoctorLearningRecord.delete_flag != 'Y'
         ).count()
-        
-        # Get total view count
-        total_views = session.query(
+
+        # Get this week's statistics
+        week_views = session.query(
             func.sum(DoctorLearningRecord.view_count)
         ).filter(
             DoctorLearningRecord.user_id == user_id,
             DoctorLearningRecord.tenant_id == tenant_id,
-            DoctorLearningRecord.delete_flag != 'Y'
+            DoctorLearningRecord.delete_flag != 'Y',
+            DoctorLearningRecord.last_viewed_at >= week_ago
         ).scalar() or 0
-        
-        # Get total time spent
-        total_time = session.query(
+
+        week_time = session.query(
             func.sum(DoctorLearningRecord.total_time_spent)
         ).filter(
             DoctorLearningRecord.user_id == user_id,
             DoctorLearningRecord.tenant_id == tenant_id,
-            DoctorLearningRecord.delete_flag != 'Y'
+            DoctorLearningRecord.delete_flag != 'Y',
+            DoctorLearningRecord.last_viewed_at >= week_ago
         ).scalar() or 0
-        
+
+        # Calculate knowledge mastery (based on records with multiple views)
+        records_with_multiple_views = session.query(DoctorLearningRecord).filter(
+            DoctorLearningRecord.user_id == user_id,
+            DoctorLearningRecord.tenant_id == tenant_id,
+            DoctorLearningRecord.delete_flag != 'Y',
+            DoctorLearningRecord.view_count >= 2
+        ).count()
+
+        knowledge_mastery = round((records_with_multiple_views / total_records * 100)) if total_records > 0 else 0
+
+        # Get recent records (last 10)
+        recent_records = session.query(DoctorLearningRecord).filter(
+            DoctorLearningRecord.user_id == user_id,
+            DoctorLearningRecord.tenant_id == tenant_id,
+            DoctorLearningRecord.delete_flag != 'Y'
+        ).order_by(
+            DoctorLearningRecord.last_viewed_at.desc()
+        ).limit(10).all()
+
+        recent_records_list = [as_dict(r) for r in recent_records]
+
+        # Generate 28-day activity heatmap
+        activity_heatmap = [0] * 28
+
+        # Query records from last 28 days grouped by date
+        heatmap_data = session.query(
+            func.date(DoctorLearningRecord.last_viewed_at).label('date'),
+            func.count(DoctorLearningRecord.record_id).label('count')
+        ).filter(
+            DoctorLearningRecord.user_id == user_id,
+            DoctorLearningRecord.tenant_id == tenant_id,
+            DoctorLearningRecord.delete_flag != 'Y',
+            DoctorLearningRecord.last_viewed_at >= twenty_eight_days_ago
+        ).group_by(
+            func.date(DoctorLearningRecord.last_viewed_at)
+        ).all()
+
+        # Fill heatmap array (index 0 = today, index 27 = 27 days ago)
+        for record in heatmap_data:
+            days_ago = (now.date() - record.date).days
+            if 0 <= days_ago < 28:
+                activity_heatmap[27 - days_ago] = record.count
+
         return {
-            "total_records": total_records,
-            "total_views": total_views,
-            "total_time_spent_seconds": total_time,
-            "total_time_spent_hours": round(total_time / 3600, 2) if total_time else 0
+            "total_views_this_week": int(week_views),
+            "total_time_this_week": round(week_time / 3600, 2) if week_time else 0,
+            "knowledge_mastery": knowledge_mastery,
+            "recent_records": recent_records_list,
+            "activity_heatmap": activity_heatmap
         }
 
 
