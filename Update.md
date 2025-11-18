@@ -1,3 +1,60 @@
+## 2025-11-18
+
+### 优化患者概览组件结构和修复 DatePicker 问题
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/patient-overview-optimization-20251118`
+- 📦 **提交更改**: 4 个文件，215 行新增，104 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+- `frontend/components/doctor/patients/PatientOverview.tsx` (重构优化)
+- `frontend/components/doctor/patients/CreateTodoModal.tsx` (修复 DatePicker 问题)
+- `frontend/components/doctor/patients/PatientDetailView.tsx` (更新)
+- `backend/apps/patient_app.py` (更新)
+
+**功能说明**:
+
+#### 1. PatientOverview 组件优化
+- ✨ **代码结构重构**：
+  - 提取辅助函数到组件顶部（formatDate, formatDaysUntil, getStageIcon）
+  - 使用 `useMemo` 优化计算值性能
+  - 统一变量命名（timeline → timelines）
+  - 优化条件渲染逻辑
+- 🚀 **性能优化**：
+  - 使用 `useMemo` 缓存 `urgentTodos`、`nextCheckup`、`recentTimelines`
+  - 缓存统计计算（checkCount, completedCount, treatmentCount, followupCount）
+  - 提取 `latestTimeline` 变量避免重复访问
+- 📊 **数据展示优化**：
+  - 动态显示真实数据替代硬编码
+  - 显示实际就诊记录、待办事项、时间线数据
+  - 优化紧急待办展示逻辑
+
+#### 2. DatePicker 日期验证错误修复
+- ❌ **问题**: `TypeError: date.isValid is not a function`
+- ❌ **原因**: 编辑待办事项时，直接将字符串日期传递给 DatePicker，但 rc-picker 期望 dayjs 对象
+- ✅ **修复方案**：
+  - 移除对 dayjs 的显式依赖
+  - 编辑时不设置日期初始值，让用户重新选择
+  - 增强 `formatDate` 函数支持多种日期格式（dayjs 对象、Date 对象、字符串）
+
+#### 3. 类型错误修复
+- ❌ **问题**: `This comparison appears to be unintentional because the types '"medium" | "low"' and '"urgent"' have no overlap`
+- ✅ **修复**: 移除对 `"urgent"` 的检查，只保留 `"high"` 优先级检查
+
+**技术改进**:
+- 使用 React `useMemo` hook 优化性能
+- 提取可复用辅助函数
+- 统一代码格式和缩进
+- 改进代码可读性和可维护性
+
+**分支信息**:
+- 分支名称: `feature/patient-overview-optimization-20251118`
+- 远程仓库: `origin/feature/patient-overview-optimization-20251118`
+- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/patient-overview-optimization-20251118
+
+---
+
 ## 2025-11-17
 
 ### 修复患者时间线和待办事项 API 端点路径不匹配问题
