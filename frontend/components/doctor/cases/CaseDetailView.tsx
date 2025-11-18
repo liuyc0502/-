@@ -122,6 +122,14 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
           .filter((line) => line.length > 0);
       }
 
+      // Convert tags from comma-separated string to array
+      if (field === "tags" && typeof value === "string") {
+        value = value
+          .split(/[,，]/) // Support both English and Chinese commas
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
+      }
+
       // Determine if it's a basic field or detail field
       const basicFields = [
         "case_title",
@@ -132,6 +140,7 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
         "chief_complaint",
         "category",
         "is_classic",
+        "tags",
       ];
       if (basicFields.includes(field)) {
         // Update basic case info
@@ -546,21 +555,63 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                       </div>
                       <div className="pt-4 border-t border-gray-100">
                         <span className="text-gray-500 text-sm mb-2 block">病例标签</span>
-                        {caseData.tags && caseData.tags.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {caseData.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full flex items-center gap-1"
-                              >
-                                <TagIcon className="h-3 w-3" />
-                                {tag}
-                              </span>
-                            ))}
+                        <div className="group">
+                          <div className="flex items-start justify-between gap-2">
+                            {editingField !== "tags" ? (
+                              <>
+                                <div className="flex-1">
+                                  {caseData.tags && caseData.tags.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {caseData.tags.map((tag) => (
+                                        <span
+                                          key={tag}
+                                          className="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full flex items-center gap-1"
+                                        >
+                                          <TagIcon className="h-3 w-3" />
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-gray-400 italic">暂无标签</p>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEdit("tags", caseData.tags?.join(", ") || "")}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <div className="flex-1 flex items-start gap-2">
+                                <div className="flex-1">
+                                  <Input
+                                    value={editValues["tags"]}
+                                    onChange={(e) => setEditValues({ ...editValues, tags: e.target.value })}
+                                    placeholder="输入标签，用逗号分隔，例如：关节炎,慢性病,重症"
+                                    className="w-full"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">用逗号分隔多个标签</p>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleSave("tags")}
+                                    className="bg-green-500 hover:bg-green-600 text-white"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={handleCancel}>
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-400 italic">暂无标签，您可以在后台录入</p>
-                        )}
+                        </div>
                       </div>
                       <div className="pt-4 border-t border-gray-100">
                         <span className="text-gray-500 text-sm mb-2 block">主诉</span>
