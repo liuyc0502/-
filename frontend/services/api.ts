@@ -176,6 +176,7 @@ export const API_ENDPOINTS = {
       list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/timeline`,
       detail: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/detail`,
       createDetail: `${API_BASE_URL}/patient/timeline/detail/save`,
+      delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}`,
     },
     image: {
       create: `${API_BASE_URL}/patient/timeline/image/create`,
@@ -187,6 +188,7 @@ export const API_ENDPOINTS = {
       create: `${API_BASE_URL}/patient/todo/create`,
       list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/todos`,
       updateStatus: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}/status`,
+      delete: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}`,
     },
   },
 

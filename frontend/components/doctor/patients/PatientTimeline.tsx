@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, App, Button } from "antd";
-import { PlusOutlined, EditOutlined } from "@ant-design/icons";
+import { Card, App, Button, Modal } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
   FileText,
   TestTube,
@@ -98,6 +98,26 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     loadTimelineDetail(timelineId);
   };
 
+  const handleDeleteTimeline = (timeline: TimelineStage) => {
+    Modal.confirm({
+      title: "确认删除",
+      content: `确定要删除时间线节点"${timeline.stage_title}"吗？`,
+      okText: "确认",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await patientService.deleteTimeline(timeline.timeline_id);
+          message.success("删除成功");
+          loadPatientAndTimeline();
+        } catch (error) {
+          message.error("删除失败");
+          console.error("Failed to delete timeline:", error);
+        }
+      },
+    });
+  };
+
   const getStageStatus = (timeline: TimelineStage) => {
     if (timeline.status === "completed") return "completed";
     if (timeline.status === "current") return "current";
@@ -172,15 +192,29 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                 创建节点
               </Button>
               {selectedTimeline && (
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => {
-                    setCurrentTimelineId(selectedTimeline.timeline_id);
-                    setEditModalOpen(true);
-                  }}
-                >
-                  编辑详情
-                </Button>
+                <>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                      setCurrentTimelineId(selectedTimeline.timeline_id);
+                      setEditModalOpen(true);
+                    }}
+                  >
+                    编辑详情
+                  </Button>
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      const timeline = timelines.find(t => t.timeline_id === selectedTimeline.timeline_id);
+                      if (timeline) {
+                        handleDeleteTimeline(timeline);
+                      }
+                    }}
+                  >
+                    删除节点
+                  </Button>
+                </>
               )}
             </div>
           </div>

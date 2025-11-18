@@ -274,11 +274,11 @@ async def update_todo_status_service(todo_id: int, status: str, tenant_id: str, 
         valid_statuses = ['pending', 'completed', 'overdue']
         if status not in valid_statuses:
             raise ValueError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
- 
+
         success = patient_db.update_todo_status(todo_id, status, tenant_id, user_id)
         if not success:
             raise ValueError("Todo not found")
- 
+
         return {
             "success": True,
             "message": "Todo status updated successfully"
@@ -286,3 +286,39 @@ async def update_todo_status_service(todo_id: int, status: str, tenant_id: str, 
     except Exception as e:
         logger.error(f"Failed to update todo status: {str(e)}")
         raise AgentRunException(f"Failed to update todo status: {str(e)}")
+
+
+async def delete_timeline_service(timeline_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete a timeline stage (soft delete)
+    """
+    try:
+        success = patient_db.delete_timeline(timeline_id, tenant_id, user_id)
+        if not success:
+            raise ValueError("Timeline not found")
+
+        return {
+            "success": True,
+            "message": "Timeline deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete timeline: {str(e)}")
+        raise AgentRunException(f"Failed to delete timeline: {str(e)}")
+
+
+async def delete_patient_todo_service(todo_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete a patient todo item (soft delete)
+    """
+    try:
+        success = patient_db.delete_patient_todo(todo_id, tenant_id, user_id)
+        if not success:
+            raise ValueError("Todo not found")
+
+        return {
+            "success": True,
+            "message": "Todo deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete todo: {str(e)}")
+        raise AgentRunException(f"Failed to delete todo: {str(e)}")

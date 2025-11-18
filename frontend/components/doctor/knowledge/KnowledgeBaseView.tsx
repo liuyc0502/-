@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { doctorKnowledgeService, DoctorKnowledgeBase, DoctorKnowledgeFile, KnowledgeCard } from "@/services/doctorKnowledgeService"
+import { learningRecordService, type LearningStats } from "@/services/learningRecordService";
 import { App } from "antd";
 import { ReactMarkdown } from "react-markdown/lib/react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,6 +49,7 @@ export function KnowledgeBaseView({
   const[fileContent, setFileContent] = useState<string>("");
   const[fileLoading, setFileLoading] = useState(false);
   const[fileName, setFileName] = useState<string | null>(null);
+  const[learningStats, setLearningStats] = useState<LearningStats>(learningRecordService.getStats());
   
 
   // Load knowledge bases and build tree structure
@@ -175,6 +177,10 @@ export function KnowledgeBaseView({
       const parts = filePath.split("/");
       const name = parts[parts.length - 1].replace(".md", "");
       setFileName(name);
+
+      // Record learning activity
+      learningRecordService.recordView(filePath, name, selectedCategory, 120); // Assume 2 min reading time
+      setLearningStats(learningRecordService.getStats());
     } catch (error) {
       console.error("Failed to load file:", filePath, error);
       message.error(`文件不存在或已被删除`);
@@ -416,19 +422,19 @@ export function KnowledgeBaseView({
             <div className="grid grid-cols-3 gap-4">
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl font-bold text-[#D94527]">42</div>
+                  <div className="text-4xl font-bold text-[#D94527]">{learningStats.totalViewsThisWeek}</div>
                   <div className="text-sm text-gray-600 mt-2">本周查阅知识点</div>
                 </CardContent>
               </Card>
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl font-bold text-blue-600">3.5h</div>
+                  <div className="text-4xl font-bold text-blue-600">{learningStats.totalTimeThisWeek.toFixed(1)}h</div>
                   <div className="text-sm text-gray-600 mt-2">学习时长</div>
                 </CardContent>
               </Card>
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl font-bold text-green-600">85%</div>
+                  <div className="text-4xl font-bold text-green-600">{Math.round(learningStats.knowledgeMastery)}%</div>
                   <div className="text-sm text-gray-600 mt-2">知识掌握度</div>
                 </CardContent>
               </Card>
@@ -444,14 +450,14 @@ export function KnowledgeBaseView({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-7 gap-2">
-                  {Array.from({ length: 28 }).map((_, index) => {
-                    const intensity = Math.floor(Math.random() * 4);
+                  {learningStats.activityHeatmap.map((count, index) => {
+                    const intensity = count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : 3;
                     const colors = ["bg-gray-100", "bg-blue-200", "bg-blue-400", "bg-blue-600"];
                     return (
                       <div
                         key={index}
                         className={`h-12 rounded ${colors[intensity]} hover:ring-2 hover:ring-[#D94527] cursor-pointer transition-all`}
-                        title={`${intensity} 个知识点`}
+                        title={`${count} 个知识点`}
                       />
                     );
                   })}

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, Filter } from "lucide-react";
+import { Search, Plus, Filter, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { App } from "antd";
+import { App, Modal } from "antd";
 import patientService from "@/services/patientService";
 import type { Patient } from "@/types/patient";
 import{CreatePatientDialog} from "./CreatePatientDialog";
@@ -69,6 +69,27 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeletePatient = (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    Modal.confirm({
+      title: "确认删除",
+      content: `确定要删除患者"${patient.name}"的档案吗？删除后将无法恢复。`,
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await patientService.deletePatient(patient.patient_id);
+          message.success("删除成功");
+          loadPatients();
+        } catch (error) {
+          message.error("删除失败");
+          console.error("Failed to delete patient:", error);
+        }
+      },
+    });
   };
 
   const getDiagnosisColor = (diagnosis?: string) => {
@@ -171,6 +192,13 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                             {patient.gender} · {patient.age}岁 · {patient.medical_record_no}
                           </p>
                         </div>
+                        <button
+                          onClick={(e) => handleDeletePatient(patient, e)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="删除患者"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                       <div
                         className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getDiagnosisColor(

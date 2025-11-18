@@ -89,7 +89,7 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
     setTodoModalOpen(true);
   };
 
-  const handleDelete = (todo: PatientTodo) => {
+  const handleDelete = async (todo: PatientTodo) => {
     Modal.confirm({
       title: "确认删除",
       content: `确定要删除待办"${todo.todo_title}"吗？`,
@@ -97,9 +97,14 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
       cancelText: "取消",
       okButtonProps: { danger: true },
       onOk: async () => {
-        message.warning("删除功能需要后端支持deleteTodo接口");
-        // await patientService.deletePatientTodo(todo.todo_id);
-        // loadTodos();
+        try {
+          await patientService.deletePatientTodo(todo.todo_id);
+          message.success("删除成功");
+          loadTodos();
+        } catch (error) {
+          message.error("删除失败");
+          console.error("Failed to delete todo:", error);
+        }
       },
     });
   };

@@ -421,6 +421,42 @@ async def save_timeline_detail(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to save timeline detail: {str(e)}"
         )
+
+@router.delete("/patient/timeline/{timeline_id}")
+async def delete_timeline(
+    timeline_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete a timeline stage (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.delete_timeline_service(
+            timeline_id,
+            tenant_id,
+            user_id
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete timeline failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete timeline: {str(e)}"
+        )
 # ============================================================================
 # Medical Image Endpoints
 # ============================================================================
@@ -603,4 +639,40 @@ async def update_todo_status(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to update todo status: {str(e)}"
+        )
+
+@router.delete("/patient/todo/{todo_id}")
+async def delete_patient_todo(
+    todo_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete a patient todo item (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.delete_patient_todo_service(
+            todo_id,
+            tenant_id,
+            user_id
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete todo failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete todo: {str(e)}"
         )

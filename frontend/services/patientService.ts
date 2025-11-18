@@ -299,15 +299,37 @@ export async function saveTimelineDetail(
       },
       body: JSON.stringify(detailData),
     });
- 
+
     if (!response.ok) {
       throw new Error(`Failed to save timeline detail: ${response.statusText}`);
     }
- 
+
     const data = await response.json();
     return data;
   } catch (error) {
     log.error("Failed to save timeline detail:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a timeline stage
+ */
+export async function deleteTimeline(timelineId: number): Promise<ApiSuccessResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.delete(timelineId), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete timeline: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete timeline ${timelineId}:`, error);
     throw error;
   }
 }
@@ -452,6 +474,22 @@ export async function updateTodoStatus(
   }
 }
 
+export async function deletePatientTodo(todoId: number): Promise<ApiSuccessResponse> {
+  try {
+    return await jsonRequest<ApiSuccessResponse>(
+      API_ENDPOINTS.patient.todo.delete(todoId),
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+      "Failed to delete todo"
+    );
+  } catch (error) {
+    log.error(`Failed to delete todo ${todoId}:`, error);
+    throw error;
+  }
+}
+
 
 // ============================================================================
 // Export all services
@@ -471,6 +509,7 @@ const patientService = {
   getPatientTimeline,
   getTimelineDetail,
   saveTimelineDetail,
+  deleteTimeline,
 
   // Medical Images
   createMedicalImage,
@@ -483,6 +522,7 @@ const patientService = {
   createPatientTodo,
   getPatientTodos,
   updateTodoStatus,
+  deletePatientTodo,
 };
 
 

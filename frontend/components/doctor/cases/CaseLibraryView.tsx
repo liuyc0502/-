@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Filter, Target } from "lucide-react";
+import { Search, Filter, Target, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { medicalCaseService, type MedicalCase } from "@/services/medicalCaseService";
 import { message } from "antd";
+import { CreateCaseDialog } from "./CreateCaseDialog";
 
 const diseaseTypes = ["类风湿", "红斑狼疮", "强直性脊柱炎", "痛风", "骨关节炎", "干燥综合征"];
 const ageRanges = ["<30", "30-50", "50-70", ">70"];
@@ -28,6 +29,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
   const [favoriteCases, setFavoriteCases] = useState<MedicalCase[]>([]);
   const [recentCases, setRecentCases] = useState<MedicalCase[]>([]);
   const [loading, setLoading] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Load cases based on active tab
   useEffect(() => {
@@ -67,8 +69,16 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">病例库</h1>
-          <Tabs value={activeTab} onValueChange={onTabChange}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+          <div className="flex items-center gap-4">
+            <Button
+              className="bg-[#D94527] hover:bg-[#C23E21] text-white h-11"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              新建病例
+            </Button>
+            <Tabs value={activeTab} onValueChange={onTabChange}>
+              <TabsList className="bg-gray-100 h-14 p-1 gap-1">
               <TabsTrigger
                 value="search"
                 className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
@@ -87,8 +97,9 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
               >
                 最近浏览
               </TabsTrigger>
-            </TabsList>
-          </Tabs>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -375,6 +386,13 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
           )}
         </div>
       </div>
+
+      {/* Create Case Dialog */}
+      <CreateCaseDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={loadCases}
+      />
     </div>
   );
 }
