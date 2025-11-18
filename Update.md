@@ -2,6 +2,52 @@
 病例库真实 患者档案真实 病理知识库真实 学习热力图未知 待完成患者端 以及患者端与医生端的对接 
 
 
+## 2025-01-21
+
+### 医疗案例和患者相关功能更新
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/medical-case-updates-20250121`
+- 📦 **提交更改**: 17 个文件，2212 行新增，2126 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**前端文件**:
+- `frontend/components/doctor/cases/CaseDetailView.tsx` (更新 - 病例详情视图优化)
+- `frontend/components/doctor/knowledge/KnowledgeBaseView.tsx` (更新)
+- `frontend/components/doctor/patients/EditTimelineDetailModal.tsx` (更新)
+- `frontend/components/doctor/patients/PatientListView.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTodos.tsx` (更新)
+- `frontend/services/api.ts` (更新)
+- `frontend/services/patientService.ts` (更新)
+- `frontend/components/doctor/cases/EditCaseDialog.tsx` (删除)
+
+**后端文件**:
+- `backend/apps/base_app.py` (更新)
+- `backend/apps/medical_case_app.py` (更新)
+- `backend/apps/patient_app.py` (更新)
+- `backend/database/db_models.py` (更新)
+- `backend/database/patient_db.py` (更新)
+- `backend/services/patient_service.py` (更新)
+
+**其他文件**:
+- `Update.md` (更新)
+- `backend/flower_db.sqlite` (更新)
+
+**功能说明**:
+- 🔧 **医疗案例功能优化**: 更新病例详情视图和相关组件
+- 👥 **患者管理功能更新**: 优化患者列表、时间线和待办事项功能
+- 🗄️ **数据库模型更新**: 更新患者和医疗案例相关的数据库模型
+- 🔌 **API服务更新**: 优化前后端API接口和服务
+
+**分支信息**:
+- 分支名称: `feature/medical-case-updates-20250121`
+- 远程仓库: `origin/feature/medical-case-updates-20250121`
+
+---
+
 ## 2025-11-18
 
 ### 病例管理功能完善与代码优化
