@@ -23,7 +23,13 @@ function AppReadyWrapper({ children }: { children: ReactNode }) {
  */
 export function RootProvider({ children }: { children: ReactNode }) {
   return (
-    <ConfigProvider getPopupContainer={() => document.body}>
+    <ConfigProvider
+      getPopupContainer={() => document.body}
+      // Suppress React version compatibility warning for Next.js 15
+      // This is a false positive - we're using React 18.2.0, but Next.js 15
+      // may trigger this warning due to internal optimizations
+      warning={{ strict: false }}
+    >
       <App>
         <AuthContextProvider>
           {(authContextValue) => (
