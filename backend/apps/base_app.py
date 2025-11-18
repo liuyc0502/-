@@ -12,6 +12,7 @@ from apps.elasticsearch_app import router as elasticsearch_router
 from apps.file_management_app import router as file_manager_router
 from apps.image_app import router as proxy_router
 from apps.knowledge_summary_app import router as summary_router
+from apps.learning_record_app import router as learning_record_router
 from apps.memory_config_app import router as memory_router
 from apps.me_model_managment_app import router as me_model_manager_router
 from apps.mock_user_management_app import router as mock_user_management_router
@@ -51,6 +52,7 @@ app.include_router(agent_router)
 app.include_router(portal_agent_assignment_router)
 app.include_router(conversation_management_router)
 app.include_router(doctor_knowledge_router)
+app.include_router(learning_record_router)
 app.include_router(patient_router)
 app.include_router(medical_case_router)
 app.include_router(elasticsearch_router)

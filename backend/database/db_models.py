@@ -647,3 +647,23 @@ class MedicalCaseViewHistory(TableBase):
     user_id = Column(String(100), nullable=False, doc="User ID")
     view_time = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="View timestamp")
     tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class DoctorLearningRecord(TableBase):
+    """
+    Doctor learning record table for knowledge base tracking
+    """
+    __tablename__ = "doctor_learning_record_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    record_id = Column(Integer, Sequence("doctor_learning_record_t_record_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Record ID, primary key")
+    user_id = Column(String(100), nullable=False, doc="User ID")
+    tenant_id = Column(String(100), nullable=False, doc="Tenant ID")
+    file_path = Column(String(500), nullable=False, doc="Knowledge file path")
+    file_name = Column(String(200), nullable=False, doc="Knowledge file name")
+    category = Column(String(100), doc="Knowledge category")
+    view_count = Column(Integer, default=0, doc="View count")
+    total_time_spent = Column(Integer, default=0, doc="Total time spent in seconds")
+    last_viewed_at = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="Last viewed timestamp")
+    first_viewed_at = Column(TIMESTAMP(timezone=False), server_default=func.now(), doc="First viewed timestamp")

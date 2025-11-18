@@ -49,18 +49,34 @@ export function KnowledgeBaseView({
   const[fileContent, setFileContent] = useState<string>("");
   const[fileLoading, setFileLoading] = useState(false);
   const[fileName, setFileName] = useState<string | null>(null);
-  const[learningStats, setLearningStats] = useState<LearningStats>(learningRecordService.getStats());
-  
+  const[learningStats, setLearningStats] = useState<LearningStats>({
+    total_views_this_week: 0,
+    total_time_this_week: 0,
+    knowledge_mastery: 0,
+    recent_records: [],
+    activity_heatmap: new Array(28).fill(0),
+  });
+
 
   // Load knowledge bases and build tree structure
   useEffect(() => {
     loadKnowledgeBases();
+    loadLearningStats();
   }, []);
 
   // Load cards when category changes
   useEffect(() => {
     loadKnowledgeCards(selectedCategory);
   }, [selectedCategory]);
+
+  const loadLearningStats = async () => {
+    try {
+      const stats = await learningRecordService.getStats();
+      setLearningStats(stats);
+    } catch (error) {
+      console.error("Failed to load learning stats:", error);
+    }
+  };
 
   // Load file content when selected
   useEffect(() => {
@@ -179,8 +195,8 @@ export function KnowledgeBaseView({
       setFileName(name);
 
       // Record learning activity
-      learningRecordService.recordView(filePath, name, selectedCategory, 120); // Assume 2 min reading time
-      setLearningStats(learningRecordService.getStats());
+      await learningRecordService.recordView(filePath, name, selectedCategory, 120); // Assume 2 min reading time
+      await loadLearningStats(); // Reload stats after recording view
     } catch (error) {
       console.error("Failed to load file:", filePath, error);
       message.error(`文件不存在或已被删除`);
@@ -422,19 +438,19 @@ export function KnowledgeBaseView({
             <div className="grid grid-cols-3 gap-4">
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl font-bold text-[#D94527]">{learningStats.totalViewsThisWeek}</div>
+                  <div className="text-4xl font-bold text-[#D94527]">{learningStats.total_views_this_week}</div>
                   <div className="text-sm text-gray-600 mt-2">本周查阅知识点</div>
                 </CardContent>
               </Card>
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl font-bold text-blue-600">{learningStats.totalTimeThisWeek.toFixed(1)}h</div>
+                  <div className="text-4xl font-bold text-blue-600">{learningStats.total_time_this_week.toFixed(1)}h</div>
                   <div className="text-sm text-gray-600 mt-2">学习时长</div>
                 </CardContent>
               </Card>
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl font-bold text-green-600">{Math.round(learningStats.knowledgeMastery)}%</div>
+                  <div className="text-4xl font-bold text-green-600">{Math.round(learningStats.knowledge_mastery)}%</div>
                   <div className="text-sm text-gray-600 mt-2">知识掌握度</div>
                 </CardContent>
               </Card>
@@ -450,7 +466,7 @@ export function KnowledgeBaseView({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-7 gap-2">
-                  {learningStats.activityHeatmap.map((count, index) => {
+                  {learningStats.activity_heatmap.map((count, index) => {
                     const intensity = count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : 3;
                     const colors = ["bg-gray-100", "bg-blue-200", "bg-blue-400", "bg-blue-600"];
                     return (

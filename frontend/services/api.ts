@@ -209,6 +209,14 @@ export const API_ENDPOINTS = {
     },
     detailCreate: `${API_BASE_URL}/medical_case/detail/create`,
   },
+
+  learningRecord: {
+    recordView: `${API_BASE_URL}/learning_record/record_view`,
+    list: `${API_BASE_URL}/learning_record/list`,
+    stats: `${API_BASE_URL}/learning_record/stats`,
+    delete: (recordId: number) => `${API_BASE_URL}/learning_record/${recordId}`,
+    clearAll: `${API_BASE_URL}/learning_record/clear_all`,
+  },
 };
 
 // Common error handling
