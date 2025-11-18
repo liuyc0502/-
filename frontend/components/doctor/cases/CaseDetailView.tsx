@@ -1,296 +1,671 @@
 "use client";
-
-import { ArrowLeft, Star, Share2, GitCompare, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  Star,
+  Share2,
+  Edit,
+  User,
+  Calendar,
+  FileText,
+  TestTube,
+  Stethoscope,
+  Pill,
+  TrendingUp,
+  ClipboardList,
+  StickyNote,
+  Check,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input, Select, InputNumber } from "antd";
+import { medicalCaseService, type MedicalCaseDetail } from "@/services/medicalCaseService";
+import { message } from "antd";
+const { TextArea } = Input;
 interface CaseDetailViewProps {
   caseId: string;
   onBack: () => void;
 }
-
+const diseaseTypes = ["类风湿", "红斑狼疮", "强直性脊柱炎", "痛风", "骨关节炎", "干燥综合征", "其他"];
 export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
-  return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
-      {/* Header */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 px-8 py-4 flex-shrink-0">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={onBack} className="text-gray-600 hover:text-gray-900">
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                返回病例库
+  const [caseData, setCaseData] = useState<MedicalCaseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("basic");
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  useEffect(() => {
+    loadCaseDetail();
+  }, [caseId]);
+  const loadCaseDetail = async () => {
+    try {
+      setLoading(true);
+      const data = await medicalCaseService.getDetail(parseInt(caseId));
+      setCaseData(data);
+    } catch (error) {
+      console.error("Failed to load case detail:", error);
+      message.error("加载病例详情失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleEdit = (field: string, currentValue: any) => {
+    setEditingField(field);
+    setEditValues({ [field]: currentValue });
+  };
+  const handleCancel = () => {
+    setEditingField(null);
+    setEditValues({});
+  };
+  const handleSave = async (field: string) => {
+    try {
+      const value = editValues[field];
+      // Determine if it's a basic field or detail field
+      const basicFields = ["diagnosis", "disease_type", "age", "gender", "chief_complaint", "category", "is_classic"];
+      if (basicFields.includes(field)) {
+        // Update basic case info
+        await medicalCaseService.update(parseInt(caseId), { [field]: value });
+      } else {
+        // Update case detail
+        await medicalCaseService.createDetail({
+          case_id: parseInt(caseId),
+          [field]: value,
+        });
+      }
+      message.success("保存成功");
+      await loadCaseDetail();
+      setEditingField(null);
+      setEditValues({});
+    } catch (error) {
+      console.error("Failed to save:", error);
+      message.error("保存失败");
+    }
+  };
+  const handleToggleFavorite = async () => {
+    try {
+      setFavoriteLoading(true);
+      const action = isFavorited ? "remove" : "add";
+      await medicalCaseService.toggleFavorite(parseInt(caseId), action);
+      setIsFavorited(!isFavorited);
+      message.success(isFavorited ? "已取消收藏" : "已添加收藏");
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      message.error("操作失败");
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+  const EditableField = ({
+    field,
+    value,
+    label,
+    type = "text",
+    rows = 3,
+    options = [],
+  }: {
+    field: string;
+    value: any;
+    label: string;
+    type?: "text" | "textarea" | "number" | "select";
+    rows?: number;
+    options?: Array<{ value: any; label: string }>;
+  }) => {
+    const isEditing = editingField === field;
+    const displayValue = value || <span className="text-gray-400 italic">暂无{label}</span>;
+    return (
+      <div className="group">
+        <div className="flex items-start justify-between gap-2">
+          {!isEditing ? (
+            <>
+              <div className="flex-1 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{displayValue}</div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleEdit(field, value)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Edit className="h-3 w-3" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">病例 #0234 - 类风湿关节炎</h1>
+            </>
+          ) : (
+            <div className="flex-1 flex items-start gap-2">
+              <div className="flex-1">
+                {type === "textarea" ? (
+                  <TextArea
+                    value={editValues[field]}
+                    onChange={(e) => setEditValues({ ...editValues, [field]: e.target.value })}
+                    rows={rows}
+                    className="w-full"
+                  />
+                ) : type === "number" ? (
+                  <InputNumber
+                    value={editValues[field]}
+                    onChange={(val) => setEditValues({ ...editValues, [field]: val })}
+                    className="w-full"
+                  />
+                ) : type === "select" ? (
+                  <Select
+                    value={editValues[field]}
+                    onChange={(val) => setEditValues({ ...editValues, [field]: val })}
+                    className="w-full"
+                    options={options}
+                  />
+                ) : (
+                  <Input
+                    value={editValues[field]}
+                    onChange={(e) => setEditValues({ ...editValues, [field]: e.target.value })}
+                    className="w-full"
+                  />
+                )}
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  onClick={() => handleSave(field)}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleCancel}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Star className="h-4 w-4 mr-2" />
-                收藏
-              </Button>
-              <Button variant="outline" size="sm">
-                <Share2 className="h-4 w-4 mr-2" />
-                分享
-              </Button>
-              <Button variant="outline" size="sm">
-                <GitCompare className="h-4 w-4 mr-2" />
-                对比
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-8 py-5">
-          <div className="grid grid-cols-12 gap-4">
-          {/* Left Column - Case Information */}
-          <div className="col-span-12 lg:col-span-8 space-y-5">
-            {/* Patient Information */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">患者信息</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">性别:</span>
-                    <span className="ml-2 font-medium">女</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">年龄:</span>
-                    <span className="ml-2 font-medium">58岁</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">病例编号:</span>
-                    <span className="ml-2 font-medium">#0234</span>
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-gray-100">
-                  <p className="text-sm">
-                    <span className="font-semibold text-gray-700">主诉:</span>
-                    <span className="ml-2 text-gray-600">双膝关节肿痛3个月，伴晨僵</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Medical History */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">现病史</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-700 leading-relaxed space-y-3">
-                <p>
-                  患者3个月前无明显诱因出现双膝关节肿痛，以晨起明显，伴晨僵约1小时，
-                  活动后可缓解。关节肿胀逐渐加重，影响日常活动。无发热、皮疹等症状。
-                </p>
-                <p>曾在当地医院就诊，诊断为"骨关节炎"，给予非甾体抗炎药治疗，效果不佳。</p>
-              </CardContent>
-            </Card>
-
-            {/* Physical Examination */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">体格检查</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-700 space-y-2">
-                <p>
-                  <span className="font-semibold">一般情况:</span> 神志清楚，精神可，营养中等
-                </p>
-                <p>
-                  <span className="font-semibold">关节检查:</span>{" "}
-                  双膝关节肿胀明显，局部皮温升高，压痛(+)，浮髌试验(+)，活动受限
-                </p>
-                <p>
-                  <span className="font-semibold">双手:</span> 掌指关节轻度肿胀，无晨僵
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Laboratory Tests */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">实验室检查</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">RF (类风湿因子)</span>
-                      <span className="font-semibold text-red-600">126 IU/mL ↑</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">抗CCP抗体</span>
-                      <span className="font-semibold text-red-600">158 U/mL ↑</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">ESR (血沉)</span>
-                      <span className="font-semibold text-red-600">45 mm/h ↑</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">CRP (C反应蛋白)</span>
-                      <span className="font-semibold text-red-600">28 mg/L ↑</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">ANA</span>
-                      <span className="font-semibold text-gray-900">阴性</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">血常规</span>
-                      <span className="font-semibold text-gray-900">正常</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Imaging */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">影像学检查</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-700 space-y-2">
-                <p>
-                  <span className="font-semibold">双膝X线:</span>{" "}
-                  关节间隙轻度狭窄，软骨下骨轻度硬化，未见明显骨质破坏
-                </p>
-                <p>
-                  <span className="font-semibold">双手X线:</span> 未见明显异常
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Diagnosis */}
-            <Card className="bg-blue-50 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-blue-900">诊断</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-700">
-                <p className="font-semibold">类风湿关节炎 (Rheumatoid Arthritis)</p>
-                <p className="mt-2 text-xs text-gray-600">
-                  根据2010 ACR/EULAR类风湿关节炎分类标准，患者符合诊断标准（评分≥6分）
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Treatment Plan */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">治疗方案</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div>
-                  <p className="font-semibold text-gray-900 mb-2">药物治疗:</p>
-                  <ul className="space-y-1 text-gray-700 pl-5 list-disc">
-                    <li>甲氨蝶呤 (Methotrexate) 15mg 口服，每周一次</li>
-                    <li>叶酸 5mg 口服，每日一次（避开甲氨蝶呤当天）</li>
-                    <li>塞来昔布 200mg 口服，每日两次</li>
-                  </ul>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900 mb-2">监测:</p>
-                  <ul className="space-y-1 text-gray-700 pl-5 list-disc">
-                    <li>每2周复查肝功能、肾功能、血常规</li>
-                    <li>每月评估疾病活动度</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Prognosis */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">预后</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-700 leading-relaxed">
-                <p>
-                  患者接受规范化治疗后，症状明显改善。3个月后复查，关节肿痛基本消失，
-                  晨僵时间缩短至15分钟，RF、ESR、CRP均明显下降。继续维持治疗，
-                  定期随访，预后良好。
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - AI Analysis & Related Cases */}
-          <div className="col-span-12 lg:col-span-4 space-y-6">
-            {/* AI Analysis */}
-            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-purple-900 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  AI辅助分析
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5 text-sm">
-                <div>
-                  <p className="font-semibold text-gray-900 mb-2">诊断要点提取:</p>
-                  <ul className="space-y-1 text-gray-700 pl-4 list-disc">
-                    <li>双侧对称性关节肿痛</li>
-                    <li>晨僵时间 &gt; 1小时</li>
-                    <li>RF阳性 + 抗CCP阳性</li>
-                    <li>炎症指标升高</li>
-                  </ul>
-                </div>
-                <div className="pt-3 border-t border-purple-200">
-                  <p className="font-semibold text-gray-900 mb-2">鉴别诊断思路:</p>
-                  <ul className="space-y-1 text-gray-700 pl-4 list-disc">
-                    <li>骨关节炎 - 已排除</li>
-                    <li>系统性红斑狼疮 - ANA阴性</li>
-                    <li>强直性脊柱炎 - 无脊柱症状</li>
-                  </ul>
-                </div>
-                <div className="pt-3 border-t border-purple-200">
-                  <p className="font-semibold text-gray-900 mb-2">治疗方案分析:</p>
-                  <p className="text-gray-700">
-                    MTX作为一线DMARDs，联合NSAIDs控制症状，
-                    方案合理。需注意MTX的肝毒性，定期监测必要。
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Related Cases */}
-            <Card className="bg-white border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-sm font-bold">相似病例推荐</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {[
-                  { id: "#0156", similarity: 82, match: "相似症状表现" },
-                  { id: "#0189", similarity: 78, match: "类似治疗方案" },
-                  { id: "#0201", similarity: 75, match: "相同年龄段患者" },
-                ].map((relatedCase) => (
-                  <div
-                    key={relatedCase.id}
-                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-semibold text-gray-900">病例 {relatedCase.id}</span>
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                        {relatedCase.similarity}% 相似
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600">{relatedCase.match}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <Button className="w-full bg-[#D94527] hover:bg-[#C23E21] text-white">应用到当前患者</Button>
-              <Button variant="outline" className="w-full">
-                加入对比列表
-              </Button>
-              <Button variant="outline" className="w-full">
-                导出病例
-              </Button>
+    );
+  };
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-[#FAFAFA]">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <p className="text-gray-500">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+  if (!caseData) {
+    return (
+      <div className="h-full flex items-center justify-center bg-[#FAFAFA]">
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">未找到病例信息</p>
+          <Button onClick={onBack}>返回病例库</Button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+      {/* Header with Tab Navigation */}
+      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+        <div className="px-8 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={onBack} className="text-gray-600 hover:text-gray-900">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{caseData.diagnosis}</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                病例编号: {caseData.case_no} · {caseData.gender} · {caseData.age}岁
+              </p>
             </div>
           </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+              <TabsTrigger
+                value="basic"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+              >
+                基本信息
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+              >
+                病史
+              </TabsTrigger>
+              <TabsTrigger
+                value="examination"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+              >
+                检查
+              </TabsTrigger>
+              <TabsTrigger
+                value="treatment"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+              >
+                诊疗
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-8 py-5">
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column - Main Content */}
+            <div className="col-span-12 lg:col-span-8">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                {/* Basic Information Tab */}
+                <TabsContent value="basic" className="mt-0 space-y-4">
+                  {/* Patient Info Card */}
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <User className="h-5 w-5 text-[#D94527]" />
+                        患者信息
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-gray-500 text-sm mb-1 block">性别</span>
+                          <EditableField
+                            field="gender"
+                            value={caseData.gender}
+                            label="性别信息"
+                            type="select"
+                            options={[
+                              { value: "男", label: "男" },
+                              { value: "女", label: "女" },
+                            ]}
+                          />
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm mb-1 block">年龄</span>
+                          <EditableField field="age" value={caseData.age} label="年龄信息" type="number" />
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm mb-1 block">疾病类型</span>
+                          <EditableField
+                            field="disease_type"
+                            value={caseData.disease_type}
+                            label="疾病类型"
+                            type="select"
+                            options={diseaseTypes.map((t) => ({ value: t, label: t }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-gray-100">
+                        <span className="text-gray-500 text-sm mb-2 block">主诉</span>
+                        <EditableField
+                          field="chief_complaint"
+                          value={caseData.chief_complaint}
+                          label="主诉信息"
+                          type="textarea"
+                          rows={2}
+                        />
+                      </div>
+                      {caseData.is_classic && (
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full font-semibold flex items-center gap-1">
+                            <Star className="h-3 w-3" />
+                            经典病例
+                          </span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  {/* Diagnosis Card */}
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                        <ClipboardList className="h-5 w-5" />
+                        诊断
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <EditableField field="diagnosis" value={caseData.diagnosis} label="诊断" />
+                      {(caseData.detail?.diagnosis_basis || editingField === "diagnosis_basis") && (
+                        <div className="pt-3 border-t border-blue-200">
+                          <span className="text-sm text-blue-700 font-medium mb-2 block">诊断依据:</span>
+                          <EditableField
+                            field="diagnosis_basis"
+                            value={caseData.detail?.diagnosis_basis}
+                            label="诊断依据"
+                            type="textarea"
+                            rows={4}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  {/* Symptoms Card */}
+                  {caseData.symptoms && caseData.symptoms.length > 0 && (
+                    <Card className="bg-white border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                          <Stethoscope className="h-5 w-5 text-[#D94527]" />
+                          症状表现
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {caseData.symptoms.map((symptom, index) => (
+                            <div
+                              key={index}
+                              className={`px-3 py-2 rounded-lg text-sm ${
+                                symptom.is_key_symptom
+                                  ? "bg-red-50 text-red-700 border border-red-200"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              <div className="font-semibold">{symptom.symptom_name}</div>
+                              {symptom.symptom_description && (
+                                <div className="text-xs mt-1 opacity-80">{symptom.symptom_description}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+                {/* History Tab */}
+                <TabsContent value="history" className="mt-0 space-y-4">
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-[#D94527]" />
+                        现病史
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="present_illness_history"
+                        value={caseData.detail?.present_illness_history}
+                        label="现病史信息"
+                        type="textarea"
+                        rows={6}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-[#D94527]" />
+                        既往史
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="past_medical_history"
+                        value={caseData.detail?.past_medical_history}
+                        label="既往史信息"
+                        type="textarea"
+                        rows={4}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <User className="h-5 w-5 text-[#D94527]" />
+                        家族史
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="family_history"
+                        value={caseData.detail?.family_history}
+                        label="家族史信息"
+                        type="textarea"
+                        rows={3}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                {/* Examination Tab */}
+                <TabsContent value="examination" className="mt-0 space-y-4">
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <Stethoscope className="h-5 w-5 text-[#D94527]" />
+                        体格检查
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="physical_examination"
+                        value={
+                          typeof caseData.detail?.physical_examination === "string"
+                            ? caseData.detail.physical_examination
+                            : JSON.stringify(caseData.detail?.physical_examination || "", null, 2)
+                        }
+                        label="体格检查信息"
+                        type="textarea"
+                        rows={6}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <TestTube className="h-5 w-5 text-[#D94527]" />
+                        实验室检查
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {caseData.lab_results && caseData.lab_results.length > 0 ? (
+                        <div className="space-y-2">
+                          {caseData.lab_results.map((lab, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                            >
+                              <span className="text-gray-700 font-medium">{lab.test_name}</span>
+                              <div className="text-right">
+                                <span className={`font-semibold ${lab.is_abnormal ? "text-red-600" : "text-gray-900"}`}>
+                                  {lab.test_value} {lab.test_unit}
+                                </span>
+                                {lab.abnormal_indicator && (
+                                  <span className="ml-1 text-red-600">{lab.abnormal_indicator}</span>
+                                )}
+                                {lab.normal_range && (
+                                  <div className="text-xs text-gray-500 mt-0.5">正常范围: {lab.normal_range}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">暂无实验室检查信息</span>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-[#D94527]" />
+                        影像学检查
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="imaging_results"
+                        value={
+                          typeof caseData.detail?.imaging_results === "string"
+                            ? caseData.detail.imaging_results
+                            : JSON.stringify(caseData.detail?.imaging_results || "", null, 2)
+                        }
+                        label="影像学检查信息"
+                        type="textarea"
+                        rows={6}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                {/* Treatment Tab */}
+                <TabsContent value="treatment" className="mt-0 space-y-4">
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <ClipboardList className="h-5 w-5 text-[#D94527]" />
+                        治疗方案
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="treatment_plan"
+                        value={caseData.detail?.treatment_plan}
+                        label="治疗方案信息"
+                        type="textarea"
+                        rows={5}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <Pill className="h-5 w-5 text-[#D94527]" />
+                        用药方案
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="medications"
+                        value={caseData.detail?.medications?.join("\n")}
+                        label="用药方案信息"
+                        type="textarea"
+                        rows={6}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-[#D94527]" />
+                        预后
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="prognosis"
+                        value={caseData.detail?.prognosis}
+                        label="预后信息"
+                        type="textarea"
+                        rows={4}
+                      />
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <StickyNote className="h-5 w-5 text-[#D94527]" />
+                        临床备注
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EditableField
+                        field="clinical_notes"
+                        value={caseData.detail?.clinical_notes}
+                        label="临床备注"
+                        type="textarea"
+                        rows={4}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+            {/* Right Column - Actions & Stats */}
+            <div className="col-span-12 lg:col-span-4 space-y-4">
+              {/* Actions Card */}
+              <Card className="bg-white border-gray-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold">操作</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button
+                    onClick={handleToggleFavorite}
+                    disabled={favoriteLoading}
+                    className={`w-full ${isFavorited ? "bg-yellow-500 hover:bg-yellow-600" : "bg-white"}`}
+                    variant={isFavorited ? "default" : "outline"}
+                  >
+                    {favoriteLoading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        {isFavorited ? "取消收藏中..." : "收藏中..."}
+                      </>
+                    ) : (
+                      <>
+                        <Star className={`h-4 w-4 mr-2 ${isFavorited ? "fill-current" : ""}`} />
+                        {isFavorited ? "已收藏" : "收藏"}
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    <Share2 className="h-4 w-4 mr-2" />
+                    分享
+                  </Button>
+                </CardContent>
+              </Card>
+              {/* Stats Card */}
+              <Card className="bg-orange-50 border-orange-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold text-orange-900">病例统计</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-orange-700">浏览次数</span>
+                    <span className="text-lg font-bold text-orange-900">{caseData.view_count || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-orange-700">症状数量</span>
+                    <span className="text-lg font-bold text-orange-900">{caseData.symptoms?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-orange-700">检查项目</span>
+                    <span className="text-lg font-bold text-orange-900">{caseData.lab_results?.length || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* AI Analysis Card */}
+              <Card className="bg-purple-50 border-purple-200">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold text-purple-900 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    AI辅助分析
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-purple-800 space-y-3">
+                  <div>
+                    <p className="font-semibold mb-2">诊断要点:</p>
+                    <ul className="space-y-1 pl-4 list-disc text-purple-700">
+                      <li>临床症状分析</li>
+                      <li>实验室指标异常</li>
+                      <li>影像学特征</li>
+                    </ul>
+                  </div>
+                  <div className="pt-3 border-t border-purple-200">
+                    <p className="text-xs text-purple-600 italic">AI 深度分析功能即将上线...</p>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Quick Actions */}
+              <Card className="bg-white border-gray-200">
+                <CardHeader>
+                  <CardTitle className="text-sm font-bold">快捷操作</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                    应用到患者
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                    加入对比
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                    导出病例
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

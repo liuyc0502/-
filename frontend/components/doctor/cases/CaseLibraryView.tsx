@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Filter, Target } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Filter, Target, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { App } from "antd";
 import { medicalCaseService, type MedicalCase } from "@/services/medicalCaseService";
-import { message } from "antd";
+import { CreateCaseDialog } from "./CreateCaseDialog";
 
 const diseaseTypes = ["类风湿", "红斑狼疮", "强直性脊柱炎", "痛风", "骨关节炎", "干燥综合征"];
 const ageRanges = ["<30", "30-50", "50-70", ">70"];
@@ -18,7 +19,59 @@ interface CaseLibraryViewProps {
   onSelectCase: (id: string) => void;
 }
 
+// Case Card Component
+function CaseCard({ caseItem, onSelect }: { caseItem: MedicalCase; onSelect: (id: string) => void }) {
+  return (
+    <Card
+      className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
+      onClick={() => onSelect(caseItem.case_id.toString())}
+    >
+      <CardContent className="p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
+          {caseItem.is_classic && (
+            <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+              <Target className="h-3 w-3" />
+              <span className="text-xs font-semibold">经典</span>
+            </div>
+          )}
+        </div>
+
+        <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
+
+        <div className="text-sm text-gray-600">
+          {caseItem.gender} · {caseItem.age}岁
+        </div>
+
+        {caseItem.symptoms && caseItem.symptoms.length > 0 && (
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-gray-500">关键症状:</span>
+            <div className="flex flex-wrap gap-1">
+              {caseItem.symptoms.slice(0, 3).map((symptom, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
+                >
+                  {symptom}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Button
+          variant="outline"
+          className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
+        >
+          查看详情
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLibraryViewProps) {
+  const { message } = App.useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([]);
@@ -28,13 +81,9 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
   const [favoriteCases, setFavoriteCases] = useState<MedicalCase[]>([]);
   const [recentCases, setRecentCases] = useState<MedicalCase[]>([]);
   const [loading, setLoading] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  // Load cases based on active tab
-  useEffect(() => {
-    loadCases();
-  }, [activeTab, selectedDiseases, selectedAgeRange, selectedGender, searchQuery]);
-
-  const loadCases = async () => {
+  const loadCases = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'search') {
@@ -59,36 +108,43 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, selectedDiseases, selectedAgeRange, selectedGender, searchQuery, message]);
+
+  // Load cases based on active tab
+  useEffect(() => {
+    loadCases();
+  }, [loadCases]);
 
   return (
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
-      {/* Header with Tab Navigation */}
+  
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">病例库</h1>
-          <Tabs value={activeTab} onValueChange={onTabChange}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
-              <TabsTrigger
-                value="search"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
-              >
-                病例检索
-              </TabsTrigger>
-              <TabsTrigger
-                value="favorites"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
-              >
-                我的收藏
-              </TabsTrigger>
-              <TabsTrigger
-                value="recent"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
-              >
-                最近浏览
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-4">
+            <Tabs value={activeTab} onValueChange={onTabChange}>
+              <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+                <TabsTrigger
+                  value="search"
+                  className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                >
+                  病例检索
+                </TabsTrigger>
+                <TabsTrigger
+                  value="favorites"
+                  className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                >
+                  我的收藏
+                </TabsTrigger>
+                <TabsTrigger
+                  value="recent"
+                  className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                >
+                  最近浏览
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -128,13 +184,22 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                       {type}
                     </button>
                   ))}
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="ml-auto px-4 py-1.5 rounded-lg bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
-                  >
-                    <Filter className="h-4 w-4" />
-                    {showFilters ? "收起筛选" : "展开筛选"}
-                  </button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      onClick={() => setCreateDialogOpen(true)}
+                      className="bg-[#D94527] hover:bg-[#C23E21] text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      新建病例
+                    </Button>
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="px-4 py-1.5 rounded-lg bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Filter className="h-4 w-4" />
+                      {showFilters ? "收起筛选" : "展开筛选"}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Advanced Filters (Expandable) */}
@@ -210,52 +275,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                   </div>
                 ) : (
                   cases.map((caseItem) => (
-                    <Card
-                      key={caseItem.case_id}
-                      className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
-                      onClick={() => onSelectCase(caseItem.case_id.toString())}
-                    >
-                      <CardContent className="p-5 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
-                          {caseItem.is_classic && (
-                            <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                              <Target className="h-3 w-3" />
-                              <span className="text-xs font-semibold">经典</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
-
-                        <div className="text-sm text-gray-600">
-                          {caseItem.gender} · {caseItem.age}岁
-                        </div>
-
-                        {caseItem.symptoms && caseItem.symptoms.length > 0 && (
-                          <div className="space-y-1">
-                            <span className="text-xs font-semibold text-gray-500">关键症状:</span>
-                            <div className="flex flex-wrap gap-1">
-                              {caseItem.symptoms.slice(0, 3).map((symptom, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
-                                >
-                                  {symptom}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <Button
-                          variant="outline"
-                          className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
-                        >
-                          查看详情
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <CaseCard key={caseItem.case_id} caseItem={caseItem} onSelect={onSelectCase} />
                   ))
                 )}
               </div>
@@ -273,46 +293,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {favoriteCases.map((caseItem) => (
-                    <Card
-                      key={caseItem.case_id}
-                      className="bg-white border-gray-200 hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
-                      onClick={() => onSelectCase(caseItem.case_id.toString())}
-                    >
-                      <CardContent className="p-5 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
-                        </div>
-
-                        <h3 className="font-bold text-lg text-gray-900">{caseItem.diagnosis}</h3>
-
-                        <div className="text-sm text-gray-600">
-                          {caseItem.gender} · {caseItem.age}岁
-                        </div>
-
-                        {caseItem.symptoms && caseItem.symptoms.length > 0 && (
-                          <div className="space-y-1">
-                            <span className="text-xs font-semibold text-gray-500">关键症状:</span>
-                            <div className="flex flex-wrap gap-1">
-                              {caseItem.symptoms.slice(0, 3).map((symptom, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
-                                >
-                                  {symptom}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <Button
-                          variant="outline"
-                          className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
-                        >
-                          查看详情
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <CaseCard key={caseItem.case_id} caseItem={caseItem} onSelect={onSelectCase} />
                   ))}
                 </div>
               )}
@@ -375,6 +356,12 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
           )}
         </div>
       </div>
+      {/* Create Case Dialog */}
+      <CreateCaseDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={loadCases}
+      />
     </div>
   );
 }
