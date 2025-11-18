@@ -177,6 +177,8 @@ export const API_ENDPOINTS = {
       detail: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/detail`,
       createDetail: `${API_BASE_URL}/patient/timeline/detail/save`,
       delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}`,
+      deleteImages: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/images`,
+      deleteMetrics: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/metrics`,
     },
     image: {
       create: `${API_BASE_URL}/patient/timeline/image/create`,

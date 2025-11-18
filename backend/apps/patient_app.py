@@ -712,3 +712,77 @@ async def delete_patient_todo(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete todo: {str(e)}"
         )
+
+
+@router.delete("/patient/timeline/{timeline_id}/images")
+async def delete_timeline_images(
+    timeline_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete all images for a timeline (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.delete_timeline_images_service(
+            timeline_id,
+            tenant_id,
+            user_id
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete timeline images failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete timeline images: {str(e)}"
+        )
+
+
+@router.delete("/patient/timeline/{timeline_id}/metrics")
+async def delete_timeline_metrics(
+    timeline_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete all metrics for a timeline (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.delete_timeline_metrics_service(
+            timeline_id,
+            tenant_id,
+            user_id
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Delete timeline metrics failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete timeline metrics: {str(e)}"
+        )

@@ -325,12 +325,12 @@ export async function deleteTimeline(timelineId: number): Promise<ApiSuccessResp
       headers: getAuthHeaders(),
     });
 
- 
+
     if (!response.ok) {
       throw new Error(`Failed to delete timeline: ${response.statusText}`);
     }
 
- 
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -338,7 +338,51 @@ export async function deleteTimeline(timelineId: number): Promise<ApiSuccessResp
     throw error;
   }
 }
- 
+
+/**
+ * Delete all images for a timeline
+ */
+export async function deleteTimelineImages(timelineId: number): Promise<ApiSuccessResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.deleteImages(timelineId), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete timeline images: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete timeline images ${timelineId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete all metrics for a timeline
+ */
+export async function deleteTimelineMetrics(timelineId: number): Promise<ApiSuccessResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.patient.timeline.deleteMetrics(timelineId), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete timeline metrics: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete timeline metrics ${timelineId}:`, error);
+    throw error;
+  }
+}
+
 // ============================================================================
 // Medical Image Services
 // ============================================================================
@@ -521,6 +565,8 @@ const patientService = {
   getTimelineDetail,
   saveTimelineDetail,
   deleteTimeline,
+  deleteTimelineImages,
+  deleteTimelineMetrics,
 
   // Medical Images
   createMedicalImage,

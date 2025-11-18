@@ -477,3 +477,47 @@ def delete_patient_todo(todo_id: int, tenant_id: str, user_id: str) -> bool:
 
         logger.info(f"Deleted patient todo: {todo_id}")
         return True
+
+
+# ============================================================================
+# Timeline Images and Metrics Cleanup Operations
+# ============================================================================
+
+def delete_timeline_images(timeline_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Delete all images for a timeline (soft delete)
+    """
+    with get_db_session() as session:
+        images = session.query(PatientMedicalImage).filter(
+            PatientMedicalImage.timeline_id == timeline_id,
+            PatientMedicalImage.tenant_id == tenant_id,
+            PatientMedicalImage.delete_flag != 'Y'
+        ).all()
+
+        for image in images:
+            image.delete_flag = 'Y'
+            image.updated_by = user_id
+
+        session.commit()
+        logger.info(f"Deleted {len(images)} images for timeline: {timeline_id}")
+        return True
+
+
+def delete_timeline_metrics(timeline_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Delete all metrics for a timeline (soft delete)
+    """
+    with get_db_session() as session:
+        metrics = session.query(PatientMetrics).filter(
+            PatientMetrics.timeline_id == timeline_id,
+            PatientMetrics.tenant_id == tenant_id,
+            PatientMetrics.delete_flag != 'Y'
+        ).all()
+
+        for metric in metrics:
+            metric.delete_flag = 'Y'
+            metric.updated_by = user_id
+
+        session.commit()
+        logger.info(f"Deleted {len(metrics)} metrics for timeline: {timeline_id}")
+        return True

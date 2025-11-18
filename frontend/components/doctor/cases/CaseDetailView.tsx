@@ -18,13 +18,13 @@ import {
   X,
   Image as ImageIcon,
   Tag as TagIcon,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input, Select, InputNumber } from "antd";
+import { Input, Select, InputNumber, App } from "antd";
 import { medicalCaseService, type MedicalCaseDetail } from "@/services/medicalCaseService";
-import { message } from "antd";
 const { TextArea } = Input;
 interface CaseDetailViewProps {
   caseId: string;
@@ -38,6 +38,7 @@ const caseCategories = [
   { value: "complex", label: "复杂病例" },
 ];
 export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
+  const { message, modal } = App.useApp();
   const [caseData, setCaseData] = useState<MedicalCaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("basic");
@@ -53,6 +54,18 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
       setLoading(true);
       const data = await medicalCaseService.getDetail(parseInt(caseId));
       setCaseData(data);
+
+      // Check if this case is in user's favorites
+      try {
+        const favoritesResponse = await medicalCaseService.getFavorites();
+        const isFav = favoritesResponse.cases.some(
+          (favCase) => favCase.case_id === parseInt(caseId)
+        );
+        setIsFavorited(isFav);
+      } catch (error) {
+        console.error("Failed to load favorite status:", error);
+        // Don't show error message for favorite status check failure
+      }
     } catch (error) {
       console.error("Failed to load case detail:", error);
       message.error("加载病例详情失败");
@@ -89,6 +102,14 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
       // Parse JSON fields for detail updates
       if (field === "physical_examination" || field === "imaging_results") {
         value = parseJsonField(value);
+      }
+
+      // Convert medications from newline-separated string to array
+      if (field === "medications" && typeof value === "string") {
+        value = value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
       }
 
       // Determine if it's a basic field or detail field
@@ -134,6 +155,33 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
     } finally {
       setFavoriteLoading(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!caseData) return;
+
+    modal.confirm({
+      title: "确认删除",
+      content: `确定要删除病例"${caseData.diagnosis || caseData.case_no}"吗？删除后将无法恢复。`,
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await medicalCaseService.delete(parseInt(caseId));
+            message.success("删除成功");
+            onBack();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete case:", error);
+            const errorMessage = error instanceof Error ? error.message : '删除失败';
+            message.error(errorMessage);
+            reject(error);
+          }
+        });
+      },
+    });
   };
   const EditableField = ({
     field,
@@ -747,6 +795,14 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                   <Button variant="outline" className="w-full">
                     <Share2 className="h-4 w-4 mr-2" />
                     分享
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    删除病例
                   </Button>
                 </CardContent>
               </Card>

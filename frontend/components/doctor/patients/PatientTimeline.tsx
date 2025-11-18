@@ -43,7 +43,7 @@ const getMetricStatusText = (status: string): string => {
 };
 
 export function PatientTimeline({ patientId }: PatientTimelineProps) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [timelines, setTimelines] = useState<TimelineStage[]>([]);
   const [selectedTimeline, setSelectedTimeline] = useState<TimelineWithDetail | null>(null);
@@ -99,21 +99,31 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
   };
 
   const handleDeleteTimeline = async (timeline: TimelineStage) => {
-    Modal.confirm({
+    if (!timeline.timeline_id) {
+      message.error('时间线ID无效，无法删除');
+      return;
+    }
+
+    modal.confirm({
       title: "确认删除",
       content: `确定要删除时间线节点"${timeline.stage_title}"吗？`,
       okText: "确认",
       cancelText: "取消",
       okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await patientService.deleteTimeline(timeline.timeline_id);
-          message.success("删除成功");
-          loadPatientAndTimeline();
-        } catch (error) {
-          message.error("删除失败");
-          console.error("Failed to delete timeline:", error);
-        }
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await patientService.deleteTimeline(timeline.timeline_id);
+            message.success("删除成功");
+            await loadPatientAndTimeline();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete timeline:", error);
+            const errorMessage = error instanceof Error ? error.message : '删除失败';
+            message.error(errorMessage);
+            reject(error);
+          }
+        });
       },
     });
   };
