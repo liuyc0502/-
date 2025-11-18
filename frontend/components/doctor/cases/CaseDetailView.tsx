@@ -19,11 +19,12 @@ import {
   Image as ImageIcon,
   Tag as TagIcon,
   Trash2,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input, Select, InputNumber, App } from "antd";
+import { Input, Select, InputNumber, App, Modal, Form } from "antd";
 import { medicalCaseService, type MedicalCaseDetail } from "@/services/medicalCaseService";
 const { TextArea } = Input;
 interface CaseDetailViewProps {
@@ -46,6 +47,15 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
   const [editValues, setEditValues] = useState<any>({});
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  // Modal states for editing
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isSymptomModalOpen, setIsSymptomModalOpen] = useState(false);
+  const [isLabResultModalOpen, setIsLabResultModalOpen] = useState(false);
+  const [imageForm] = Form.useForm();
+  const [symptomForm] = Form.useForm();
+  const [labResultForm] = Form.useForm();
+
   useEffect(() => {
     loadCaseDetail();
   }, [caseId]);
@@ -177,6 +187,120 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
             console.error("Failed to delete case:", error);
             const errorMessage = error instanceof Error ? error.message : '删除失败';
             message.error(errorMessage);
+            reject(error);
+          }
+        });
+      },
+    });
+  };
+
+  // Image handling functions
+  const handleAddImage = async (values: any) => {
+    try {
+      await medicalCaseService.addImages(parseInt(caseId), [values]);
+      message.success("添加影像成功");
+      setIsImageModalOpen(false);
+      imageForm.resetFields();
+      await loadCaseDetail();
+    } catch (error) {
+      console.error("Failed to add image:", error);
+      message.error("添加影像失败");
+    }
+  };
+
+  const handleDeleteAllImages = () => {
+    modal.confirm({
+      title: "确认删除",
+      content: "确定要删除所有影像资料吗？删除后将无法恢复。",
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await medicalCaseService.deleteImages(parseInt(caseId));
+            message.success("删除成功");
+            await loadCaseDetail();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete images:", error);
+            message.error("删除失败");
+            reject(error);
+          }
+        });
+      },
+    });
+  };
+
+  // Symptom handling functions
+  const handleAddSymptom = async (values: any) => {
+    try {
+      await medicalCaseService.addSymptoms(parseInt(caseId), [values]);
+      message.success("添加症状成功");
+      setIsSymptomModalOpen(false);
+      symptomForm.resetFields();
+      await loadCaseDetail();
+    } catch (error) {
+      console.error("Failed to add symptom:", error);
+      message.error("添加症状失败");
+    }
+  };
+
+  const handleDeleteAllSymptoms = () => {
+    modal.confirm({
+      title: "确认删除",
+      content: "确定要删除所有症状吗？删除后将无法恢复。",
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await medicalCaseService.deleteSymptoms(parseInt(caseId));
+            message.success("删除成功");
+            await loadCaseDetail();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete symptoms:", error);
+            message.error("删除失败");
+            reject(error);
+          }
+        });
+      },
+    });
+  };
+
+  // Lab result handling functions
+  const handleAddLabResult = async (values: any) => {
+    try {
+      await medicalCaseService.addLabResults(parseInt(caseId), [values]);
+      message.success("添加检查结果成功");
+      setIsLabResultModalOpen(false);
+      labResultForm.resetFields();
+      await loadCaseDetail();
+    } catch (error) {
+      console.error("Failed to add lab result:", error);
+      message.error("添加检查结果失败");
+    }
+  };
+
+  const handleDeleteAllLabResults = () => {
+    modal.confirm({
+      title: "确认删除",
+      content: "确定要删除所有实验室检查结果吗？删除后将无法恢复。",
+      okText: "确认删除",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await medicalCaseService.deleteLabResults(parseInt(caseId));
+            message.success("删除成功");
+            await loadCaseDetail();
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete lab results:", error);
+            message.error("删除失败");
             reject(error);
           }
         });
@@ -461,10 +585,34 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                   {/* Image Gallery Card */}
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
-                      <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <ImageIcon className="h-5 w-5 text-[#D94527]" />
-                        影像资料
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                          <ImageIcon className="h-5 w-5 text-[#D94527]" />
+                          影像资料
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsImageModalOpen(true)}
+                            className="flex items-center gap-1"
+                          >
+                            <Plus className="h-3 w-3" />
+                            添加
+                          </Button>
+                          {caseData.images && caseData.images.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleDeleteAllImages}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              删除全部
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       {caseData.images && caseData.images.length > 0 ? (
@@ -529,15 +677,39 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                     </CardContent>
                   </Card>
                   {/* Symptoms Card */}
-                  {caseData.symptoms && caseData.symptoms.length > 0 && (
-                    <Card className="bg-white border-gray-200">
-                      <CardHeader>
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
                           <Stethoscope className="h-5 w-5 text-[#D94527]" />
                           症状表现
                         </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsSymptomModalOpen(true)}
+                            className="flex items-center gap-1"
+                          >
+                            <Plus className="h-3 w-3" />
+                            添加
+                          </Button>
+                          {caseData.symptoms && caseData.symptoms.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleDeleteAllSymptoms}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              删除全部
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {caseData.symptoms && caseData.symptoms.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {caseData.symptoms.map((symptom, index) => (
                             <div
@@ -555,9 +727,15 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                             </div>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                      ) : (
+                        <div className="text-center py-8 text-gray-400">
+                          <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm">暂无症状信息</p>
+                          <p className="text-xs mt-1">点击"添加"按钮添加症状</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
                 {/* History Tab */}
                 <TabsContent value="history" className="mt-0 space-y-4">
@@ -638,10 +816,34 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                   </Card>
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
-                      <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <TestTube className="h-5 w-5 text-[#D94527]" />
-                        实验室检查
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">
+                          <TestTube className="h-5 w-5 text-[#D94527]" />
+                          实验室检查
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsLabResultModalOpen(true)}
+                            className="flex items-center gap-1"
+                          >
+                            <Plus className="h-3 w-3" />
+                            添加
+                          </Button>
+                          {caseData.lab_results && caseData.lab_results.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleDeleteAllLabResults}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              删除全部
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       {caseData.lab_results && caseData.lab_results.length > 0 ? (
@@ -667,7 +869,11 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">暂无实验室检查信息</span>
+                        <div className="text-center py-8 text-gray-400">
+                          <TestTube className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm">暂无实验室检查信息</p>
+                          <p className="text-xs mt-1">点击"添加"按钮添加检查结果</p>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -869,6 +1075,174 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <Modal
+        title="添加影像资料"
+        open={isImageModalOpen}
+        onCancel={() => setIsImageModalOpen(false)}
+        footer={null}
+      >
+        <Form
+          form={imageForm}
+          onFinish={handleAddImage}
+          layout="vertical"
+        >
+          <Form.Item
+            name="image_url"
+            label="影像URL"
+            rules={[{ required: true, message: '请输入影像URL' }]}
+          >
+            <Input placeholder="请输入影像文件的URL地址" />
+          </Form.Item>
+          <Form.Item
+            name="image_type"
+            label="影像类型"
+          >
+            <Select placeholder="请选择影像类型">
+              <Select.Option value="X光">X光</Select.Option>
+              <Select.Option value="CT">CT</Select.Option>
+              <Select.Option value="MRI">MRI</Select.Option>
+              <Select.Option value="病理切片">病理切片</Select.Option>
+              <Select.Option value="其他">其他</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="image_description"
+            label="影像描述"
+          >
+            <TextArea rows={3} placeholder="请描述影像发现或特征" />
+          </Form.Item>
+          <Form.Item
+            name="thumbnail_url"
+            label="缩略图URL（可选）"
+          >
+            <Input placeholder="可选：缩略图URL" />
+          </Form.Item>
+          <Form.Item className="mb-0 flex justify-end gap-2">
+            <Button onClick={() => setIsImageModalOpen(false)}>取消</Button>
+            <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
+              添加
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Symptom Modal */}
+      <Modal
+        title="添加症状"
+        open={isSymptomModalOpen}
+        onCancel={() => setIsSymptomModalOpen(false)}
+        footer={null}
+      >
+        <Form
+          form={symptomForm}
+          onFinish={handleAddSymptom}
+          layout="vertical"
+        >
+          <Form.Item
+            name="symptom_name"
+            label="症状名称"
+            rules={[{ required: true, message: '请输入症状名称' }]}
+          >
+            <Input placeholder="例如：关节疼痛、晨僵" />
+          </Form.Item>
+          <Form.Item
+            name="symptom_description"
+            label="症状描述"
+          >
+            <TextArea rows={3} placeholder="详细描述症状表现、持续时间等" />
+          </Form.Item>
+          <Form.Item
+            name="is_key_symptom"
+            label="是否为关键症状"
+            valuePropName="checked"
+          >
+            <input type="checkbox" className="mr-2" />
+            <span className="text-sm text-gray-600">标记为诊断关键症状</span>
+          </Form.Item>
+          <Form.Item className="mb-0 flex justify-end gap-2">
+            <Button onClick={() => setIsSymptomModalOpen(false)}>取消</Button>
+            <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
+              添加
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Lab Result Modal */}
+      <Modal
+        title="添加实验室检查"
+        open={isLabResultModalOpen}
+        onCancel={() => setIsLabResultModalOpen(false)}
+        footer={null}
+      >
+        <Form
+          form={labResultForm}
+          onFinish={handleAddLabResult}
+          layout="vertical"
+        >
+          <Form.Item
+            name="test_name"
+            label="检查项目"
+            rules={[{ required: true, message: '请输入检查项目名称' }]}
+          >
+            <Input placeholder="例如：CRP、RF、ESR" />
+          </Form.Item>
+          <Form.Item
+            name="test_full_name"
+            label="检查项目全称"
+          >
+            <Input placeholder="例如：C反应蛋白" />
+          </Form.Item>
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              name="test_value"
+              label="检查结果"
+              rules={[{ required: true, message: '请输入检查结果' }]}
+            >
+              <Input placeholder="例如：8.5" />
+            </Form.Item>
+            <Form.Item
+              name="test_unit"
+              label="单位"
+            >
+              <Input placeholder="例如：mg/L" />
+            </Form.Item>
+          </div>
+          <Form.Item
+            name="normal_range"
+            label="正常范围"
+          >
+            <Input placeholder="例如：0-10 mg/L" />
+          </Form.Item>
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              name="is_abnormal"
+              label="是否异常"
+              valuePropName="checked"
+            >
+              <input type="checkbox" className="mr-2" />
+              <span className="text-sm text-gray-600">标记为异常</span>
+            </Form.Item>
+            <Form.Item
+              name="abnormal_indicator"
+              label="异常指示"
+            >
+              <Select placeholder="选择">
+                <Select.Option value="↑">↑ 偏高</Select.Option>
+                <Select.Option value="↓">↓ 偏低</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
+          <Form.Item className="mb-0 flex justify-end gap-2">
+            <Button onClick={() => setIsLabResultModalOpen(false)}>取消</Button>
+            <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
+              添加
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
