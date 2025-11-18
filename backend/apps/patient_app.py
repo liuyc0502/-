@@ -211,7 +211,7 @@ async def get_patient_by_email(
             detail=f"Failed to get patient by email: {str(e)}"
         )
                 
-@router.put("/patient/{patient_id}/update")
+@router.put("/patient/{patient_id}")
 async def update_patient(
     patient_id: int,
     request: CreatePatientRequest,
@@ -248,7 +248,7 @@ async def update_patient(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to update patient: {str(e)}"
         )
-@router.delete("/patient/{patient_id}/delete")
+@router.delete("/patient/{patient_id}")
 async def delete_patient(
     patient_id: int,
     authorization: Optional[str] = Header(None)

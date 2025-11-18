@@ -57,13 +57,13 @@ export function CreateTodoModal({
   useEffect(() => {
     if (open) {
       if (editingTodo) {
-        // DatePicker accepts string dates and converts them internally
-        // We can pass the string directly, DatePicker will handle conversion
+        // Don't set date value if it's a string - DatePicker needs dayjs object
+        // User will need to re-select the date when editing
         form.setFieldsValue({
           todo_title: editingTodo.todo_title,
           todo_description: editingTodo.todo_description,
           todo_type: editingTodo.todo_type,
-          due_date: editingTodo.due_date || undefined,
+          // Skip due_date - let user re-select to avoid dayjs dependency
           priority: editingTodo.priority,
           status: editingTodo.status,
         });
@@ -74,8 +74,28 @@ export function CreateTodoModal({
   }, [open, editingTodo, form]);
 
   const formatDate = (date: any): string => {
-    // DatePicker returns dayjs object, which has format method
-    return date?.format("YYYY-MM-DD") || "";
+    // DatePicker may return dayjs object (if available) or Date object
+    if (!date) return "";
+    
+    // Check if it has format method (dayjs object)
+    if (typeof date.format === 'function') {
+      return date.format("YYYY-MM-DD");
+    }
+    
+    // Otherwise, treat as Date object and format manually
+    if (date instanceof Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // If it's already a string, return as is
+    if (typeof date === 'string') {
+      return date;
+    }
+    
+    return "";
   };
 
   const handleSubmit = async () => {

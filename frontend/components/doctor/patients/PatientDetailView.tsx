@@ -41,9 +41,9 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
 
   return (
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
-      {/* Header */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 px-8 py-4 flex-shrink-0">
-        <div className="max-w-7xl mx-auto">
+      {/* Header with Tab Navigation */}
+      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+        <div className="px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -53,10 +53,10 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
               <ArrowLeft className="h-5 w-5" />
             </Button>
             {loading ? (
-              <h1 className="text-2xl font-bold text-gray-900">加载中...</h1>
+              <h1 className="text-3xl font-bold text-gray-900">加载中...</h1>
             ) : patient ? (
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900">
                  {patient.name} · {patient.gender} · {patient.age}岁
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
@@ -64,32 +64,26 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
                 </p>
               </div>
             ) : (
-              <h1 className="text-2xl font-bold text-gray-900">患者信息</h1>
+              <h1 className="text-3xl font-bold text-gray-900">患者信息</h1>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Tab Navigation - Reference Image 2 Style */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-gray-100 h-14 p-1 gap-1">
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base text-gray-600"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 患者概览
               </TabsTrigger>
               <TabsTrigger
                 value="timeline"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base text-gray-600"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 诊疗时间线
               </TabsTrigger>
               <TabsTrigger
                 value="todos"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base text-gray-600"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 待办事项
               </TabsTrigger>
