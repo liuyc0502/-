@@ -467,7 +467,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
             </Card>
           )}
 
-           {/* Bottom Section: Doctor Notes (50%) + Pathology Findings (50%) - 始终显示 */}
+           {/* Bottom Section: 4-column grid layout */}
 
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -516,6 +516,70 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     <div className="text-center py-8">
 
       <p className="text-gray-400 text-sm">暂无病理发现</p>
+
+      <p className="text-gray-400 text-xs mt-1">点击"编辑详情"可添加</p>
+
+    </div>
+
+  )}
+
+</Card>
+
+{/* Patient Summary - 患者报告解读 */}
+
+<Card className="bg-blue-50 border-blue-200" title="📋 患者报告解读（通俗版）">
+
+  {selectedTimeline.detail?.patient_summary ? (
+
+    <p className="text-sm text-gray-700 leading-relaxed">
+
+      {selectedTimeline.detail.patient_summary}
+
+    </p>
+
+  ) : (
+
+    <div className="text-center py-8">
+
+      <p className="text-gray-400 text-sm">暂无患者报告解读</p>
+
+      <p className="text-gray-400 text-xs mt-1">点击"编辑详情"可添加</p>
+
+    </div>
+
+  )}
+
+</Card>
+
+
+
+{/* Patient Suggestions - 给患者的建议 */}
+
+<Card className="bg-green-50 border-green-200" title="💡 给患者的建议">
+
+  {selectedTimeline.detail?.patient_suggestions && selectedTimeline.detail.patient_suggestions.length > 0 ? (
+
+    <ul className="space-y-2">
+
+      {selectedTimeline.detail.patient_suggestions.map((suggestion, idx) => (
+
+        <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+
+          <span className="text-green-600 font-bold">•</span>
+
+          <span>{suggestion}</span>
+
+        </li>
+
+      ))}
+
+    </ul>
+
+  ) : (
+
+    <div className="text-center py-8">
+
+      <p className="text-gray-400 text-sm">暂无患者建议</p>
 
       <p className="text-gray-400 text-xs mt-1">点击"编辑详情"可添加</p>
 
