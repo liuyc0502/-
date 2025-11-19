@@ -397,7 +397,6 @@ export function ReportsTab() {
           ))}
         </div>
       )}
-      </div>
     </div>
   );
 }
