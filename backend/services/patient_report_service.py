@@ -6,10 +6,63 @@ Reports are not stored separately but derived from timeline stages with metrics,
 """
 import logging
 from typing import List, Dict, Optional
+from sqlalchemy import text
 
 from database import patient_db
+from database.client import get_db_session
 
 logger = logging.getLogger(__name__)
+
+# Cache for user names to avoid repeated database queries
+_user_name_cache = {}
+
+
+def get_user_display_name(user_id: Optional[str]) -> str:
+    """
+    Get user display name from Supabase auth.users table
+
+    Args:
+        user_id: User ID (UUID string from Supabase auth)
+
+    Returns:
+        str: User display name or "医生" as fallback
+    """
+    if not user_id:
+        return "医生"
+
+    # Check cache first
+    if user_id in _user_name_cache:
+        return _user_name_cache[user_id]
+
+    try:
+        with get_db_session() as session:
+            # Query auth.users table for user metadata
+            # Supabase stores user metadata in raw_user_meta_data JSON field
+            query = text("""
+                SELECT
+                    COALESCE(
+                        raw_user_meta_data->>'full_name',
+                        raw_user_meta_data->>'name',
+                        email
+                    ) as display_name
+                FROM auth.users
+                WHERE id = :user_id
+            """)
+
+            result = session.execute(query, {"user_id": user_id}).fetchone()
+
+            if result and result[0]:
+                display_name = result[0]
+                # Cache the result
+                _user_name_cache[user_id] = display_name
+                return display_name
+            else:
+                logger.warning(f"User {user_id} not found in auth.users table")
+                return "医生"
+
+    except Exception as e:
+        logger.error(f"Failed to fetch user display name for {user_id}: {str(e)}")
+        return "医生"
 
 
 def infer_report_type(timeline: Dict) -> str:
@@ -168,11 +221,14 @@ def get_patient_reports(patient_id: int, user_id: str, tenant_id: str) -> List[D
         if timeline_detail.get('detail'):
             has_ai = bool(timeline_detail['detail'].get('patient_summary'))
 
+        # Get doctor name from created_by field
+        doctor_name = get_user_display_name(timeline_detail.get('created_by'))
+
         reports.append({
             'id': str(timeline_detail['timeline_id']),
             'type': infer_report_type(timeline_detail),
             'date': timeline_detail.get('stage_date', ''),
-            'doctor': '医生',  # TODO: Fetch actual doctor name from user table
+            'doctor': doctor_name,
             'status': '已解读' if timeline_detail.get('status') == 'completed' else '未解读',
             'hasAI': has_ai,
             'keyFindings': map_key_findings(timeline_detail.get('metrics', []))
@@ -237,11 +293,14 @@ def get_report_detail(timeline_id: int, user_id: str, tenant_id: str) -> Dict:
         ai_summary = detail.get('patient_summary')
         suggestions = detail.get('patient_suggestions', [])
 
+    # Get doctor name from created_by field
+    doctor_name = get_user_display_name(timeline.get('created_by'))
+
     report_detail = {
         'id': str(timeline['timeline_id']),
         'type': infer_report_type(timeline),
         'date': timeline.get('stage_date', ''),
-        'doctor': '医生',  # TODO: Fetch actual doctor name
+        'doctor': doctor_name,
         'status': '已解读' if timeline.get('status') == 'completed' else '未解读',
         'hasAI': has_ai,
         'diagnosis': timeline.get('diagnosis'),
