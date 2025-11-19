@@ -177,12 +177,26 @@ export interface TodayPlanResponse {
   precautions: string[];
 }
 
+export interface DailyStats {
+  date: string;
+  total_items: number;
+  completed_items: number;
+  completion_rate: number;
+  medication_total?: number;
+  medication_completed?: number;
+  task_total?: number;
+  task_completed?: number;
+}
+ 
+export interface CompletionChart {
+  date: string;
+  completion_rate: number;
+}
+ 
 export interface WeeklyProgressResponse {
-  completionRate: number;
-  medicationCompliance: number;
-  taskCompletion: number;
-  weekData: Array<{
-    day: string;
-    completion: number;
-  }>;
+  overall_completion_rate: number;
+  medication_compliance_rate: number;
+  task_completion_rate: number;
+  daily_stats: DailyStats[];
+  completion_chart: CompletionChart[];
 }

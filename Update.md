@@ -57,7 +57,7 @@
   - care_plan_task_t: plan_id, task_category
   - care_plan_precaution_t: plan_id
   - care_plan_completion_t: plan_id, patient_id+record_date（复合索引）, item_type+item_id（复合索引）
-
+#### 4. 医生端康复计划的可视化
 
 **技术实现**:
 
@@ -94,7 +94,7 @@ care_plan_t (康复计划主表)
 ---
 
 
-## 2025-01-21
+## 2025-11-19
 
 ### 医疗案例和患者相关功能更新
 

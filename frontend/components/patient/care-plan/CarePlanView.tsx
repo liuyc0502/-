@@ -241,12 +241,7 @@ export function CarePlanView() {
                     </div>
                   )}
 
-                  <Button
-                    variant="outline"
-                    className="w-full text-[#10B981] border-[#10B981] hover:bg-[#10B981] hover:text-white"
-                  >
-                    查看用药详情
-                  </Button>
+                
                 </CardContent>
               </Card>
 
@@ -305,12 +300,7 @@ export function CarePlanView() {
                     </div>
                   )}
 
-                  <Button
-                    variant="outline"
-                    className="w-full text-[#10B981] border-[#10B981] hover:bg-[#10B981] hover:text-white"
-                  >
-                    记录完成情况
-                  </Button>
+           
                 </CardContent>
               </Card>
             </div>
@@ -330,7 +320,7 @@ export function CarePlanView() {
                       <div className="space-y-3">
                         <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
                           <div className="text-3xl font-bold text-[#10B981]">
-                            {weeklyProgress.completionRate}%
+                            {weeklyProgress.overall_completion_rate}%
                           </div>
                           <div className="text-sm text-gray-600 mt-1">平均完成率</div>
                         </div>
@@ -338,20 +328,20 @@ export function CarePlanView() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">用药依从性</span>
-                            <span className="font-bold text-gray-900">{weeklyProgress.medicationCompliance}%</span>
+                            <span className="font-bold text-gray-900">{weeklyProgress.medication_compliance_rate}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-[#10B981] h-2 rounded-full" style={{ width: `${weeklyProgress.medicationCompliance}%` }}></div>
+                            <div className="bg-[#10B981] h-2 rounded-full" style={{ width: `${weeklyProgress.medication_compliance_rate}%` }}></div>
                           </div>
                         </div>
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-gray-600">任务完成率</span>
-                            <span className="font-bold text-gray-900">{weeklyProgress.taskCompletion}%</span>
+                            <span className="font-bold text-gray-900">{weeklyProgress.task_completion_rate}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${weeklyProgress.taskCompletion}%` }}></div>
+                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${weeklyProgress.task_completion_rate}%` }}></div>
                           </div>
                         </div>
                       </div>
@@ -360,17 +350,22 @@ export function CarePlanView() {
                       <div className="pt-3 border-t border-gray-200">
                         <div className="text-xs text-gray-500 mb-2">每日完成度</div>
                         <div className="flex items-end justify-between gap-1 h-24">
-                          {weeklyProgress.weekData.map((day, index) => (
-                            <div key={index} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="w-full bg-gray-200 rounded-t flex items-end" style={{ height: "80px" }}>
-                                <div
-                                  className="w-full bg-[#10B981] rounded-t transition-all"
-                                  style={{ height: `${day.completion}%` }}
-                                ></div>
+                          {weeklyProgress.completion_chart.map((day, index) => {
+                            const date = new Date(day.date);
+                            const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                            const dayName = dayNames[date.getDay()];
+                            return (
+                              <div key={index} className="flex-1 flex flex-col items-center gap-1">
+                                <div className="w-full bg-gray-200 rounded-t flex items-end" style={{ height: "80px" }}>
+                                  <div
+                                    className="w-full bg-[#10B981] rounded-t transition-all"
+                                    style={{ height: `${day.completion_rate}%` }}
+                                  ></div>
+                                </div>
+                                <div className="text-xs text-gray-500">{dayName.slice(1)}</div>
                               </div>
-                              <div className="text-xs text-gray-500">{day.day.slice(1)}</div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </>
@@ -378,9 +373,7 @@ export function CarePlanView() {
                     <div className="text-center py-8 text-gray-500">加载中...</div>
                   )}
 
-                  <Button className="w-full bg-[#10B981] hover:bg-[#059669] text-white">
-                    查看详细统计
-                  </Button>
+              
                 </CardContent>
               </Card>
 
