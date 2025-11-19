@@ -43,7 +43,8 @@ class CreateTimelineDetailRequest(BaseModel):
     doctor_notes: Optional[str] = Field(None, description="Doctor observation notes")
     pathology_findings: Optional[str] = Field(None, description="Pathology findings")
     medications: Optional[List[str]] = Field(default_factory=list, description="Medication list")
-
+    patient_summary: Optional[str] = Field(None, description="Patient-friendly summary (plain language)")
+    patient_suggestions: Optional[List[str]] = Field(default_factory=list, description="Suggestions for patient")
 
 class CreateMedicalImageRequest(BaseModel):
     timeline_id: int = Field(..., description="Timeline ID")

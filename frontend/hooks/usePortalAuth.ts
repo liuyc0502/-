@@ -73,7 +73,6 @@ export function usePortalAuth(requiredPortal?: PortalType) {
    */
   const getCurrentPortal = (): PortalType | null => {
     if (pathname.includes("/doctor")) return "doctor";
-    if (pathname.includes("/student")) return "student";
     if (pathname.includes("/patient")) return "patient";
     if (pathname.includes("/admin")) return "admin";
     return null;

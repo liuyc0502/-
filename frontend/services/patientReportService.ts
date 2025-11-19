@@ -13,13 +13,18 @@ const patientReportService = {
   /**
    * Get all reports for a patient
    *
-   * @param patientId - Patient ID
+   * @param patientId - Patient ID (optional, if not provided, will use current user's email to find patient)
    * @returns List of report summaries
    */
-  async getReportList(patientId: number): Promise<PatientReport[]> {
+  async getReportList(patientId?: number): Promise<PatientReport[]> {
     try {
+      // Build URL - if patientId is provided, include it as query param, otherwise just use base URL
+      const baseUrl = API_ENDPOINTS.patient.reports.list(0).split('?')[0]; // Get base URL without query params
+      const url = patientId 
+        ? `${baseUrl}?patient_id=${patientId}`
+        : baseUrl; // For patient portal, don't pass patient_id - backend will find by email
       const response = await fetchWithErrorHandling(
-        API_ENDPOINTS.patient.reports.list(patientId),
+        url,
         {
           method: 'GET',
           headers: getAuthHeaders(),
@@ -28,7 +33,7 @@ const patientReportService = {
       const data = await response.json();
       return data.data;
     } catch (error) {
-      log.error(`Failed to get report list for patient ${patientId}:`, error);
+      log.error(`Failed to get report list for patient ${patientId || 'current user'}:`, error);
       throw error;
     }
   },

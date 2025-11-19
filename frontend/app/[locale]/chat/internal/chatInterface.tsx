@@ -41,7 +41,7 @@ import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseVi
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
-import { KnowledgeView } from "@/components/patient/knowledge/KnowledgeView";
+
 
 import {
   preprocessAttachments,
@@ -1776,7 +1776,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
               <>
                 {activeView === "profile" && <PatientProfileView />}
                 {activeView === "care-plan" && <CarePlanView />}
-                {activeView === "knowledge" && <KnowledgeView />}
               </>
             ) : (
               <div className="p-8 text-slate-600">

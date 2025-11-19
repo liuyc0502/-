@@ -105,7 +105,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     searchPlaceholder: "搜索对话",
     recentLabel: "Recents",
     quickActionHeading: "Try asking about",
-    defaultUserName: "沉宸",
+    defaultUserName: "沅宸",
   },
   doctor: {
     accentColor: "#D94527",
@@ -137,7 +137,6 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
       { id: "chats", label: "对话", icon: MessageSquare },
       { id: "profile", label: "我的档案", icon: Users },
       { id: "care-plan", label: "康复计划", icon: LifeBuoy },
-      { id: "knowledge", label: "疾病百科", icon: BookOpen },
     ],
     quickActions: sharedQuickActions,
     searchPlaceholder: "搜索健康话题或对话",

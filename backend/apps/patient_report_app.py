@@ -29,16 +29,16 @@ def get_patient_reports(
 ):
     """
     Get all examination reports for a patient
- 
+
     Query Parameters:
         patient_id: Patient ID
- 
+
     Returns:
         JSON response with report list
     """
     try:
         user_id, tenant_id = get_current_user_id(authorization)
- 
+
         # Permission check: Verify patient belongs to tenant
         patient = patient_db.get_patient_by_id(patient_id, tenant_id)
         if not patient:
@@ -76,16 +76,16 @@ def get_report_detail(
 ):
     """
     Get detailed report information
- 
+
     Path Parameters:
         timeline_id: Timeline ID (serves as report ID)
- 
+
     Returns:
         JSON response with detailed report data
     """
     try:
         user_id, tenant_id = get_current_user_id(authorization)
- 
+
         # Get report detail
         detail = patient_report_service.get_report_detail(
             timeline_id=timeline_id,

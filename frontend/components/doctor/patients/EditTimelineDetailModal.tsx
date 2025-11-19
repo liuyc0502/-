@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Input, Button, Card, App, Tabs } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import patientService from "@/services/patientService";
@@ -153,96 +153,103 @@ export function EditTimelineDetailModal({
     onClose();
   };
 
-  const items = [
+  // Tab items configuration
+  const tabItems = useMemo(() => [
     {
       key: "basic",
       label: "基本信息",
       children: (
-        <>
-          <Form.Item label="医生观察记录" name="doctor_notes">
-            <Input.TextArea rows={4} placeholder="请输入医生观察记录" />
-          </Form.Item>
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column - Doctor Notes */}
+          <div className="col-span-7 space-y-4">
+            <Form.Item label="医生观察记录" name="doctor_notes">
+              <Input.TextArea rows={3} placeholder="请输入医生观察记录" />
+            </Form.Item>
 
-          <Form.Item label="病理发现" name="pathology_findings">
-            <Input.TextArea rows={4} placeholder="请输入病理发现" />
-          </Form.Item>
+            <Form.Item label="病理发现" name="pathology_findings">
+              <Input.TextArea rows={3} placeholder="请输入病理发现" />
+            </Form.Item>
 
-          <Form.Item label="用药方案">
-            <Form.List name="medications">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field) => (
-                    <div key={field.key} className="flex gap-2 mb-2">
-                      <Form.Item
-                        name={field.name}
-                        fieldKey={field.name}
-                        className="flex-1 mb-0"
-                        noStyle
-                      >
-                        <Input placeholder="例如：甲氨蝶呤 10mg 每周一次" />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    </div>
-                  ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    添加药物
-                  </Button>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
-          <Form.Item
-            label="患者报告解读（通俗版）"
-            name="patient_summary"
-            tooltip="用通俗易懂的语言向患者解释检查结果，避免使用专业术语"
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="例如：本次检查结果显示，您的肿瘤标志物指标整体向好。CEA已降至正常范围，CA199虽略高于正常值但较上次明显下降，说明治疗效果良好。"
-            />
-          </Form.Item>
+            <Form.Item label="用药方案">
+              <Form.List name="medications">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map((field) => (
+                      <div key={field.key} className="flex gap-2 mb-2">
+                        <Form.Item
+                          name={field.name}
+                          fieldKey={field.name}
+                          className="flex-1 mb-0"
+                          noStyle
+                        >
+                          <Input placeholder="例如：甲氨蝶呤 10mg 每周一次" />
+                        </Form.Item>
+                        <Button
+                          icon={<DeleteOutlined />}
+                          onClick={() => remove(field.name)}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                      block
+                    >
+                      添加药物
+                    </Button>
+                  </>
+                )}
+              </Form.List>
+            </Form.Item>
+          </div>
 
-          <Form.Item label="给患者的建议">
-            <Form.List name="patient_suggestions">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field) => (
-                    <div key={field.key} className="flex gap-2 mb-2">
-                      <Form.Item
-                        name={field.name}
-                        className="flex-1 mb-0"
-                        noStyle
-                      >
-                        <Input placeholder="例如：继续观察CA199指标变化" />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    </div>
-                  ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    添加建议
-                  </Button>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
+          {/* Right Column - Patient Summary */}
+          <div className="col-span-5 space-y-4">
+            <Form.Item
+              label="患者报告解读（通俗版）"
+              name="patient_summary"
+              tooltip="用通俗易懂的语言向患者解释检查结果，避免使用专业术语"
+            >
+              <Input.TextArea
+                rows={6}
+                placeholder="例如：本次检查结果显示，您的肿瘤标志物指标整体向好。CEA已降至正常范围，CA199虽略高于正常值但较上次明显下降，说明治疗效果良好。"
+              />
+            </Form.Item>
 
-        </>
+            <Form.Item label="给患者的建议">
+              <Form.List name="patient_suggestions">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map((field) => (
+                      <div key={field.key} className="flex gap-2 mb-2">
+                        <Form.Item
+                          name={field.name}
+                          className="flex-1 mb-0"
+                          noStyle
+                        >
+                          <Input placeholder="例如：继续观察CA199指标变化" />
+                        </Form.Item>
+                        <Button
+                          icon={<DeleteOutlined />}
+                          onClick={() => remove(field.name)}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                      block
+                    >
+                      添加建议
+                    </Button>
+                  </>
+                )}
+              </Form.List>
+            </Form.Item>
+          </div>
+        </div>
       ),
     },
     {
@@ -395,10 +402,9 @@ export function EditTimelineDetailModal({
             )}
           </Form.List>
         </Form.Item>
-
       ),
     },
-  ];
+  ], []);
 
   return (
     <Modal
@@ -407,7 +413,7 @@ export function EditTimelineDetailModal({
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={loading}
-      width={900}
+      width={1200}
       okText="保存"
       cancelText="取消"
     >
@@ -418,7 +424,7 @@ export function EditTimelineDetailModal({
         </div>
       ) : (
         <Form form={form} layout="vertical">
-          <Tabs items={items} />
+          <Tabs items={tabItems} />
         </Form>
       )}
     </Modal>
