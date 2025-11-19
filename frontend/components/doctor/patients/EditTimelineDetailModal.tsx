@@ -56,6 +56,8 @@ export function EditTimelineDetailModal({
         doctor_notes: detail.detail?.doctor_notes || "",
         pathology_findings: detail.detail?.pathology_findings || "",
         medications: detail.detail?.medications || [],
+        patient_summary: detail.detail?.patient_summary || "",
+        patient_suggestions: detail.detail?.patient_suggestions || [],
         images: detail.images.map(img => ({
           image_type: img.image_type,
           image_label: img.image_label,
@@ -85,11 +87,14 @@ export function EditTimelineDetailModal({
 
       // Save timeline detail
       const medications = values.medications?.filter((m: string) => m?.trim()) || [];
+      const patient_suggestions = values.patient_suggestions?.filter((s: string) => s?.trim()) || [];
       await patientService.saveTimelineDetail({
         timeline_id: timelineId,
         doctor_notes: values.doctor_notes || "",
         pathology_findings: values.pathology_findings || "",
         medications: medications,
+        patient_summary: values.patient_summary || "",
+        patient_suggestions: patient_suggestions,
       });
 
       await patientService.deleteTimelineImages(timelineId);
@@ -191,6 +196,49 @@ export function EditTimelineDetailModal({
                     block
                   >
                     添加药物
+                  </Button>
+                </>
+              )}
+            </Form.List>
+          </Form.Item>
+
+          <Form.Item
+            label="患者报告解读（通俗版）"
+            name="patient_summary"
+            tooltip="用通俗易懂的语言向患者解释检查结果，避免使用专业术语"
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="例如：本次检查结果显示，您的肿瘤标志物指标整体向好。CEA已降至正常范围，CA199虽略高于正常值但较上次明显下降，说明治疗效果良好。"
+            />
+          </Form.Item>
+
+          <Form.Item label="给患者的建议">
+            <Form.List name="patient_suggestions">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field) => (
+                    <div key={field.key} className="flex gap-2 mb-2">
+                      <Form.Item
+                        name={field.name}
+                        className="flex-1 mb-0"
+                        noStyle
+                      >
+                        <Input placeholder="例如：继续观察CA199指标变化" />
+                      </Form.Item>
+                      <Button
+                        icon={<DeleteOutlined />}
+                        onClick={() => remove(field.name)}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    icon={<PlusOutlined />}
+                    block
+                  >
+                    添加建议
                   </Button>
                 </>
               )}
