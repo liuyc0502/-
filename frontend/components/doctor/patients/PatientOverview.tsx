@@ -499,38 +499,6 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
             </CardContent>
           </Card>
         )}
-
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-gray-900">{visitCount}</div>
-              <div className="text-sm text-gray-500 mt-1">就诊次数</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4 text-center">
-              <div className={`text-3xl font-bold ${pendingTodosCount > 0 ? "text-red-600" : "text-gray-900"}`}>
-                {pendingTodosCount}
-              </div>
-              <div className="text-sm text-gray-500 mt-1">待办事项</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-gray-900">{todos.length}</div>
-              <div className="text-sm text-gray-500 mt-1">总任务数</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-4 text-center">
-              <div className={`text-3xl font-bold ${nextCheckup ? "text-blue-600" : "text-gray-400"}`}>
-                {nextCheckup ? formatDaysUntil(nextCheckup.due_date) : "未安排"}
-              </div>
-              <div className="text-sm text-gray-500 mt-1">下次复查</div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Right Column - 60% width */}
@@ -607,6 +575,38 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
             )}
           </CardContent>
         </Card>
+
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-gray-900">{visitCount}</div>
+              <div className="text-sm text-gray-500 mt-1">就诊次数</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4 text-center">
+              <div className={`text-3xl font-bold ${pendingTodosCount > 0 ? "text-red-600" : "text-gray-900"}`}>
+                {pendingTodosCount}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">待办事项</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-gray-900">{todos.length}</div>
+              <div className="text-sm text-gray-500 mt-1">总任务数</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border-gray-200">
+            <CardContent className="p-4 text-center">
+              <div className={`text-3xl font-bold ${nextCheckup ? "text-blue-600" : "text-gray-400"}`}>
+                {nextCheckup ? formatDaysUntil(nextCheckup.due_date) : "未安排"}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">下次复查</div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Pending Tasks Banner */}
         {urgentTodos.length > 0 && (

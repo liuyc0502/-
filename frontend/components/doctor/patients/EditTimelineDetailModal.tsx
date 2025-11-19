@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, Card, App, Tabs } from "antd";
+import { Modal, Form, Input, Button, Card, App } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import patientService from "@/services/patientService";
 
@@ -153,253 +153,6 @@ export function EditTimelineDetailModal({
     onClose();
   };
 
-  const items = [
-    {
-      key: "basic",
-      label: "基本信息",
-      children: (
-        <>
-          <Form.Item label="医生观察记录" name="doctor_notes">
-            <Input.TextArea rows={4} placeholder="请输入医生观察记录" />
-          </Form.Item>
-
-          <Form.Item label="病理发现" name="pathology_findings">
-            <Input.TextArea rows={4} placeholder="请输入病理发现" />
-          </Form.Item>
-
-          <Form.Item label="用药方案">
-            <Form.List name="medications">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field) => (
-                    <div key={field.key} className="flex gap-2 mb-2">
-                      <Form.Item
-                        name={field.name}
-                        fieldKey={field.name}
-                        className="flex-1 mb-0"
-                        noStyle
-                      >
-                        <Input placeholder="例如：甲氨蝶呤 10mg 每周一次" />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    </div>
-                  ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    添加药物
-                  </Button>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
-          <Form.Item
-            label="患者报告解读（通俗版）"
-            name="patient_summary"
-            tooltip="用通俗易懂的语言向患者解释检查结果，避免使用专业术语"
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="例如：本次检查结果显示，您的肿瘤标志物指标整体向好。CEA已降至正常范围，CA199虽略高于正常值但较上次明显下降，说明治疗效果良好。"
-            />
-          </Form.Item>
-
-          <Form.Item label="给患者的建议">
-            <Form.List name="patient_suggestions">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field) => (
-                    <div key={field.key} className="flex gap-2 mb-2">
-                      <Form.Item
-                        name={field.name}
-                        className="flex-1 mb-0"
-                        noStyle
-                      >
-                        <Input placeholder="例如：继续观察CA199指标变化" />
-                      </Form.Item>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    </div>
-                  ))}
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    添加建议
-                  </Button>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
-
-        </>
-      ),
-    },
-    {
-      key: "images",
-      label: "医学影像",
-      children: (
-        <Form.Item label="影像资料">
-          <Form.List name="images">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field) => (
-                  <Card
-                    key={field.key}
-                    size="small"
-                    className="mb-3"
-                    extra={
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    }
-                  >
-                    <div className="grid grid-cols-2 gap-3">
-                      <Form.Item
-                        name={[field.name, "image_type"]}
-                        fieldKey={[field.name, "image_type"]}
-                        label="影像类型"
-                        className="mb-2"
-                      >
-                        <Input placeholder="病理切片" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "image_label"]}
-                        fieldKey={[field.name, "image_label"]}
-                        label="影像标签"
-                        className="mb-2"
-                      >
-                        <Input placeholder="关节X光片" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "image_url"]}
-                        fieldKey={[field.name, "image_url"]}
-                        label="影像URL"
-                        className="col-span-2 mb-0"
-                      >
-                        <Input placeholder="https://example.com/image.jpg" />
-                      </Form.Item>
-                    </div>
-                  </Card>
-                ))}
-                <Button
-                  type="dashed"
-                  onClick={() => add()}
-                  icon={<PlusOutlined />}
-                  block
-                >
-                  添加影像
-                </Button>
-              </>
-            )}
-          </Form.List>
-        </Form.Item>
-      ),
-    },
-    {
-      key: "metrics",
-      label: "检查指标",
-      children: (
-        <Form.Item label="指标数据">
-          <Form.List name="metrics">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field) => (
-                  <Card
-                    key={field.key}
-                    size="small"
-                    className="mb-3"
-                    extra={
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    }
-                  >
-                    <div className="grid grid-cols-3 gap-3">
-                      <Form.Item
-                        name={[field.name, "metric_name"]}
-                        fieldKey={[field.name, "metric_name"]}
-                        label="指标名称"
-                        className="mb-2"
-                      >
-                        <Input placeholder="RF" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "metric_full_name"]}
-                        fieldKey={[field.name, "metric_full_name"]}
-                        label="全称"
-                        className="mb-2"
-                      >
-                        <Input placeholder="类风湿因子" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "metric_value"]}
-                        fieldKey={[field.name, "metric_value"]}
-                        label="数值"
-                        className="mb-2"
-                      >
-                        <Input placeholder="125" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "metric_unit"]}
-                        fieldKey={[field.name, "metric_unit"]}
-                        label="单位"
-                        className="mb-2"
-                      >
-                        <Input placeholder="IU/mL" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "metric_trend"]}
-                        fieldKey={[field.name, "metric_trend"]}
-                        label="趋势"
-                        className="mb-2"
-                      >
-                        <Input placeholder="up/down/normal/abnormal" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "metric_status"]}
-                        fieldKey={[field.name, "metric_status"]}
-                        label="状态"
-                        className="mb-0"
-                      >
-                        <Input placeholder="error/warning/normal/improving" />
-                      </Form.Item>
-                    </div>
-                  </Card>
-                ))}
-                <Button
-                  type="dashed"
-                  onClick={() => add()}
-                  icon={<PlusOutlined />}
-                  block
-                >
-                  添加指标
-                </Button>
-              </>
-            )}
-          </Form.List>
-        </Form.Item>
-
-      ),
-    },
-  ];
-
   return (
     <Modal
       title="编辑时间线详情"
@@ -407,9 +160,15 @@ export function EditTimelineDetailModal({
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={loading}
-      width={900}
+      width={1400}
       okText="保存"
       cancelText="取消"
+      styles={{
+        body: {
+          maxHeight: 'calc(100vh - 200px)',
+          overflowY: 'auto'
+        }
+      }}
     >
       {dataLoading ? (
         <div className="text-center py-8">
@@ -418,7 +177,254 @@ export function EditTimelineDetailModal({
         </div>
       ) : (
         <Form form={form} layout="vertical">
-          <Tabs items={items} />
+          {/* Top Section - Grid Layout */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column - 60% - Doctor Notes */}
+            <div className="col-span-7 space-y-4">
+              <Card title="医生记录" size="small" className="h-full">
+                <Form.Item label="医生观察记录" name="doctor_notes">
+                  <Input.TextArea rows={3} placeholder="请输入医生观察记录" />
+                </Form.Item>
+
+                <Form.Item label="病理发现" name="pathology_findings">
+                  <Input.TextArea rows={3} placeholder="请输入病理发现" />
+                </Form.Item>
+
+                <Form.Item label="用药方案">
+                  <Form.List name="medications">
+                    {(fields, { add, remove }) => (
+                      <>
+                        {fields.map((field) => (
+                          <div key={field.key} className="flex gap-2 mb-2">
+                            <Form.Item
+                              name={field.name}
+                              fieldKey={field.name}
+                              className="flex-1 mb-0"
+                              noStyle
+                            >
+                              <Input placeholder="例如：甲氨蝶呤 10mg 每周一次" />
+                            </Form.Item>
+                            <Button
+                              icon={<DeleteOutlined />}
+                              onClick={() => remove(field.name)}
+                            />
+                          </div>
+                        ))}
+                        <Button
+                          type="dashed"
+                          onClick={() => add()}
+                          icon={<PlusOutlined />}
+                          block
+                          size="small"
+                        >
+                          添加药物
+                        </Button>
+                      </>
+                    )}
+                  </Form.List>
+                </Form.Item>
+              </Card>
+            </div>
+
+            {/* Right Column - 40% - Patient Summary */}
+            <div className="col-span-5 space-y-4">
+              <Card title="患者版本（通俗易懂）" size="small" className="h-full">
+                <Form.Item
+                  label="患者报告解读"
+                  name="patient_summary"
+                  tooltip="用通俗易懂的语言向患者解释检查结果，避免使用专业术语"
+                >
+                  <Input.TextArea
+                    rows={6}
+                    placeholder="例如：本次检查结果显示，您的肿瘤标志物指标整体向好。CEA已降至正常范围，CA199虽略高于正常值但较上次明显下降，说明治疗效果良好。"
+                  />
+                </Form.Item>
+
+                <Form.Item label="给患者的建议">
+                  <Form.List name="patient_suggestions">
+                    {(fields, { add, remove }) => (
+                      <>
+                        {fields.map((field) => (
+                          <div key={field.key} className="flex gap-2 mb-2">
+                            <Form.Item
+                              name={field.name}
+                              className="flex-1 mb-0"
+                              noStyle
+                            >
+                              <Input placeholder="例如：继续观察CA199指标变化" />
+                            </Form.Item>
+                            <Button
+                              icon={<DeleteOutlined />}
+                              onClick={() => remove(field.name)}
+                            />
+                          </div>
+                        ))}
+                        <Button
+                          type="dashed"
+                          onClick={() => add()}
+                          icon={<PlusOutlined />}
+                          block
+                          size="small"
+                        >
+                          添加建议
+                        </Button>
+                      </>
+                    )}
+                  </Form.List>
+                </Form.Item>
+              </Card>
+            </div>
+          </div>
+
+          {/* Bottom Section - Images and Metrics */}
+          <div className="grid grid-cols-2 gap-6 mt-6">
+            {/* Medical Images */}
+            <Card title="医学影像" size="small">
+              <Form.Item label="影像资料" className="mb-0">
+                <Form.List name="images">
+                  {(fields, { add, remove }) => (
+                    <>
+                      <div className="space-y-3 max-h-64 overflow-y-auto mb-3">
+                        {fields.map((field) => (
+                          <Card
+                            key={field.key}
+                            size="small"
+                            className="bg-gray-50"
+                            extra={
+                              <Button
+                                type="text"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={() => remove(field.name)}
+                              />
+                            }
+                          >
+                            <div className="grid grid-cols-2 gap-2">
+                              <Form.Item
+                                name={[field.name, "image_type"]}
+                                fieldKey={[field.name, "image_type"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="病理切片" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "image_label"]}
+                                fieldKey={[field.name, "image_label"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="关节X光片" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "image_url"]}
+                                fieldKey={[field.name, "image_url"]}
+                                className="col-span-2 mb-0"
+                              >
+                                <Input placeholder="https://example.com/image.jpg" size="small" />
+                              </Form.Item>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        icon={<PlusOutlined />}
+                        block
+                        size="small"
+                      >
+                        添加影像
+                      </Button>
+                    </>
+                  )}
+                </Form.List>
+              </Form.Item>
+            </Card>
+
+            {/* Metrics */}
+            <Card title="检查指标" size="small">
+              <Form.Item label="指标数据" className="mb-0">
+                <Form.List name="metrics">
+                  {(fields, { add, remove }) => (
+                    <>
+                      <div className="space-y-3 max-h-64 overflow-y-auto mb-3">
+                        {fields.map((field) => (
+                          <Card
+                            key={field.key}
+                            size="small"
+                            className="bg-gray-50"
+                            extra={
+                              <Button
+                                type="text"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={() => remove(field.name)}
+                              />
+                            }
+                          >
+                            <div className="grid grid-cols-3 gap-2">
+                              <Form.Item
+                                name={[field.name, "metric_name"]}
+                                fieldKey={[field.name, "metric_name"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="RF" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "metric_full_name"]}
+                                fieldKey={[field.name, "metric_full_name"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="类风湿因子" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "metric_value"]}
+                                fieldKey={[field.name, "metric_value"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="125" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "metric_unit"]}
+                                fieldKey={[field.name, "metric_unit"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="IU/mL" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "metric_trend"]}
+                                fieldKey={[field.name, "metric_trend"]}
+                                className="mb-2"
+                              >
+                                <Input placeholder="up/down/normal" size="small" />
+                              </Form.Item>
+                              <Form.Item
+                                name={[field.name, "metric_status"]}
+                                fieldKey={[field.name, "metric_status"]}
+                                className="mb-0"
+                              >
+                                <Input placeholder="normal/warning" size="small" />
+                              </Form.Item>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        icon={<PlusOutlined />}
+                        block
+                        size="small"
+                      >
+                        添加指标
+                      </Button>
+                    </>
+                  )}
+                </Form.List>
+              </Form.Item>
+            </Card>
+          </div>
         </Form>
       )}
     </Modal>
