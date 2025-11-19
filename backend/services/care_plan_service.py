@@ -812,65 +812,57 @@ async def get_weekly_progress_service(patient_id: int, tenant_id: str,
 
  
 
-        # Get daily completion data
+        # Get daily completion data with detailed stats
+        daily_stats = []
+        completion_chart = []
 
-        week_data = []
-
-        current_date = start_date_obj
-
+        current_date_calc = start_date_obj
         for i in range(7):
-
-            date_str = current_date.strftime('%Y-%m-%d')
-
+            date_str = current_date_calc.strftime('%Y-%m-%d')
             day_records = care_plan_db.get_completion_records(
-
                 plan_id, patient_id, date_str, tenant_id
-
             )
 
- 
-
             total = len(day_records)
-
             completed = sum(1 for r in day_records if r['completed'])
-
             completion_rate = round(completed / total * 100) if total > 0 else 0
 
- 
+            # Separate medication and task stats
+            medication_records = [r for r in day_records if r['item_type'] == 'medication']
+            task_records = [r for r in day_records if r['item_type'] == 'task']
 
-            week_data.append({
+            medication_completed = sum(1 for r in medication_records if r['completed'])
+            task_completed = sum(1 for r in task_records if r['completed'])
 
-                "day": current_date.strftime('周%w').replace('周0', '周日')
-
-                                                  .replace('周1', '周一')
-
-                                                  .replace('周2', '周二')
-
-                                                  .replace('周3', '周三')
-
-                                                  .replace('周4', '周四')
-
-                                                  .replace('周5', '周五')
-
-                                                  .replace('周6', '周六'),
-
-                "completion": completion_rate
-
+            daily_stats.append({
+                "date": date_str,
+                "total_items": total,
+                "completed_items": completed,
+                "completion_rate": completion_rate,
+                "medication_total": len(medication_records),
+                "medication_completed": medication_completed,
+                "task_total": len(task_records),
+                "task_completed": task_completed
             })
 
-            current_date += timedelta(days=1)
+            completion_chart.append({
+                "date": date_str,
+                "completion_rate": completion_rate
+            })
 
- 
+            current_date_calc += timedelta(days=1)
 
         return {
 
-            "completionRate": stats['completion_rate'],
+            "overall_completion_rate": stats['completion_rate'],
 
-            "medicationCompliance": stats['medication_compliance'],
+            "medication_compliance_rate": stats['medication_compliance'],
 
-            "taskCompletion": stats['task_completion_rate'],
+            "task_completion_rate": stats['task_completion_rate'],
 
-            "weekData": week_data
+            "daily_stats": daily_stats,
+
+            "completion_chart": completion_chart
 
         }
 

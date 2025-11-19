@@ -7,6 +7,7 @@ import { Plus, Calendar, FileText, Pill, Activity, Clock, Edit, Trash2 } from "l
 import carePlanService from "@/services/carePlanService";
 import type { CarePlan } from "@/types/carePlan";
 import { CreateCarePlanModal } from "./CreateCarePlanModal";
+import { CarePlanCompletionStats } from "./CarePlanCompletionStats";
 interface PatientCarePlansProps {
   patientId: string;
 }
@@ -186,6 +187,14 @@ export function PatientCarePlans({ patientId }: PatientCarePlansProps) {
                     </span>
                   </div>
                 </div>
+
+                {/* Patient Completion Feedback */}
+                {plan.status === 'active' && (
+                  <CarePlanCompletionStats
+                    patientId={parseInt(patientId)}
+                    planId={plan.plan_id}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}
