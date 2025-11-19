@@ -8,6 +8,7 @@ import { Upload, FileText, Calendar, User, TrendingDown, TrendingUp, Minus, Spar
 import { message } from "antd";
 import patientReportService from "@/services/patientReportService";
 import type { PatientReport, ReportDetail } from "@/types/patientReport";
+import { usePatientInfo } from "@/hooks/usePatientInfo";
 
 const filterOptions = [
   { id: "all", label: "全部报告" },
@@ -40,6 +41,7 @@ const TrendIcon = ({ trend }: { trend: string }) => {
 };
 
 export function ReportsTab() {
+  const { patientId, isLoading: patientLoading, error: patientError } = usePatientInfo();
   const [reports, setReports] = useState<PatientReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -47,17 +49,21 @@ export function ReportsTab() {
   const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // TODO: Get patient_id from authentication context or props
-  const PATIENT_ID = 1; // Temporary hardcoded value
-
   useEffect(() => {
-    loadReports();
-  }, []);
+    if (patientId) {
+      loadReports();
+    }
+  }, [patientId]);
 
   const loadReports = async () => {
+    if (!patientId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await patientReportService.getReportList(PATIENT_ID);
+      const data = await patientReportService.getReportList(patientId);
       setReports(data);
     } catch (error) {
       message.error('加载报告失败');
@@ -239,12 +245,25 @@ export function ReportsTab() {
   }
 
   // Report List View
-  if (loading) {
+  if (patientLoading || loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#10B981] border-r-transparent mb-4"></div>
           <p className="text-gray-500">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if patient info not found
+  if (patientError || !patientId) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <p className="text-gray-500">未找到患者档案信息</p>
+          <p className="text-gray-400 text-sm mt-2">请联系医生创建您的患者档案</p>
         </div>
       </div>
     );
