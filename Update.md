@@ -1,6 +1,122 @@
 # 更新日志
-病例库真实 患者档案真实 病理知识库真实 学习热力图未知 待完成患者端 以及患者端与医生端的对接 
+病例库真实 患者档案真实 病理知识库真实 学习热力图未知 待完成患者端 以及患者端与医生端的对接
 
+
+## 2025-11-19
+
+### 患者档案功能增强与康复计划数据库迁移
+
+**操作内容**:
+- 📦 **提交更改**: 5 个文件，264 行新增，60 行删除
+- 🗄️ **数据库迁移**: 创建康复计划管理系统的完整迁移脚本
+
+**主要更新文件**:
+
+**后端文件**:
+- `backend/apps/patient_app.py` (更新 - 修复邮箱字段缺失)
+- `backend/database/migrations/create_care_plan_tables.sql` (新建 - SQL迁移脚本)
+- `backend/database/migrations/run_care_plan_migration.py` (新建 - Python执行脚本)
+- `backend/database/migrations/CARE_PLAN_MIGRATION_README.md` (新建 - 迁移文档)
+- `.gitignore` (新建 - Git忽略规则)
+
+**前端文件**:
+- `frontend/components/doctor/patients/PatientOverview.tsx` (重构 - 添加邮箱显示和可编辑功能)
+
+**功能说明**:
+
+#### 1. 患者档案基本信息编辑功能
+- ✨ **EditableField组件**：
+  - 鼠标悬停字段时右侧显示编辑按钮（铅笔图标）
+  - 支持4种输入类型：text（单行文本）、number（数字）、select（下拉选择）、textarea（多行文本）
+  - 编辑状态下显示保存（绿色勾号）和取消（叉号）按钮
+  - 点击保存后立即调用API更新数据并刷新页面
+- 📝 **可编辑字段**：
+  - 基本信息：姓名、性别（下拉）、年龄（数字）、病历号
+  - 联系信息：出生日期、联系电话、邮箱、地址（多行）
+  - 医疗史：过敏史（多行，支持顿号/逗号分隔）、家族史（多行）、既往病史（多行，支持顿号/逗号分隔）
+- 🎯 **交互体验**：
+  - 使用 `group-hover:opacity-100` 实现编辑按钮淡入效果
+  - 与病例库编辑功能保持一致的交互体验
+  - 数组字段自动处理：显示时用顿号连接，编辑时支持多种分隔符输入
+
+#### 2. 邮箱字段显示与保存修复
+- 📧 **邮箱字段显示**：在患者档案基本信息中添加邮箱显示，位于联系电话和地址之间
+- 🐛 **修复新建患者档案邮箱未保存问题**：
+  - 问题原因：后端 `CreatePatientRequest` 模型缺少 `email` 字段
+  - 解决方案：在 Pydantic 模型中添加 `email: str = Field(..., description="Patient email address")`
+  - 前端表单已正确传递邮箱，数据库模型和数据库层也已支持，只是API层缺失
+
+#### 3. 康复计划数据库迁移脚本
+- 🗄️ **创建5个数据库表**：
+  - `care_plan_t` - 康复计划主表（计划名称、描述、开始/结束日期、状态）
+  - `care_plan_medication_t` - 用药安排表（药品名称、剂量、频率、时间点、注意事项）
+  - `care_plan_task_t` - 康复任务表（任务标题、描述、类别、频率、持续时间）
+  - `care_plan_precaution_t` - 注意事项表（内容、优先级）
+  - `care_plan_completion_t` - 完成记录表（日期、项目类型、完成状态、备注）
+- 📊 **11个性能优化索引**：
+  - care_plan_t: patient_id, status, tenant_id
+  - care_plan_medication_t: plan_id
+  - care_plan_task_t: plan_id, task_category
+  - care_plan_precaution_t: plan_id
+  - care_plan_completion_t: plan_id, patient_id+record_date（复合索引）, item_type+item_id（复合索引）
+- ✅ **迁移脚本特性**：
+  - 幂等性：可重复运行，不会重复创建
+  - 事务安全：使用DO块确保原子性操作
+  - 自动验证：迁移完成后显示表结构验证
+  - 标准字段：所有表包含 TableBase 标准字段（create_time, update_time, created_by, updated_by, delete_flag）
+
+#### 4. Git忽略规则配置
+- 📁 **新建.gitignore文件**：
+  - Python缓存：`__pycache__/`, `*.pyc`, `*.pyo`
+  - 虚拟环境：`venv/`, `.venv/`, `ENV/`
+  - IDE配置：`.vscode/`, `.idea/`
+  - 操作系统文件：`.DS_Store`, `Thumbs.db`
+  - Node模块：`node_modules/`, `.next/`
+  - 环境变量：`.env`, `.env.local`
+  - 日志文件：`logs/`, `*.log`
+  - 数据库文件：`*.sqlite`, `*.db`
+  - 测试覆盖：`htmlcov/`, `.coverage`, `.pytest_cache/`
+
+**技术实现**:
+
+**EditableField组件**:
+- 使用 React hooks 管理编辑状态（`editingField`, `editValues`）
+- 支持不同输入类型的条件渲染（Input, TextArea, InputNumber, Select）
+- 数组字段的智能处理：编辑时将数组转为字符串，保存时按分隔符拆分回数组
+- 优雅的交互动画：opacity过渡、group-hover效果
+
+**数据库迁移**:
+- SQL迁移脚本：使用PostgreSQL的DO块实现条件创建
+- Python执行脚本：自动读取SQL文件、连接数据库、执行迁移、显示结果
+- 完整文档：包含表结构说明、运行指南、验证方法、回滚说明
+
+**用户体验**:
+- ✅ 鼠标悬停即显示编辑按钮，操作直观
+- ✅ 编辑状态清晰，保存和取消按钮易于区分
+- ✅ 保存成功后立即刷新，确保数据最新
+- ✅ 数组字段输入提示明确，支持多种分隔符
+- ✅ 邮箱字段完整显示，新建患者时正确保存
+- ✅ 数据库迁移脚本可重复运行，安全可靠
+
+**康复计划数据关系**:
+```
+patient_info_t (患者信息)
+    ↓ 1:N
+care_plan_t (康复计划主表)
+    ↓ 1:N
+    ├─→ care_plan_medication_t (用药安排)
+    ├─→ care_plan_task_t (康复任务)
+    ├─→ care_plan_precaution_t (注意事项)
+    └─→ care_plan_completion_t (完成记录) ←── 追踪medication和task的完成情况
+```
+
+**迁移执行命令**:
+```bash
+cd backend/database/migrations
+python3 run_care_plan_migration.py
+```
+
+---
 
 ## 2025-11-18
 
