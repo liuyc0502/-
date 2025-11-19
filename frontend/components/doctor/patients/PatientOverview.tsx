@@ -2,26 +2,169 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, TestTube, Pill, TrendingDown, AlertCircle, Users } from "lucide-react";
-import { App } from "antd";
+import { Button } from "@/components/ui/button";
+import { FileText, TestTube, Pill, TrendingDown, AlertCircle, Users, Edit, Check, X } from "lucide-react";
+import { App, Input, InputNumber, Select } from "antd";
 import patientService from "@/services/patientService";
 import type { Patient, TimelineStage, PatientTodo } from "@/types/patient";
 
+const { TextArea } = Input;
+
+// ==================== Types ====================
 interface PatientOverviewProps {
   patientId: string;
 }
 
+interface EditableFieldProps {
+  field: string;
+  value: any;
+  label: string;
+  type?: "text" | "textarea" | "number" | "select";
+  rows?: number;
+  options?: Array<{ value: any; label: string }>;
+}
+
+// ==================== Helper Functions ====================
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleDateString("zh-CN");
+};
+
+const formatDaysUntil = (dateString?: string): string => {
+  if (!dateString) return "未设置";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "今天";
+  if (diffDays === 1) return "明天";
+  if (diffDays === 2) return "后天";
+  if (diffDays > 0) return `${diffDays}天后`;
+  if (diffDays < 0) return `已过期${Math.abs(diffDays)}天`;
+  return "未设置";
+};
+
+const getStageIcon = (stageType: string) => {
+  switch (stageType) {
+    case "治疗":
+      return Pill;
+    case "检查":
+      return TestTube;
+    default:
+      return FileText;
+  }
+};
+
+// ==================== Sub Components ====================
+interface EditableFieldComponentProps extends EditableFieldProps {
+  editingField: string | null;
+  editValues: any;
+  onEdit: (field: string, currentValue: any) => void;
+  onSave: (field: string) => void;
+  onCancel: () => void;
+  onEditValueChange: (field: string, value: any) => void;
+}
+
+const EditableField = ({
+  field,
+  value,
+  label,
+  type = "text",
+  rows = 3,
+  options = [],
+  editingField,
+  editValues,
+  onEdit,
+  onSave,
+  onCancel,
+  onEditValueChange,
+}: EditableFieldComponentProps) => {
+  const isEditing = editingField === field;
+  const displayValue = value || <span className="text-gray-400 italic">暂无{label}</span>;
+
+  return (
+    <div className="group">
+      <div className="flex items-start justify-between gap-2">
+        {!isEditing ? (
+          <>
+            <div className="flex-1 text-sm text-gray-900 font-medium">{displayValue}</div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onEdit(field, value)}
+              className="opacity-0 group-hover:opacity-100 transition-opacity h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          </>
+        ) : (
+          <div className="flex-1 flex items-start gap-2">
+            <div className="flex-1">
+              {type === "textarea" ? (
+                <TextArea
+                  value={editValues[field]}
+                  onChange={(e) => onEditValueChange(field, e.target.value)}
+                  rows={rows}
+                  className="w-full"
+                />
+              ) : type === "number" ? (
+                <InputNumber
+                  value={editValues[field]}
+                  onChange={(val) => onEditValueChange(field, val)}
+                  className="w-full"
+                />
+              ) : type === "select" ? (
+                <Select
+                  value={editValues[field]}
+                  onChange={(val) => onEditValueChange(field, val)}
+                  className="w-full"
+                  options={options}
+                />
+              ) : (
+                <Input
+                  value={editValues[field]}
+                  onChange={(e) => onEditValueChange(field, e.target.value)}
+                  className="w-full"
+                />
+              )}
+            </div>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                onClick={() => onSave(field)}
+                className="bg-green-500 hover:bg-green-600 text-white h-8 px-2"
+              >
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={onCancel} className="h-8 px-2">
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== Main Component ====================
 export function PatientOverview({ patientId }: PatientOverviewProps) {
   const { message } = App.useApp();
+
+  // ==================== State ====================
   const [patient, setPatient] = useState<Patient | null>(null);
   const [timelines, setTimelines] = useState<TimelineStage[]>([]);
   const [todos, setTodos] = useState<PatientTodo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
 
+  // ==================== Effects ====================
   useEffect(() => {
     loadPatientInfo();
   }, [patientId]);
 
+  // ==================== Data Loading ====================
   const loadPatientInfo = async () => {
     try {
       setLoading(true);
@@ -41,44 +184,54 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
     }
   };
 
-  // Helper functions
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("zh-CN");
+  // ==================== Event Handlers ====================
+  const handleEdit = (field: string, currentValue: any) => {
+    setEditingField(field);
+    setEditValues({ [field]: currentValue });
   };
 
-  const formatDaysUntil = (dateString?: string): string => {
-    if (!dateString) return "未设置";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "今天";
-    if (diffDays === 1) return "明天";
-    if (diffDays === 2) return "后天";
-    if (diffDays > 0) return `${diffDays}天后`;
-    if (diffDays < 0) return `已过期${Math.abs(diffDays)}天`;
-    return "未设置";
+  const handleCancel = () => {
+    setEditingField(null);
+    setEditValues({});
   };
 
-  const getStageIcon = (stageType: string) => {
-    switch (stageType) {
-      case "治疗":
-        return Pill;
-      case "检查":
-        return TestTube;
-      default:
-        return FileText;
+  const handleEditValueChange = (field: string, value: any) => {
+    setEditValues({ ...editValues, [field]: value });
+  };
+
+  const handleSave = async (field: string) => {
+    try {
+      let value = editValues[field];
+
+      // Handle array fields (allergies, past_medical_history)
+      if ((field === "allergies" || field === "past_medical_history") && typeof value === "string") {
+        value = value
+          .split(/[,，、]/) // Support multiple separators
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+      }
+
+      await patientService.updatePatient(parseInt(patientId), { [field]: value });
+      message.success("保存成功");
+      await loadPatientInfo();
+      setEditingField(null);
+      setEditValues({});
+    } catch (error) {
+      message.error("保存失败");
+      console.error("Failed to save patient info:", error);
     }
   };
 
-  // Computed values
+  // ==================== Computed Values ====================
   const visitCount = timelines.length;
   const pendingTodosCount = todos.filter((t) => t.status !== "completed").length;
+  const latestTimeline = timelines.length > 0 ? timelines[timelines.length - 1] : null;
+
   const urgentTodos = useMemo(
     () => todos.filter((t) => t.status !== "completed" && t.priority === "high").slice(0, 3),
     [todos]
   );
+
   const nextCheckup = useMemo(
     () =>
       todos
@@ -87,33 +240,17 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
     [todos]
   );
 
-  const recentTimelines = useMemo(
-    () => timelines.slice(-5).reverse(),
-    [timelines]
-  );
+  const recentTimelines = useMemo(() => timelines.slice(-5).reverse(), [timelines]);
 
-  const checkCount = useMemo(
-    () => timelines.filter((t) => t.stage_type === "检查").length,
-    [timelines]
-  );
+  const checkCount = useMemo(() => timelines.filter((t) => t.stage_type === "检查").length, [timelines]);
 
-  const completedCount = useMemo(
-    () => timelines.filter((t) => t.status === "completed").length,
-    [timelines]
-  );
+  const completedCount = useMemo(() => timelines.filter((t) => t.status === "completed").length, [timelines]);
 
-  const treatmentCount = useMemo(
-    () => timelines.filter((t) => t.stage_type === "治疗").length,
-    [timelines]
-  );
+  const treatmentCount = useMemo(() => timelines.filter((t) => t.stage_type === "治疗").length, [timelines]);
 
-  const followupCount = useMemo(
-    () => timelines.filter((t) => t.stage_type === "随访").length,
-    [timelines]
-  );
+  const followupCount = useMemo(() => timelines.filter((t) => t.stage_type === "随访").length, [timelines]);
 
-  const latestTimeline = timelines.length > 0 ? timelines[timelines.length - 1] : null;
-
+  // ==================== Render Helpers ====================
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -133,6 +270,7 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
     );
   }
 
+  // ==================== Render ====================
   return (
     <div className="grid grid-cols-12 gap-6">
       {/* Left Column - 40% width */}
@@ -145,70 +283,191 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500">姓名:</span>
-                <span className="ml-2 font-medium">{patient.name}</span>
+                <span className="text-gray-500 block mb-1">姓名:</span>
+                <EditableField
+                  field="name"
+                  value={patient.name}
+                  label="姓名"
+                  editingField={editingField}
+                  editValues={editValues}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onEditValueChange={handleEditValueChange}
+                />
               </div>
               <div>
-                <span className="text-gray-500">性别:</span>
-                <span className="ml-2 font-medium">{patient.gender}</span>
+                <span className="text-gray-500 block mb-1">性别:</span>
+                <EditableField
+                  field="gender"
+                  value={patient.gender}
+                  label="性别"
+                  type="select"
+                  options={[
+                    { value: "男", label: "男" },
+                    { value: "女", label: "女" },
+                  ]}
+                  editingField={editingField}
+                  editValues={editValues}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onEditValueChange={handleEditValueChange}
+                />
               </div>
               <div>
-                <span className="text-gray-500">年龄:</span>
-                <span className="ml-2 font-medium">{patient.age}岁</span>
+                <span className="text-gray-500 block mb-1">年龄:</span>
+                <EditableField
+                  field="age"
+                  value={patient.age}
+                  label="年龄"
+                  type="number"
+                  editingField={editingField}
+                  editValues={editValues}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onEditValueChange={handleEditValueChange}
+                />
               </div>
               <div>
-                <span className="text-gray-500">病历号:</span>
-                <span className="ml-2 font-medium">{patient.medical_record_no}</span>
+                <span className="text-gray-500 block mb-1">病历号:</span>
+                <EditableField
+                  field="medical_record_no"
+                  value={patient.medical_record_no}
+                  label="病历号"
+                  editingField={editingField}
+                  editValues={editValues}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onEditValueChange={handleEditValueChange}
+                />
               </div>
             </div>
-            {patient.date_of_birth && (
-              <div className="text-sm">
-                <span className="text-gray-500">出生日期:</span>
-                <span className="ml-2 font-medium">{formatDate(patient.date_of_birth)}</span>
-              </div>
-            )}
-            {patient.phone && (
-              <div className="text-sm">
-                <span className="text-gray-500">联系电话:</span>
-                <span className="ml-2 font-medium">{patient.phone}</span>
-              </div>
-            )}
-            {patient.address && (
-              <div className="text-sm">
-                <span className="text-gray-500">地址:</span>
-                <span className="ml-2 font-medium">{patient.address}</span>
-              </div>
-            )}
-            {patient.allergies && patient.allergies.length > 0 && (
-              <div className="pt-3 border-t border-gray-100">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-sm font-semibold text-red-700">过敏史:</span>
-                    <span className="ml-2 text-sm text-gray-700">{patient.allergies.join("、")}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            {patient.family_history && (
+
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">出生日期:</span>
+              <EditableField
+                field="date_of_birth"
+                value={patient.date_of_birth || ""}
+                label="出生日期"
+                editingField={editingField}
+                editValues={editValues}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onEditValueChange={handleEditValueChange}
+              />
+            </div>
+
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">联系电话:</span>
+              <EditableField
+                field="phone"
+                value={patient.phone || ""}
+                label="联系电话"
+                editingField={editingField}
+                editValues={editValues}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onEditValueChange={handleEditValueChange}
+              />
+            </div>
+
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">邮箱:</span>
+              <EditableField
+                field="email"
+                value={patient.email || ""}
+                label="邮箱"
+                editingField={editingField}
+                editValues={editValues}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onEditValueChange={handleEditValueChange}
+              />
+            </div>
+
+            <div className="text-sm">
+              <span className="text-gray-500 block mb-1">地址:</span>
+              <EditableField
+                field="address"
+                value={patient.address || ""}
+                label="地址"
+                type="textarea"
+                rows={2}
+                editingField={editingField}
+                editValues={editValues}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onEditValueChange={handleEditValueChange}
+              />
+            </div>
+
+            <div className="pt-3 border-t border-gray-100">
               <div className="flex items-start gap-2">
-                <Users className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <span className="text-sm font-semibold text-gray-700">家族史:</span>
-                  <span className="ml-2 text-sm text-gray-600">{patient.family_history}</span>
+                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <span className="text-sm font-semibold text-red-700 block mb-1">过敏史:</span>
+                  <EditableField
+                    field="allergies"
+                    value={patient.allergies?.join("、") || ""}
+                    label="过敏史"
+                    type="textarea"
+                    rows={2}
+                    editingField={editingField}
+                    editValues={editValues}
+                    onEdit={handleEdit}
+                    onSave={handleSave}
+                    onCancel={handleCancel}
+                    onEditValueChange={handleEditValueChange}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">多个过敏项请用顿号（、）或逗号分隔</p>
                 </div>
               </div>
-            )}
-            {patient.past_medical_history && patient.past_medical_history.length > 0 && (
-              <div className="pt-2">
-                <p className="text-sm font-semibold text-gray-700 mb-2">既往病史:</p>
-                <ul className="text-sm text-gray-600 space-y-1 pl-4 list-disc">
-                  {patient.past_medical_history.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Users className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-sm font-semibold text-gray-700 block mb-1">家族史:</span>
+                <EditableField
+                  field="family_history"
+                  value={patient.family_history || ""}
+                  label="家族史"
+                  type="textarea"
+                  rows={2}
+                  editingField={editingField}
+                  editValues={editValues}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onEditValueChange={handleEditValueChange}
+                />
               </div>
-            )}
+            </div>
+
+            <div className="pt-2">
+              <p className="text-sm font-semibold text-gray-700 mb-1">既往病史:</p>
+              <EditableField
+                field="past_medical_history"
+                value={patient.past_medical_history?.join("、") || ""}
+                label="既往病史"
+                type="textarea"
+                rows={3}
+                editingField={editingField}
+                editValues={editValues}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onEditValueChange={handleEditValueChange}
+              />
+              <p className="text-xs text-gray-400 mt-1">多项病史请用顿号（、）或逗号分隔</p>
+            </div>
           </CardContent>
         </Card>
 

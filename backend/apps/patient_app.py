@@ -19,6 +19,7 @@ class CreatePatientRequest(BaseModel):
     gender: str = Field(..., description="Gender")
     age: int = Field(..., description="Age")
     medical_record_no: str = Field(..., description="Medical record number")
+    email: str = Field(..., description="Patient email address")
     phone: Optional[str] = Field(None, description="Phone number")
     address: Optional[str] = Field(None, description="Address")
     date_of_birth: Optional[str] = Field(None, description="Date of birth (YYYY-MM-DD)")
