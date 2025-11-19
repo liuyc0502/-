@@ -192,6 +192,10 @@ export const API_ENDPOINTS = {
       updateStatus: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}/status`,
       delete: (todoId: number) => `${API_BASE_URL}/patient/todo/${todoId}`,
     },
+    reports: {
+      list: (patientId: number) => `${API_BASE_URL}/patient/reports?patient_id=${patientId}`,
+      detail: (timelineId: number) => `${API_BASE_URL}/patient/reports/${timelineId}`,
+    },
   },
 
   medicalCase: {

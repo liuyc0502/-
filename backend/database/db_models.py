@@ -411,6 +411,8 @@ class PatientTimelineDetail(TableBase):
     doctor_notes = Column(Text, doc="Doctor observation notes")
     pathology_findings = Column(Text, doc="Pathology findings")
     medications = Column(JSON, doc="Medication regimen (JSON array)")
+    patient_summary = Column(Text, doc="Patient-friendly interpretation (plain language)")
+    patient_suggestions = Column(JSON, doc="Suggestions for patient (JSON array)")
     tenant_id = Column(String(100), doc="Tenant ID")
 
 class PatientMedicalImage(TableBase):

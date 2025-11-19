@@ -269,6 +269,8 @@ def create_timeline_detail(detail_data: dict, tenant_id: str, user_id: str) -> d
             existing_detail.doctor_notes = detail_data.get('doctor_notes', existing_detail.doctor_notes)
             existing_detail.pathology_findings = detail_data.get('pathology_findings', existing_detail.pathology_findings)
             existing_detail.medications = detail_data.get('medications', existing_detail.medications)
+            existing_detail.patient_summary = detail_data.get('patient_summary', existing_detail.patient_summary)
+            existing_detail.patient_suggestions = detail_data.get('patient_suggestions', existing_detail.patient_suggestions)
             existing_detail.updated_by = user_id
             detail_id = existing_detail.detail_id
         else:
@@ -278,6 +280,8 @@ def create_timeline_detail(detail_data: dict, tenant_id: str, user_id: str) -> d
                 doctor_notes=detail_data.get('doctor_notes'),
                 pathology_findings=detail_data.get('pathology_findings'),
                 medications=detail_data.get('medications', []),
+                patient_summary=detail_data.get('patient_summary'),
+                patient_suggestions=detail_data.get('patient_suggestions', []),
                 tenant_id=tenant_id,
                 created_by=user_id,
                 updated_by=user_id,

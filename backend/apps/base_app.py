@@ -18,6 +18,7 @@ from apps.me_model_managment_app import router as me_model_manager_router
 from apps.mock_user_management_app import router as mock_user_management_router
 from apps.model_managment_app import router as model_manager_router
 from apps.patient_app import router as patient_router
+from apps.patient_report_app import router as patient_report_router
 from apps.medical_case_app import router as medical_case_router
 from apps.care_plan_app import router as care_plan_router
 from apps.portal_agent_assignment_app import router as portal_agent_assignment_router
@@ -55,6 +56,7 @@ app.include_router(conversation_management_router)
 app.include_router(doctor_knowledge_router)
 app.include_router(learning_record_router)
 app.include_router(patient_router)
+app.include_router(patient_report_router)
 app.include_router(medical_case_router)
 app.include_router(care_plan_router)
 app.include_router(elasticsearch_router)

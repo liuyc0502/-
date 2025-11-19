@@ -58,6 +58,8 @@ export interface Patient {
     doctor_notes: string;
     pathology_findings: string;
     medications: string[];
+    patient_summary?: string;
+    patient_suggestions?: string[];
     tenant_id: string; 
     create_time: string;
     update_time: string;
@@ -134,6 +136,8 @@ export interface Patient {
     doctor_notes?: string;
     pathology_findings?: string;
     medications?: string[];
+    patient_summary?: string;
+    patient_suggestions?: string[];
   }
    
   
