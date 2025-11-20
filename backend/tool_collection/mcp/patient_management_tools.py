@@ -57,14 +57,16 @@ async def get_patient_basic_info(
             "name": patient.get('name'),
             "age": patient.get('age'),
             "gender": patient.get('gender'),
+            "date_of_birth": patient.get('date_of_birth'),
             "medical_record_no": patient.get('medical_record_no'),
-            "primary_diagnosis": patient.get('primary_diagnosis'),
-            "admission_date": patient.get('admission_date'),
-            "contact_phone": patient.get('contact_phone'),
+            "diagnosis": patient.get('diagnosis'),  # Current primary diagnosis
+            "phone": patient.get('phone'),
+            "email": patient.get('email'),
+            "address": patient.get('address'),
+            "allergies": patient.get('allergies', []),
+            "family_history": patient.get('family_history'),
+            "past_medical_history": patient.get('past_medical_history', []),
         }
-
-        if include_summary and patient.get('ai_summary'):
-            result["ai_summary"] = patient.get('ai_summary')
 
         logger.info(f"Retrieved patient info for patient_id={patient_id}")
         return result
@@ -177,12 +179,12 @@ async def get_patient_medical_images_tool(
                     "image_id": img.get('image_id'),
                     "timeline_id": event.get('timeline_id'),
                     "stage_title": event.get('stage_title'),
+                    "stage_date": event.get('stage_date'),
                     "image_type": img.get('image_type'),
                     "image_label": img.get('image_label'),
                     "image_url": img.get('image_url'),
                     "thumbnail_url": img.get('thumbnail_url'),
-                    "upload_time": img.get('upload_time'),
-                    "ai_annotation": img.get('ai_annotation'),
+                    "display_order": img.get('display_order'),
                 })
 
         # Limit results
@@ -239,10 +241,14 @@ async def analyze_patient_metrics_tool(
                     "timeline_id": event.get('timeline_id'),
                     "date": event.get('stage_date'),
                     "metric_name": metric.get('metric_name'),
+                    "metric_full_name": metric.get('metric_full_name'),
                     "metric_value": metric.get('metric_value'),
                     "metric_unit": metric.get('metric_unit'),
-                    "reference_range": metric.get('reference_range'),
-                    "status": metric.get('metric_status'),  # normal/warning/error
+                    "normal_range_min": metric.get('normal_range_min'),
+                    "normal_range_max": metric.get('normal_range_max'),
+                    "metric_trend": metric.get('metric_trend'),
+                    "status": metric.get('metric_status'),  # normal/warning/error/improving
+                    "percentage": metric.get('percentage'),
                 })
 
         # Group by metric name
@@ -270,10 +276,12 @@ async def analyze_patient_metrics_tool(
 
             analysis_results.append({
                 "metric_name": metric_name,
+                "metric_full_name": latest['metric_full_name'] if latest else None,
                 "latest_value": latest['metric_value'] if latest else None,
                 "latest_date": latest['date'] if latest else None,
                 "unit": latest['metric_unit'] if latest else None,
-                "reference_range": latest['reference_range'] if latest else None,
+                "normal_range_min": latest['normal_range_min'] if latest else None,
+                "normal_range_max": latest['normal_range_max'] if latest else None,
                 "current_status": latest['status'] if latest else None,
                 "trend": trend,
                 "historical_count": len(values),
@@ -333,12 +341,12 @@ async def get_patient_todos_tool(
             formatted_todos.append({
                 "todo_id": todo.get('todo_id'),
                 "todo_title": todo.get('todo_title'),
+                "todo_description": todo.get('todo_description'),
                 "todo_type": todo.get('todo_type'),
                 "due_date": todo.get('due_date'),
                 "priority": todo.get('priority'),
                 "status": todo.get('status'),
-                "description": todo.get('description'),
-                "assigned_by": todo.get('assigned_by'),
+                "assigned_doctor": todo.get('assigned_doctor'),
             })
 
         # Count by status
