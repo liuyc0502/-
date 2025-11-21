@@ -363,3 +363,41 @@ class ToolValidateRequest(BaseModel):
         None, description="Tool inputs")
     params: Optional[Dict[str, Any]] = Field(
         None, description="Tool configuration parameters")
+
+
+# Conversation-Patient Linking Feature Request Models
+class LinkPatientRequest(BaseModel):
+    """Request model for linking conversation to patient"""
+    conversation_id: int = Field(..., description="Conversation ID")
+    patient_id: Optional[int] = Field(None, description="Patient ID (null to unlink)")
+    patient_name: Optional[str] = Field(None, description="Patient name")
+
+
+class UpdateConversationStatusRequest(BaseModel):
+    """Request model for updating conversation status"""
+    conversation_id: int = Field(..., description="Conversation ID")
+    status: str = Field(..., description="Status: active/pending_followup/difficult_case/completed/archived")
+
+
+class UpdateConversationTagsRequest(BaseModel):
+    """Request model for updating conversation tags"""
+    conversation_id: int = Field(..., description="Conversation ID")
+    tags: List[str] = Field(..., description="Tags array")
+
+
+class UpdateConversationSummaryRequest(BaseModel):
+    """Request model for updating conversation summary"""
+    conversation_id: int = Field(..., description="Conversation ID")
+    summary: str = Field(..., description="Conversation summary text")
+
+
+class ArchiveConversationRequest(BaseModel):
+    """Request model for archiving conversation"""
+    conversation_id: int = Field(..., description="Conversation ID")
+    archive_to_timeline: bool = Field(False, description="Whether to archive to patient timeline")
+
+
+class BatchArchiveRequest(BaseModel):
+    """Request model for batch archiving conversations"""
+    conversation_ids: List[int] = Field(..., description="List of conversation IDs to archive")
+    archive_to_timeline: bool = Field(False, description="Whether to archive to patient timeline")

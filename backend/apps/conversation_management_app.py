@@ -11,6 +11,12 @@ from consts.model import (
     MessageIdRequest,
     OpinionRequest,
     RenameRequest,
+    LinkPatientRequest,
+    UpdateConversationStatusRequest,
+    UpdateConversationTagsRequest,
+    UpdateConversationSummaryRequest,
+    ArchiveConversationRequest,
+    BatchArchiveRequest,
 )
 from services.conversation_management_service import (
     create_new_conversation,
@@ -20,7 +26,15 @@ from services.conversation_management_service import (
     get_conversation_list_service,
     get_sources_service,
     rename_conversation_service,
-    update_message_opinion_service, get_message_id_by_index_impl,
+    update_message_opinion_service,
+    get_message_id_by_index_impl,
+    link_conversation_to_patient_service,
+    update_conversation_status_service,
+    update_conversation_tags_service,
+    update_conversation_summary_service,
+    archive_conversation_service,
+    batch_archive_conversations_service,
+    get_patient_conversations_service,
 )
 from utils.auth_utils import get_current_user_id, get_current_user_info
 
@@ -57,22 +71,49 @@ async def create_new_conversation_endpoint(request: ConversationRequest, authori
 
 
 @router.get("/list", response_model=ConversationResponse)
-async def list_conversations_endpoint(portal_type: Optional[str] = None, authorization: Optional[str] = Header(None)):
+async def list_conversations_endpoint(
+    portal_type: Optional[str] = None,
+    patient_id: Optional[int] = None,
+    status: Optional[str] = None,
+    tags: Optional[str] = None,  # Comma-separated tags
+    date_range: Optional[str] = None,
+    include_archived: bool = False,
+    authorization: Optional[str] = Header(None)
+):
     """
-    Get all conversation list
+    Get conversation list with enhanced filtering
 
     Args:
         portal_type: Optional portal type filter ('doctor', 'student', 'patient', 'admin', or 'general')
+        patient_id: Filter by linked patient ID
+        status: Filter by status (active/pending_followup/difficult_case/completed/archived)
+        tags: Comma-separated tags to filter by
+        date_range: Time range ('today', 'this_week', 'this_month', 'archived')
+        include_archived: Whether to include archived conversations (default False)
         authorization: Authorization header
 
     Returns:
-        ConversationResponse object containing conversation list
+        ConversationResponse object containing conversation list with patient info, status, tags, summary
     """
     try:
         user_id, tenant_id = get_current_user_id(authorization)
         if not user_id:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Unauthorized access, Please login first")
-        conversations = get_conversation_list_service(user_id, portal_type)
+
+        # Parse tags from comma-separated string
+        tags_list = None
+        if tags:
+            tags_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+
+        conversations = get_conversation_list_service(
+            user_id=user_id,
+            portal_type=portal_type,
+            patient_id=patient_id,
+            status=status,
+            tags=tags_list,
+            date_range=date_range,
+            include_archived=include_archived
+        )
         return ConversationResponse(code=0, message="success", data=conversations)
     except Exception as e:
         logging.error(f"Failed to get conversation list: {str(e)}")
@@ -239,4 +280,186 @@ async def get_message_id_endpoint(request: MessageIdRequest):
         return ConversationResponse(code=0, message="success", data=message_id)
     except Exception as e:
         logging.error(f"Failed to get message ID: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+# Conversation-Patient Linking Feature Endpoints
+@router.put("/link_patient", response_model=ConversationResponse)
+async def link_patient_endpoint(request: LinkPatientRequest, authorization: Optional[str] = Header(None)):
+    """
+    Link or unlink a conversation to a patient
+
+    Args:
+        request: LinkPatientRequest object containing:
+            - conversation_id: Conversation ID
+            - patient_id: Patient ID (null to unlink)
+            - patient_name: Patient name
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = link_conversation_to_patient_service(
+            request.conversation_id, request.patient_id, request.patient_name, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to link patient: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.put("/status", response_model=ConversationResponse)
+async def update_status_endpoint(request: UpdateConversationStatusRequest, authorization: Optional[str] = Header(None)):
+    """
+    Update conversation status
+
+    Args:
+        request: UpdateConversationStatusRequest object containing:
+            - conversation_id: Conversation ID
+            - status: Status (active/pending_followup/difficult_case/completed/archived)
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = update_conversation_status_service(
+            request.conversation_id, request.status, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to update conversation status: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.put("/tags", response_model=ConversationResponse)
+async def update_tags_endpoint(request: UpdateConversationTagsRequest, authorization: Optional[str] = Header(None)):
+    """
+    Update conversation tags
+
+    Args:
+        request: UpdateConversationTagsRequest object containing:
+            - conversation_id: Conversation ID
+            - tags: Tags array
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = update_conversation_tags_service(
+            request.conversation_id, request.tags, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to update conversation tags: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.put("/summary", response_model=ConversationResponse)
+async def update_summary_endpoint(request: UpdateConversationSummaryRequest, authorization: Optional[str] = Header(None)):
+    """
+    Update conversation summary
+
+    Args:
+        request: UpdateConversationSummaryRequest object containing:
+            - conversation_id: Conversation ID
+            - summary: Conversation summary text
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = update_conversation_summary_service(
+            request.conversation_id, request.summary, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to update conversation summary: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/archive", response_model=ConversationResponse)
+async def archive_conversation_endpoint(request: ArchiveConversationRequest, authorization: Optional[str] = Header(None)):
+    """
+    Archive a conversation
+
+    Args:
+        request: ArchiveConversationRequest object containing:
+            - conversation_id: Conversation ID
+            - archive_to_timeline: Whether to archive to patient timeline
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = archive_conversation_service(
+            request.conversation_id, request.archive_to_timeline, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to archive conversation: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/batch_archive", response_model=ConversationResponse)
+async def batch_archive_endpoint(request: BatchArchiveRequest, authorization: Optional[str] = Header(None)):
+    """
+    Batch archive multiple conversations
+
+    Args:
+        request: BatchArchiveRequest object containing:
+            - conversation_ids: List of conversation IDs to archive
+            - archive_to_timeline: Whether to archive to patient timeline
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object containing count of archived conversations
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = batch_archive_conversations_service(
+            request.conversation_ids, request.archive_to_timeline, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to batch archive conversations: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/patient/{patient_id}/conversations", response_model=ConversationResponse)
+async def get_patient_conversations_endpoint(
+    patient_id: int,
+    status: Optional[str] = None,
+    include_archived: bool = False,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Get all conversations for a specific patient
+
+    Args:
+        patient_id: Patient ID
+        status: Optional status filter
+        include_archived: Whether to include archived conversations
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object containing conversation list
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        conversations = get_patient_conversations_service(
+            patient_id, user_id, status, include_archived
+        )
+        return ConversationResponse(code=0, message="success", data=conversations)
+    except Exception as e:
+        logging.error(f"Failed to get patient conversations: {str(e)}")
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
