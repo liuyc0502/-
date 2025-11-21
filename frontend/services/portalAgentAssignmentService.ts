@@ -7,7 +7,7 @@ import log from "@/lib/logger";
  * Handles API calls for assigning agents to portals (doctor, student, patient)
  */
 
-export type PortalType = "doctor" | "student" | "patient" | "admin";
+export type PortalType = "doctor" | "patient" ;
 
 /**
  * Get the main agent for a portal

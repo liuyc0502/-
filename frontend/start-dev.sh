@@ -23,5 +23,6 @@ fi
 
 echo "🚀 Starting development server..."
 cd /opt/frontend
+export NODE_OPTIONS="--max-old-space-size=4096"
 pnpm run dev
 

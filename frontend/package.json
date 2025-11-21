@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' node server.js",
     "dev:safe": "./start-dev.sh",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "start": "NODE_ENV=production NODE_OPTIONS='--max-old-space-size=4096' node server.js",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "NODE_OPTIONS='--max-old-space-size=4096' tsc --noEmit",
     "check-all": "npm run type-check && npm run lint && npm run build"
   },
   "dependencies": {

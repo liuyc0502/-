@@ -9,7 +9,7 @@ import {
   getPortalAgents,
   setPortalAgents,
   getPortalMainAgent,
-  type PortalType,
+  type PortalType
 } from "@/services/portalAgentAssignmentService";
 import log from "@/lib/logger";
 
@@ -31,25 +31,9 @@ const portalConfig = {
     borderColor: "border-gray-200",
     activeBorderColor: "border-gray-900",
   },
-  student: {
-    label: "学生端",
-    icon: GraduationCap,
-    color: "text-gray-700",
-    bgColor: "bg-gray-50",
-    borderColor: "border-gray-200",
-    activeBorderColor: "border-gray-900",
-  },
   patient: {
     label: "患者端",
     icon: Heart,
-    color: "text-gray-700",
-    bgColor: "bg-gray-50",
-    borderColor: "border-gray-200",
-    activeBorderColor: "border-gray-900",
-  },
-  admin: {
-    label: "管理端",
-    icon: Settings,
     color: "text-gray-700",
     bgColor: "bg-gray-50",
     borderColor: "border-gray-200",
@@ -68,15 +52,11 @@ export default function AgentAssignment() {
   const [allAgents, setAllAgents] = useState<Agent[]>([]);
   const [assignedAgents, setAssignedAgents] = useState<Record<PortalType, string[]>>({
     doctor: [],
-    student: [],
     patient: [],
-    admin: [],
   });
   const [portalMainAgents, setPortalMainAgents] = useState<Record<PortalType, any>>({
     doctor: null,
-    student: null,
     patient: null,
-    admin: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -97,36 +77,24 @@ export default function AgentAssignment() {
         // 加载各端口的主智能体和已分配的工具智能体
         const [
           doctorMainAgent,
-          studentMainAgent,
           patientMainAgent,
-          adminMainAgent,
           doctorIds,
-          studentIds,
           patientIds,
-          adminIds,
         ] = await Promise.all([
           getPortalMainAgent("doctor"),
-          getPortalMainAgent("student"),
           getPortalMainAgent("patient"),
-          getPortalMainAgent("admin"),
           getPortalAgents("doctor"),
-          getPortalAgents("student"),
           getPortalAgents("patient"),
-          getPortalAgents("admin"),
         ]);
 
         setPortalMainAgents({
           doctor: doctorMainAgent,
-          student: studentMainAgent,
           patient: patientMainAgent,
-          admin: adminMainAgent,
         });
 
         setAssignedAgents({
           doctor: doctorIds.map(String),
-          student: studentIds.map(String),
           patient: patientIds.map(String),
-          admin: adminIds.map(String),
         });
       } catch (error) {
         log.error("Failed to load agent assignment data:", error);

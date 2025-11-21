@@ -101,7 +101,11 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     portalConfig.defaultUserName ||
     "朋友";
 
-  const [activeView, setActiveView] = useState<PortalNavItemId>("chats");
+  // Set default active view based on variant: admin uses first nav item, others use "chats"
+  const defaultActiveView = variant === "admin" 
+    ? (portalConfig.navItems[0]?.id || "agents")
+    : "chats";
+  const [activeView, setActiveView] = useState<PortalNavItemId>(defaultActiveView);
 
   // Doctor portal state management
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -1730,13 +1734,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                 {activeView === "agent-assignment" && <AgentAssignment />}
                 {activeView === "models" && <ModelConfig />}
                 {activeView === "knowledge" && <KnowledgeConfig />}
-                {activeView === "system" && (
-                  <div className="p-8 text-slate-600">
-                    {t("chatInterface.systemSettingsComingSoon", {
-                      defaultValue: "System Settings - Coming Soon",
-                    })}
-                  </div>
-                )}
               </>
             ) : variant === "doctor" ? (
               <>
