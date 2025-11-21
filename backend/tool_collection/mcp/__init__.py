@@ -9,6 +9,7 @@ from .case_library_tools import case_tools
 from .knowledge_base_tools import knowledge_tools
 from .care_plan_tools import care_plan_tools
 from .diagnostic_assistance_tools import diagnostic_tools
+from .contextual_prompt_tools import contextual_prompt_tools
 
 # Export all MCP tool servers
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     'knowledge_tools',
     'care_plan_tools',
     'diagnostic_tools',
+    'contextual_prompt_tools',
 ]
 
 # Tool server registry for easy access
@@ -26,6 +28,7 @@ TOOL_SERVERS = {
     'knowledge_base': knowledge_tools,
     'care_plan': care_plan_tools,
     'diagnostic_assistance': diagnostic_tools,
+    'contextual_prompts': contextual_prompt_tools,
 }
 
 # Tool count summary
@@ -35,6 +38,7 @@ TOOL_COUNTS = {
     'knowledge_base': 5,
     'care_plan': 4,
     'diagnostic_assistance': 3,
+    'contextual_prompts': 6,
 }
 
 TOTAL_TOOLS = sum(TOOL_COUNTS.values())
@@ -50,6 +54,7 @@ print(f"""
   • Knowledge Base:          {TOOL_COUNTS['knowledge_base']} tools
   • Care Plan:               {TOOL_COUNTS['care_plan']} tools
   • Diagnostic Assistance:   {TOOL_COUNTS['diagnostic_assistance']} tools
+  • Contextual Prompts:      {TOOL_COUNTS['contextual_prompts']} tools
 
 ✅ Total Tools Available: {TOTAL_TOOLS}
 
