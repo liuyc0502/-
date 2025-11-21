@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Modal, Form, Input, Button, Card, App, Tabs } from "antd";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Modal, Form, Input, Button, Card, App, Tabs, Upload, message as antdMessage } from "antd";
+import { PlusOutlined, DeleteOutlined, UploadOutlined, FileOutlined } from "@ant-design/icons";
+import type { UploadFile, UploadProps } from "antd";
 import patientService from "@/services/patientService";
+import storageService from "@/services/storageService";
 
 // Types
 interface EditTimelineDetailModalProps {
@@ -26,6 +28,13 @@ interface MetricFormData {
   metric_unit?: string;
   metric_trend?: string;
   metric_status?: string;
+}
+
+interface AttachmentFormData {
+  file_name: string;
+  file_type: string;
+  file_url: string;
+  file_size: number;
 }
 
 export function EditTimelineDetailModal({
@@ -69,6 +78,12 @@ export function EditTimelineDetailModal({
           metric_trend: m.metric_trend,
           metric_status: m.metric_status,
         })),
+        attachments: detail.attachments.map(a => ({
+          file_name: a.file_name,
+          file_type: a.file_type,
+          file_url: a.file_url,
+          file_size: a.file_size,
+        })),
       });
     } catch (error) {
       message.error("加载数据失败");
@@ -97,6 +112,7 @@ export function EditTimelineDetailModal({
 
       await patientService.deleteTimelineImages(timelineId);
       await patientService.deleteTimelineMetrics(timelineId);
+      await patientService.deleteTimelineAttachments(timelineId);
 
       // Create images
       if (values.images?.length > 0) {
@@ -130,6 +146,21 @@ export function EditTimelineDetailModal({
               metric_status: m.metric_status || "normal",
             })),
           });
+        }
+      }
+
+      // Create attachments
+      if (values.attachments?.length > 0) {
+        for (const attachment of values.attachments) {
+          if (attachment?.file_url && attachment?.file_name) {
+            await patientService.createAttachment({
+              timeline_id: timelineId,
+              file_name: attachment.file_name,
+              file_type: attachment.file_type || 'unknown',
+              file_url: attachment.file_url,
+              file_size: attachment.file_size || 0,
+            });
+          }
         }
       }
 
@@ -397,6 +428,80 @@ export function EditTimelineDetailModal({
                   block
                 >
                   添加指标
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
+      ),
+    },
+    {
+      key: "attachments",
+      label: "附件",
+      children: (
+        <Form.Item label="附件文件">
+          <Form.List name="attachments">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field) => (
+                  <Card
+                    key={field.key}
+                    size="small"
+                    className="mb-3"
+                    extra={
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => remove(field.name)}
+                      />
+                    }
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <Form.Item
+                        name={[field.name, "file_name"]}
+                        fieldKey={[field.name, "file_name"]}
+                        label="文件名"
+                        className="mb-2"
+                        rules={[{ required: true, message: '请输入文件名' }]}
+                      >
+                        <Input placeholder="检查报告.pdf" />
+                      </Form.Item>
+                      <Form.Item
+                        name={[field.name, "file_type"]}
+                        fieldKey={[field.name, "file_type"]}
+                        label="文件类型"
+                        className="mb-2"
+                      >
+                        <Input placeholder="pdf/excel/dicom/zip" />
+                      </Form.Item>
+                      <Form.Item
+                        name={[field.name, "file_url"]}
+                        fieldKey={[field.name, "file_url"]}
+                        label="文件URL"
+                        className="col-span-2 mb-2"
+                        rules={[{ required: true, message: '请输入文件URL' }]}
+                      >
+                        <Input placeholder="https://example.com/file.pdf" />
+                      </Form.Item>
+                      <Form.Item
+                        name={[field.name, "file_size"]}
+                        fieldKey={[field.name, "file_size"]}
+                        label="文件大小(bytes)"
+                        className="mb-0"
+                      >
+                        <Input type="number" placeholder="1024" />
+                      </Form.Item>
+                    </div>
+                  </Card>
+                ))}
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  icon={<PlusOutlined />}
+                  block
+                >
+                  添加附件
                 </Button>
               </>
             )}

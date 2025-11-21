@@ -186,6 +186,10 @@ export const API_ENDPOINTS = {
       batchCreate: `${API_BASE_URL}/patient/timeline/metrics/batch`,
       delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/metrics`,
     },
+    attachment: {
+      create: `${API_BASE_URL}/patient/timeline/attachment/create`,
+      delete: (timelineId: number) => `${API_BASE_URL}/patient/timeline/${timelineId}/attachments`,
+    },
     todo: {
       create: `${API_BASE_URL}/patient/todo/create`,
       list: (patientId: number) => `${API_BASE_URL}/patient/${patientId}/todos`,

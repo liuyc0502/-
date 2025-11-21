@@ -84,6 +84,15 @@ class CreateTodoRequest(BaseModel):
 
 class UpdateTodoStatusRequest(BaseModel):
     status: str = Field(..., description="Status: pending/completed/overdue")
+
+
+class CreateAttachmentRequest(BaseModel):
+    timeline_id: int = Field(..., description="Timeline ID")
+    file_name: str = Field(..., description="File name")
+    file_type: str = Field(..., description="File type: pdf/excel/dicom/zip")
+    file_url: str = Field(..., description="File URL (MinIO path)")
+    file_size: int = Field(..., description="File size in bytes")
+
 # ============================================================================
 # Patient Basic Info Endpoints
 # ============================================================================
@@ -784,4 +793,76 @@ async def delete_patient_todo(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete todo: {str(e)}"
+        )
+
+
+# ============================================================================
+# Attachment Endpoints
+# ============================================================================
+
+@router.post("/patient/timeline/attachment/create")
+async def create_timeline_attachment(
+    request: CreateAttachmentRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Create a new timeline attachment record
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.create_attachment_service(
+            request.dict(),
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Create attachment failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create attachment: {str(e)}"
+        )
+
+
+@router.delete("/patient/timeline/{timeline_id}/attachments")
+async def delete_timeline_attachments(
+    timeline_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete all attachments for a timeline (soft delete)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.delete_timeline_attachments_service(
+            timeline_id,
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Delete timeline attachments failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete attachments: {str(e)}"
         )
