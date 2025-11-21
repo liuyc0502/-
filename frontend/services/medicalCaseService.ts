@@ -16,13 +16,12 @@ export interface MedicalCase {
   is_classic?: boolean;
   tags?: string[];
   view_count?: number;
-  symptoms?: string[];
   create_time?: string;
   update_time?: string;
 }
 
 
-export interface MedicalCaseDetail extends Omit<MedicalCase, 'symptoms'> {
+export interface MedicalCaseDetail extends MedicalCase{
   detail?: {
     present_illness_history?: string;
     past_medical_history?: string;

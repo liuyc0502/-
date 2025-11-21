@@ -519,3 +519,53 @@ def delete_timeline_metrics(timeline_id: int, tenant_id: str, user_id: str) -> b
  
         logger.info(f"Deleted {len(metrics)} metrics for timeline: {timeline_id}")
         return True
+
+
+# ============================================================================
+# Attachment Operations
+# ============================================================================
+ 
+def create_attachment(attachment_data: dict, tenant_id: str, user_id: str) -> dict:
+    """
+    Create a new timeline attachment record
+    """
+    with get_db_session() as session:
+        new_attachment = PatientAttachment(
+            timeline_id=attachment_data.get('timeline_id'),
+            file_name=attachment_data.get('file_name'),
+            file_type=attachment_data.get('file_type'),
+            file_url=attachment_data.get('file_url'),
+            file_size=attachment_data.get('file_size', 0),
+            tenant_id=tenant_id,
+            created_by=user_id,
+            updated_by=user_id,
+            delete_flag='N'
+        )
+        session.add(new_attachment)
+        session.flush()
+ 
+        attachment_id = new_attachment.attachment_id
+        session.commit()
+ 
+        logger.info(f"Created attachment: {attachment_id}")
+        return {"attachment_id": attachment_id}
+ 
+ 
+def delete_timeline_attachments(timeline_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Delete all attachments for a timeline (soft delete)
+    """
+    with get_db_session() as session:
+        attachments = session.query(PatientAttachment).filter(
+            PatientAttachment.timeline_id == timeline_id,
+            PatientAttachment.tenant_id == tenant_id,
+            PatientAttachment.delete_flag != 'Y'
+        ).all()
+ 
+        for attachment in attachments:
+            attachment.delete_flag = 'Y'
+            attachment.updated_by = user_id
+
+
+        logger.info(f"Deleted {len(attachments)} attachments for timeline: {timeline_id}")
+        return True

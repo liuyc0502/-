@@ -404,7 +404,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                   )}
                 </div>
 
-                {selectedTimeline.attachments && selectedTimeline.attachments.length > 0 && (
+                {selectedTimeline.attachments && selectedTimeline.attachments.length >0? (
                   <div className="pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-2 mb-2">
                       <Download className="h-4 w-4 text-gray-400" />
@@ -423,6 +423,8 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                       ))}
                     </div>
                   </div>
+                ): (
+                  <p className="text-gray-400 text-sm ml-6">暂无附件</p>
                 )}
               </div>
             </Card>

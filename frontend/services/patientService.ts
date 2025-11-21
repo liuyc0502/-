@@ -545,6 +545,61 @@ export async function deletePatientTodo(todoId: number): Promise<ApiSuccessRespo
 }
 
 // ============================================================================
+// Attachment Services
+// ============================================================================
+
+export async function createTimelineAttachment(
+  attachmentData: {
+    timeline_id: number;
+    file_name: string;
+    file_type: string;
+    file_url: string;
+    file_size: number;
+  }
+): Promise<ApiSuccessResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.patient.attachment.create, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(attachmentData),
+    });
+ 
+    if (!response.ok) {
+      throw new Error(`Failed to create attachment: ${response.statusText}`);
+    }
+ 
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error("Failed to create attachment:", error);
+    throw error;
+  }
+}
+
+export async function deleteTimelineAttachments(timelineId: number): Promise<ApiSuccessResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.patient.attachment.delete(timelineId), {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+ 
+    if (!response.ok) {
+      throw new Error(`Failed to delete timeline attachments: ${response.statusText}`);
+    }
+ 
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete timeline attachments ${timelineId}:`, error);
+    throw error;
+  }
+}
+  
+
+// ============================================================================
 // Export all services
 // ============================================================================
 
@@ -566,17 +621,20 @@ const patientService = {
 
   // Medical Images
   createMedicalImage,
-
+  deleteTimelineImages,
   // Metrics
   batchCreateMetrics,
-
+  deleteTimelineMetrics,
+  // Attachments
+  createTimelineAttachment,
+  deleteTimelineAttachments,
   // Todos
   createPatientTodo,
   getPatientTodos,
   updateTodoStatus,
   deletePatientTodo,
-  deleteTimelineImages,
-  deleteTimelineMetrics,
+  
+ 
 };
 
 export default patientService;

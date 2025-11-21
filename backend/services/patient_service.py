@@ -361,3 +361,33 @@ async def delete_timeline_metrics_service(timeline_id: int, tenant_id: str, user
     except Exception as e:
         logger.error(f"Failed to delete timeline metrics: {str(e)}")
         raise AgentRunException(f"Failed to delete timeline metrics: {str(e)}")
+
+
+async def create_attachment_service(attachment_data: dict, tenant_id: str, user_id: str) -> dict:
+    """
+    Create a new attachment record
+    """
+    try:
+        result = patient_db.create_attachment(attachment_data, tenant_id, user_id)
+        return {
+            "success": True,
+            "attachment_id": result['attachment_id'],
+            "message": "Attachment created successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to create attachment: {str(e)}")
+        raise AgentRunException(f"Failed to create attachment: {str(e)}")
+
+async def delete_attachment_service(attachment_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete an attachment record
+    """
+    try:
+        success = patient_db.delete_attachment(attachment_id, tenant_id, user_id)
+        return {
+            "success": True,
+            "message": "Attachment deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete attachment: {str(e)}")
+        raise AgentRunException(f"Failed to delete attachment: {str(e)}")
