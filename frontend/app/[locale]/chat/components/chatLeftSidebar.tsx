@@ -11,6 +11,9 @@ import {
   User,
   Search,
   ChevronDown,
+  UserCircle2,
+  Filter,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -148,11 +151,28 @@ export function ChatSidebar({
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const accentColor = portalConfig.accentColor || "#D94527";
 
-  const filteredConversations = conversationList.filter((dialog) =>
-    dialog.conversation_title
+  // Conversation-patient linking filters
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+
+  // Enhanced filtering with status and tags
+  const filteredConversations = conversationList.filter((dialog) => {
+    // Search term filter
+    const matchesSearch = dialog.conversation_title
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+      .includes(searchTerm.toLowerCase());
+
+    // Status filter
+    const matchesStatus = !statusFilter ||
+      (dialog as any).conversation_status === statusFilter;
+
+    // Tag filter
+    const matchesTag = !tagFilter ||
+      ((dialog as any).tags && (dialog as any).tags.includes(tagFilter));
+
+    return matchesSearch && matchesStatus && matchesTag;
+  });
+
   const { today, week, older } = categorizeDialogs(filteredConversations);
 
   useEffect(() => {
@@ -333,26 +353,61 @@ export function ChatSidebar({
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
-                          className="flex-1 justify-start text-left hover:bg-transparent min-w-0"
+                          className="flex-1 justify-start text-left hover:bg-transparent min-w-0 flex-col items-start py-2"
                           onClick={() => onDialogClick(dialog)}
                         >
-                          <ConversationStatusIndicator
-                            isStreaming={streamingConversations.has(
-                              dialog.conversation_id
-                            )}
-                            isCompleted={completedConversations.has(
-                              dialog.conversation_id
-                            )}
-                          />
-                          <span className="truncate block text-sm font-medium text-[#1A1A1A]">
-                            {dialog.conversation_title}
-                          </span>
+                          <div className="flex items-center w-full">
+                            <ConversationStatusIndicator
+                              isStreaming={streamingConversations.has(
+                                dialog.conversation_id
+                              )}
+                              isCompleted={completedConversations.has(
+                                dialog.conversation_id
+                              )}
+                            />
+                            <span className="truncate block text-sm font-medium text-[#1A1A1A] flex-1">
+                              {dialog.conversation_title}
+                            </span>
+                          </div>
+                          {/* Patient info and metadata row */}
+                          {((dialog as any).patient_name || (dialog as any).tags?.length > 0) && (
+                            <div className="flex items-center gap-2 mt-1 w-full">
+                              {(dialog as any).patient_name && (
+                                <div className="flex items-center text-xs text-[#6B6B6B]">
+                                  <UserCircle2 className="h-3 w-3 mr-1" />
+                                  <span className="truncate">{(dialog as any).patient_name}</span>
+                                </div>
+                              )}
+                              {(dialog as any).tags && (dialog as any).tags.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  {(dialog as any).tags.slice(0, 2).map((tag: string, idx: number) => (
+                                    <Tag
+                                      key={idx}
+                                      className="text-xs px-1.5 py-0"
+                                      color="blue"
+                                      style={{ fontSize: "10px", lineHeight: "16px" }}
+                                    >
+                                      {tag}
+                                    </Tag>
+                                  ))}
+                                  {(dialog as any).tags.length > 2 && (
+                                    <span className="text-xs text-[#999]">+{(dialog as any).tags.length - 2}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <p className="break-words">
                           {dialog.conversation_title}
                         </p>
+                        {(dialog as any).patient_name && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Patient: {(dialog as any).patient_name}
+                          </p>
+                        )}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -557,6 +612,77 @@ export function ChatSidebar({
                         placeholder={portalConfig.searchPlaceholder}
                         className="border-0 bg-transparent text-sm focus-visible:ring-0 ml-3"
                       />
+                    </div>
+
+                    {/* Filter Controls */}
+                    {(statusFilter || tagFilter) && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Filter className="h-3 w-3 text-[#B3AEA5]" />
+                        {statusFilter && (
+                          <Tag
+                            closable
+                            onClose={() => setStatusFilter(null)}
+                            color="orange"
+                            className="text-xs"
+                          >
+                            Status: {statusFilter}
+                          </Tag>
+                        )}
+                        {tagFilter && (
+                          <Tag
+                            closable
+                            onClose={() => setTagFilter(null)}
+                            color="blue"
+                            className="text-xs"
+                          >
+                            Tag: {tagFilter}
+                          </Tag>
+                        )}
+                        <button
+                          onClick={() => {
+                            setStatusFilter(null);
+                            setTagFilter(null);
+                          }}
+                          className="text-xs text-[#B3AEA5] hover:text-[#6B6B6B] flex items-center"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Clear all
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Quick filter buttons */}
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
+                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                          statusFilter === 'active'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600'
+                            : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                        }`}
+                      >
+                        Active
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
+                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                          statusFilter === 'pending_followup'
+                            ? 'bg-orange-50 border-orange-200 text-orange-600'
+                            : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                        }`}
+                      >
+                        Follow-up
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
+                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                          statusFilter === 'difficult_case'
+                            ? 'bg-red-50 border-red-200 text-red-600'
+                            : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                        }`}
+                      >
+                        Difficult
+                      </button>
                     </div>
                   </div>
 
