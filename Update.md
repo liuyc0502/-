@@ -1,6 +1,35 @@
 # 更新日志
 ## 2025-11-22
 
+### 代码变更分支创建
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/changes-20251122`
+- 📦 **提交更改**: 17 个文件，1001 行新增，216 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**前端文件**:
+- `frontend/app/[locale]/chat/components/chatHeader.tsx` (更新 - 优化聊天头部组件)
+- `frontend/app/[locale]/chat/components/chatInput.tsx` (更新 - 优化聊天输入组件)
+- `frontend/components/doctor/cases/CaseDetailView.tsx` (更新 - 更新医生端病例详情视图)
+- `frontend/components/doctor/patients/EditTimelineDetailModal.tsx` (更新 - 优化患者时间线编辑模态框)
+
+**新功能模块**:
+- `hiv_aids_qa_pipeline/` (新建 - HIV/AIDS QA 处理管道)
+  - `hiv_aids_qa_pipeline/config.py` (新建 - 配置文件)
+  - `hiv_aids_qa_pipeline/scripts/01_extract_and_clean.py` (新建 - PDF提取和清理脚本)
+  - `hiv_aids_qa_pipeline/scripts/02_make_chunks.py` (新建 - 文本分块脚本)
+  - `hiv_aids_qa_pipeline/scripts/03_generate_doctor_qa.py` (新建 - 生成医生端QA脚本)
+  - `hiv_aids_qa_pipeline/scripts/04_generate_patient_qa.py` (新建 - 生成患者端QA脚本)
+  - `hiv_aids_qa_pipeline/utils/` (新建 - 工具模块：分块器、LLM客户端、PDF工具、文本清理等)
+
+**文档更新**:
+- `Update.md` (更新 - 记录本次变更)
+
+---
+
 ### 对话管理功能增强 - 患者关联与状态管理
 
 **操作内容**:
