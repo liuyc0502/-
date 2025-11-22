@@ -1,4 +1,137 @@
 # 更新日志
+## 2025-11-22
+
+### 代码格式优化 - chatLeftSidebar 组件
+
+**操作内容**:
+- 🎨 **格式调整**: 优化 `chatLeftSidebar.tsx` 中过滤器按钮区域的代码格式
+- 📝 **修改文件**: `frontend/app/[locale]/chat/components/chatLeftSidebar.tsx`
+
+**改动内容**:
+- 清理了过滤器按钮区域（625-710行）的多余空行
+- 统一了代码缩进和格式，提高代码可读性
+- 优化了按钮组件的代码结构，使其更加整洁
+
+### 对话管理功能增强 - 患者关联与状态管理
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/conversation-management-enhancements-20251122`
+- 📦 **提交更改**: 18 个文件，2162 行新增，64 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**后端文件**:
+- `backend/apps/conversation_management_app.py` (更新 - 添加患者关联、状态、标签、摘要管理接口)
+- `backend/consts/model.py` (更新 - 新增请求模型类型)
+- `backend/database/conversation_db.py` (更新 - 添加患者关联、状态、标签、摘要数据库操作，修复 logger 导入)
+- `backend/database/db_models.py` (更新 - ConversationRecord 模型添加新字段)
+- `backend/services/conversation_management_service.py` (更新 - 添加服务层方法)
+- `backend/database/migrations/add_conversation_patient_link.sql` (新建 - 数据库迁移脚本)
+- `backend/database/migrations/run_conversation_link_migration.py` (新建 - 迁移执行脚本)
+
+**前端文件**:
+- `frontend/app/[locale]/chat/components/chatHeader.tsx` (更新 - 添加患者关联、状态、标签、摘要管理UI)
+- `frontend/app/[locale]/chat/components/PatientSelector.tsx` (新建 - 患者选择器组件)
+- `frontend/app/[locale]/chat/components/ConversationStatus.tsx` (新建 - 对话状态管理组件)
+- `frontend/app/[locale]/chat/components/TagsManager.tsx` (新建 - 标签管理组件)
+- `frontend/app/[locale]/chat/components/SummaryEditor.tsx` (新建 - 摘要编辑器组件)
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新 - 集成新组件)
+- `frontend/services/conversationService.ts` (更新 - 添加新API调用方法)
+- `frontend/services/api.ts` (更新 - 添加API端点)
+- `frontend/types/chat.ts` (更新 - 扩展 ConversationListItem 类型定义)
+- `frontend/types/conversation.ts` (更新 - 类型定义)
+
+**功能说明**:
+
+#### 1. 对话-患者关联功能
+- 🔗 **患者关联**：
+  - 支持将对话关联到特定患者
+  - 支持取消关联（设置为无患者）
+  - 在医生端聊天界面显示患者选择器
+  - 自动保存关联关系到数据库
+- 📋 **患者信息显示**：
+  - 在对话列表中显示关联的患者ID和姓名
+  - 支持按患者ID筛选对话列表
+
+#### 2. 对话状态管理
+- 📊 **状态类型**：
+  - `active` - 进行中
+  - `pending_followup` - 待跟进
+  - `difficult_case` - 疑难病例
+  - `completed` - 已完成
+  - `archived` - 已归档
+- 🎯 **状态切换**：
+  - 在聊天界面顶部显示状态选择器
+  - 支持快速切换对话状态
+  - 归档时自动记录归档时间戳
+
+#### 3. 对话标签管理
+- 🏷️ **标签功能**：
+  - 支持为对话添加多个自定义标签
+  - 支持编辑和删除标签
+  - 标签颜色自动分配
+  - 支持按标签筛选对话列表
+- 🎨 **UI交互**：
+  - 双击标签可编辑
+  - 点击删除按钮可移除标签
+  - 最多支持10个标签
+
+#### 4. 对话摘要编辑
+- 📝 **摘要功能**：
+  - 支持为对话添加和编辑摘要
+  - 摘要显示在对话列表中
+  - 支持多行文本编辑
+  - 自动保存到数据库
+
+#### 5. 数据库迁移
+- 🗄️ **新增字段**：
+  - `patient_id` - 关联患者ID
+  - `patient_name` - 患者姓名（冗余字段，优化查询）
+  - `conversation_status` - 对话状态
+  - `tags` - 标签数组
+  - `summary` - 对话摘要
+  - `archived_at` - 归档时间戳
+  - `archived_to_timeline` - 是否归档到患者时间线
+- 🔧 **索引优化**：
+  - 为常用查询字段创建索引
+  - 添加状态验证函数和触发器
+
+**技术实现**:
+
+**后端架构**:
+- 数据库层：添加 CRUD 操作方法
+- 服务层：封装业务逻辑
+- API层：提供 RESTful 接口
+- 数据验证：状态值验证、约束检查
+
+**前端架构**:
+- 组件化设计：独立的可复用组件
+- 状态管理：使用 React hooks 管理本地状态
+- 类型安全：完整的 TypeScript 类型定义
+- 错误处理：完善的错误处理和用户反馈
+
+**Bug修复**:
+- ✅ 修复 Select 组件 null 值警告（使用空字符串替代）
+- ✅ 修复 TagsManager 无限循环问题（添加更新标志）
+- ✅ 修复 logger 未定义错误（添加 logging 导入）
+- ✅ 修复类型定义缺失问题（扩展 ConversationListItem 接口）
+- ✅ 修复 date_range 变量命名不一致问题
+- ✅ 修复 API 返回格式问题（添加缺失的返回语句）
+
+**用户体验**:
+- ✅ 医生端聊天界面功能更丰富
+- ✅ 对话管理更便捷（状态、标签、摘要）
+- ✅ 患者关联功能提升工作效率
+- ✅ 所有操作实时保存，无需手动刷新
+
+**分支信息**:
+- 分支名称: `feature/conversation-management-enhancements-20251122`
+- 远程仓库: `origin/feature/conversation-management-enhancements-20251122`
+- 提交 ID: `0617f926`
+
+---
+
 ## 2025-11-21
 
 ### 管理员端UI优化与内存溢出修复

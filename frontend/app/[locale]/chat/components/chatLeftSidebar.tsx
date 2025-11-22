@@ -38,7 +38,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { StaticScrollArea } from "@/components/ui/scrollArea";
 import { getRoleColor } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { Spin, Tag, ConfigProvider, Dropdown } from "antd";
@@ -50,7 +49,8 @@ import type { ChatSidebarProps, ConversationListItem } from "@/types/chat";
 // Constants
 const SIDEBAR_EXPANDED_WIDTH = 200;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
-const TEXT_FADE_IN_DELAY = 100;
+const TEXT_FADE_IN_DELAY = 50;
+const TEXT_FADE_OUT_DURATION = 50;
 
 // conversation status indicator component
 const ConversationStatusIndicator = ({
@@ -173,8 +173,6 @@ export function ChatSidebar({
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const accentColor = portalConfig.accentColor || "#D94527";
-
-
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
@@ -236,16 +234,12 @@ export function ChatSidebar({
   };
 
   // Text content transition classes
-  const slidingContentClass = `transition-all ease-out pointer-events-auto ${
-    showText
-      ? "opacity-100 translate-x-0 duration-200 delay-100"
-      : "opacity-0 -translate-x-2 duration-100 delay-0 pointer-events-none"
+  const slidingContentClass = `transition-opacity duration-150 ease-out ${
+    showText ? "opacity-100" : "opacity-0 pointer-events-none"
   }`;
 
-  const fadingContentClass = `transition-opacity ease-in-out ${
-    showText
-      ? "opacity-100 duration-200 delay-100"
-      : "opacity-0 duration-100 delay-0"
+  const fadingContentClass = `transition-opacity duration-150 ease-out ${
+    showText ? "opacity-100" : "opacity-0"
   }`;
 
   const handleSubmitEdit = () => {
@@ -378,9 +372,8 @@ export function ChatSidebar({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex-1 justify-start text-left hover:bg-transparent min-w-0 flex-col items-start py-2"
+                        <button
+                          className="flex-1 text-left min-w-0 py-1.5 px-1 rounded hover:bg-transparent"
                           onClick={() => onDialogClick(dialog)}
                         >
                           <div className="flex items-center w-full">
@@ -392,39 +385,20 @@ export function ChatSidebar({
                                 dialog.conversation_id
                               )}
                             />
-                            <span className="truncate block text-sm font-medium text-[#1A1A1A] flex-1">
+                            <span className="text-sm font-medium text-[#1A1A1A] truncate">
                               {dialog.conversation_title}
                             </span>
                           </div>
-                          {/* Patient info and metadata row */}
-                          {((dialog as any).patient_name || (dialog as any).tags?.length > 0) && (
-                            <div className="flex items-center gap-2 mt-1 w-full">
-                              {(dialog as any).patient_name && (
-                                <div className="flex items-center text-xs text-[#6B6B6B]">
-                                  <UserCircle2 className="h-3 w-3 mr-1" />
-                                  <span className="truncate">{(dialog as any).patient_name}</span>
-                                </div>
-                              )}
-                              {(dialog as any).tags && (dialog as any).tags.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  {(dialog as any).tags.slice(0, 2).map((tag: string, idx: number) => (
-                                    <Tag
-                                      key={idx}
-                                      className="text-xs px-1.5 py-0"
-                                      color="blue"
-                                      style={{ fontSize: "10px", lineHeight: "16px" }}
-                                    >
-                                      {tag}
-                                    </Tag>
-                                  ))}
-                                  {(dialog as any).tags.length > 2 && (
-                                    <span className="text-xs text-[#999]">+{(dialog as any).tags.length - 2}</span>
-                                  )}
-                                </div>
-                              )}
+                          {/* Patient info row - simplified */}
+                          {(dialog as any).patient_name && (
+                            <div className="flex items-center mt-1">
+                              <UserCircle2 className="h-3 w-3 mr-1 text-[#999] flex-shrink-0" />
+                              <span className="text-xs text-[#999] truncate">
+                                {(dialog as any).patient_name}
+                              </span>
                             </div>
                           )}
-                        </Button>
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <p className="break-words">
@@ -432,7 +406,12 @@ export function ChatSidebar({
                         </p>
                         {(dialog as any).patient_name && (
                           <p className="text-xs text-gray-400 mt-1">
-                            Patient: {(dialog as any).patient_name}
+                            患者: {(dialog as any).patient_name}
+                          </p>
+                        )}
+                        {(dialog as any).tags && (dialog as any).tags.length > 0 && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            标签: {(dialog as any).tags.join(", ")}
                           </p>
                         )}
                       </TooltipContent>
@@ -520,10 +499,8 @@ export function ChatSidebar({
             )}
           </div>
           <div
-            className={`text-left min-w-0 transition-all ease-out ${
-              showText
-                ? "opacity-100 translate-x-0 duration-200 delay-100"
-                : "opacity-0 -translate-x-2 duration-100 delay-0 pointer-events-none"
+            className={`text-left min-w-0 transition-opacity duration-150 ease-out ${
+              showText ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
             <p className="text-sm font-semibold text-[#1A1A1A] truncate">
@@ -533,10 +510,8 @@ export function ChatSidebar({
           </div>
         </div>
         <ChevronDown
-          className={`h-4 w-4 text-[#6B6B6B] flex-shrink-0 transition-all ease-in-out ${
-            showText
-              ? "opacity-100 duration-200 delay-100"
-              : "opacity-0 duration-100 delay-0"
+          className={`h-4 w-4 text-[#6B6B6B] flex-shrink-0 transition-opacity duration-150 ease-out ${
+            showText ? "opacity-100" : "opacity-0"
           }`}
         />
       </button>
@@ -579,10 +554,8 @@ export function ChatSidebar({
               >
                 <Plus className="h-5 w-5" />
               </button>
-              <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-all ease-out ${
-                showText
-                  ? "opacity-100 translate-x-0 duration-200 delay-100"
-                  : "opacity-0 -translate-x-2 duration-100 delay-0"
+              <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
+                showText ? "opacity-100" : "opacity-0"
               }`}>
                 {t("chatLeftSidebar.newConversation")}
               </span>
@@ -605,13 +578,9 @@ export function ChatSidebar({
                     <div className="h-11 w-11 flex items-center justify-center flex-shrink-0">
                       <item.icon className="h-6 w-6" />
                     </div>
-                    <span className={`ml-3 text-lg whitespace-nowrap transition-all ease-out ${
+                    <span className={`ml-3 text-lg whitespace-nowrap transition-opacity duration-150 ease-out ${
                       isActive ? "text-[#1A1A1A] font-medium" : "text-[#4D4D4D]"
-                    } ${
-                      showText
-                        ? "opacity-100 translate-x-0 duration-200 delay-100"
-                        : "opacity-0 -translate-x-2 duration-100 delay-0"
-                    }`}>
+                    } ${showText ? "opacity-100" : "opacity-0"}`}>
                       {item.label}
                     </span>
                   </button>
@@ -632,106 +601,96 @@ export function ChatSidebar({
           >
             {expanded && (
               <>
-                <div className="flex flex-col pt-4 pb-6 space-y-4">
-                  <div>
-                    <div className="flex items-center rounded-2xl border border-[#EFE8DE] bg-white px-4 h-11">
-                      <Search className="h-4 w-4 text-[#B3AEA5]" />
-                      <Input
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder={portalConfig.searchPlaceholder}
-                        className="border-0 bg-transparent text-sm focus-visible:ring-0 ml-3"
-                      />
-                    </div>
-
-                    {/* Filter Controls */}
-                    {(statusFilter || tagFilter) && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Filter className="h-3 w-3 text-[#B3AEA5]" />
-                        {statusFilter && (
-                          <Tag
-                            closable
-                            onClose={() => setStatusFilter(null)}
-                            color="orange"
-                            className="text-xs"
-                          >
-                            Status: {statusFilter}
-                          </Tag>
-                        )}
-                        {tagFilter && (
-                          <Tag
-                            closable
-                            onClose={() => setTagFilter(null)}
-                            color="blue"
-                            className="text-xs"
-                          >
-                            Tag: {tagFilter}
-                          </Tag>
-                        )}
-                        <button
-                          onClick={handleClearFilters}
-                          className="text-xs text-[#B3AEA5] hover:text-[#6B6B6B] flex items-center"
-                        >
-                          <X className="h-3 w-3 mr-1" />
-                          Clear all
-                        </button>
-                      </div>
+                {/* Search and Filter Section - Compact Design */}
+                <div className="pt-4 pb-3 flex-shrink-0">
+                  {/* Search Input */}
+                  <div className="flex items-center rounded-xl border border-[#E8E2D6] bg-white px-3 h-9">
+                    <Search className="h-3.5 w-3.5 text-[#B3AEA5] flex-shrink-0" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="搜索对话..."
+                      className="border-0 bg-transparent text-xs focus-visible:ring-0 ml-2 h-7 px-0"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="text-[#B3AEA5] hover:text-[#6B6B6B] ml-1"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     )}
-
-                    {/* Quick filter buttons */}
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <button
-                        onClick={() => handleStatusFilterToggle("active")}
-                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                          statusFilter === "active"
-                            ? "bg-blue-50 border-blue-200 text-blue-600"
-                            : "border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]"
-                        }`}
-                      >
-                        Active
-                      </button>
-                      <button
-                        onClick={() => handleStatusFilterToggle("pending_followup")}
-                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                          statusFilter === "pending_followup"
-                            ? "bg-orange-50 border-orange-200 text-orange-600"
-                            : "border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]"
-                        }`}
-                      >
-                        Follow-up
-                      </button>
-                      <button
-                        onClick={() => handleStatusFilterToggle("difficult_case")}
-                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                          statusFilter === "difficult_case"
-                            ? "bg-red-50 border-red-200 text-red-600"
-                            : "border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]"
-                        }`}
-                      >
-                        Difficult
-                      </button>
-                    </div>
                   </div>
 
-                  <StaticScrollArea className="flex-1 pr-2">
-                    {filteredConversations.length > 0 ? (
-                      <>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
-                          {portalConfig.recentLabel}
-                        </p>
-                        {renderDialogList(today, t("chatLeftSidebar.today"))}
-                        {renderDialogList(week, t("chatLeftSidebar.last7Days"))}
-                        {renderDialogList(older, t("chatLeftSidebar.older"))}
-                      </>
-                    ) : (
-                      <div className="text-center text-sm text-[#6B6B6B] mt-10">
-                        {t("chatLeftSidebar.noHistory")}
-                      </div>
+                  {/* Filter Pills - inline style */}
+                  <div className="flex items-center gap-1 mt-2">
+                    <button
+                      onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
+                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                        statusFilter === 'active'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                      }`}
+                    >
+                      进行中
+                    </button>
+
+                    <button
+                      onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
+                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                        statusFilter === 'pending_followup'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                      }`}
+                    >
+                      待跟进
+                    </button>
+
+                    <button
+                      onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
+                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                        statusFilter === 'difficult_case'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                      }`}
+                    >
+                      疑难
+                    </button>
+
+                    {(statusFilter || tagFilter) && (
+                      <button
+                        onClick={() => {
+                          setStatusFilter(null);
+                          setTagFilter(null);
+                        }}
+                        className="text-[10px] px-1.5 py-0.5 text-[#B3AEA5] hover:text-[#6B6B6B]"
+                      >
+                        重置
+                      </button>
                     )}
-                  </StaticScrollArea>
+                  </div>
                 </div>
 
-                <div className="pb-6">
+                {/* Scrollable Conversation List */}
+                <div className="flex-1 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
+                  {conversationList.length > 0 ? (
+                    <>
+                      <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
+                        {portalConfig.recentLabel}
+                      </p>
+                      {renderDialogList(today, t("chatLeftSidebar.today"))}
+                      {renderDialogList(week, t("chatLeftSidebar.last7Days"))}
+                      {renderDialogList(older, t("chatLeftSidebar.older"))}
+                    </>
+                  ) : (
+                    <div className="text-center text-sm text-[#6B6B6B] mt-10">
+                      {t("chatLeftSidebar.noHistory")}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom User Section - Fixed */}
+                <div className="pb-6 pt-4 flex-shrink-0 border-t border-[#EFE8DE] mt-2">
                   {renderUserSection()}
                   <div className="mt-3 flex items-center justify-between">
                     {!isSpeedMode && userRole ? (
