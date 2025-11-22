@@ -70,17 +70,18 @@ export default function AppModelConfig({
   }, [forwardedRef]);
 
   return (
-    <div className="w-full h-full bg-white flex flex-col">
+    <div className="w-full h-full bg-[#FAFAF8] flex flex-col">
       {isClientSide ? (
         <>
           <div
             style={{
               padding: "20px 24px 12px 24px",
-              borderBottom: "1px solid #E5E7EB",
+              borderBottom: "1px solid #E8E2D6",
               flexShrink: 0,
+              backgroundColor: "#FDF8F2",
             }}
           >
-            <Title level={4} style={{ margin: 0 }}>{t("setup.config.modelSettings")}</Title>
+            <Title level={4} style={{ margin: 0, color: "#1A1A1A" }}>{t("setup.config.modelSettings")}</Title>
           </div>
           <div
             style={{

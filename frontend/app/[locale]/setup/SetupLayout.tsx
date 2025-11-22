@@ -4,7 +4,7 @@ import React, {ReactNode} from "react";
 import {useRouter} from "next/navigation";
 import {useTranslation} from "react-i18next";
 
-import {Badge, Button, Dropdown} from "antd";
+import {Badge, Dropdown} from "antd";
 import {DownOutlined} from "@ant-design/icons";
 import {FiArrowLeft, FiRefreshCw} from "react-icons/fi";
 import {Globe} from "lucide-react";
@@ -49,25 +49,22 @@ function Header({
 
   return (
     <header
-      className="w-full py-4 px-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+      className="w-full py-4 px-6 flex items-center justify-between border-b border-[#E8E2D6] bg-[#FDF8F2]"
       style={{ height: HEADER_CONFIG.HEIGHT }}
     >
       <div className="flex items-center">
-        <Button
+        <button
           onClick={() => router.push("/")}
-          className="mr-3 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          className="mr-3 p-2 rounded-full hover:bg-[#F5F2ED] transition-colors"
           aria-label={t("setup.header.button.back")}
-          icon={
-            <FiArrowLeft className="text-slate-600 dark:text-slate-300 text-xl" />
-          }
-          type="text"
-          shape="circle"
-        />
-        <h1 className="text-xl font-bold text-blue-600 dark:text-blue-500">
+        >
+          <FiArrowLeft className="text-[#6B6B6B] text-xl" />
+        </button>
+        <h1 className="text-xl font-bold text-[#D94527]">
           {title}
         </h1>
-        <div className="mx-2 h-6 border-l border-slate-300 dark:border-slate-600"></div>
-        <span className="text-slate-600 dark:text-slate-400 text-sm">
+        <div className="mx-3 h-5 border-l border-[#E0D6C6]"></div>
+        <span className="text-[#8B8680] text-sm">
           {description}
         </span>
       </div>
@@ -82,7 +79,7 @@ function Header({
             onClick: ({ key }) => handleLanguageChange(key as string),
           }}
         >
-          <a className="ant-dropdown-link text-sm !font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors flex items-center gap-2 cursor-pointer w-[110px] border-0 shadow-none bg-transparent text-left">
+          <a className="ant-dropdown-link text-sm font-medium text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors flex items-center gap-2 cursor-pointer">
             <Globe className="h-4 w-4" />
             {languageOptions.find((o) => o.value === currentLanguage)?.label ||
               currentLanguage}
@@ -90,24 +87,21 @@ function Header({
           </a>
         </Dropdown>
         {/* ModelEngine connectivity status */}
-        <div className="flex items-center px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center px-3 py-1.5 rounded-xl border border-[#E8E2D6] bg-white">
           <Badge
             status={connectionStatus}
             text={getStatusText()}
-            className="[&>.ant-badge-status-dot]:w-[8px] [&>.ant-badge-status-dot]:h-[8px] [&>.ant-badge-status-text]:text-base [&>.ant-badge-status-text]:ml-2 [&>.ant-badge-status-text]:font-medium"
+            className="[&>.ant-badge-status-dot]:w-[8px] [&>.ant-badge-status-dot]:h-[8px] [&>.ant-badge-status-text]:text-sm [&>.ant-badge-status-text]:ml-2 [&>.ant-badge-status-text]:text-[#6B6B6B]"
           />
-          <Button
-            icon={
-              <FiRefreshCw
-                className={isCheckingConnection ? "animate-spin" : ""}
-              />
-            }
-            size="small"
-            type="text"
+          <button
             onClick={onCheckConnection}
             disabled={isCheckingConnection}
-            className="ml-2"
-          />
+            className="ml-2 p-1 rounded-md hover:bg-[#F5F2ED] transition-colors disabled:opacity-50"
+          >
+            <FiRefreshCw
+              className={`text-[#6B6B6B] ${isCheckingConnection ? "animate-spin" : ""}`}
+            />
+          </button>
         </div>
       </div>
     </header>
@@ -161,12 +155,12 @@ function Navigation({
   };
 
   return (
-    <div className="mt-3 flex justify-between px-6">
+    <div className="mt-4 flex justify-between px-6">
       <div className="flex gap-2">
         {showBack && onBack && (
           <button
             onClick={onBack}
-            className="px-6 py-2.5 rounded-md flex items-center text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+            className="px-5 py-2 rounded-xl flex items-center text-sm font-medium bg-white border border-[#E8E2D6] text-[#6B6B6B] hover:bg-[#F5F2ED] cursor-pointer transition-colors"
           >
             {t("setup.navigation.button.previous")}
           </button>
@@ -178,7 +172,7 @@ function Navigation({
           <button
             onClick={handleClick}
             disabled={isSaving}
-            className="px-6 py-2.5 rounded-md flex items-center text-sm font-medium bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2 rounded-xl flex items-center text-sm font-medium bg-[#D94527] text-white hover:bg-[#C13D22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             style={{
               border: "none",
               marginLeft: !showBack ? "auto" : undefined,
@@ -229,7 +223,7 @@ export default function SetupLayout({
   completeText,
 }: SetupLayoutProps) {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans">
+    <div className="min-h-screen bg-[#FAFAF8] font-sans">
       <Header
         connectionStatus={connectionStatus}
         isCheckingConnection={isCheckingConnection}

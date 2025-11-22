@@ -921,10 +921,10 @@ export default function AgentSetupOrchestrator({
             {/* Header: Configure Agent Capabilities */}
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-medium mr-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#D94527] text-white text-sm font-medium mr-2">
                   2
                 </div>
-                <h2 className="text-lg font-medium">
+                <h2 className="text-lg font-medium text-[#1A1A1A]">
                   {t("businessLogic.config.title")}
                 </h2>
               </div>
@@ -954,8 +954,8 @@ export default function AgentSetupOrchestrator({
                   />
                 )}
                 {agentRoleCategory === "portal_main" && (
-                  <div className="h-[128px] lg:h-[128px] flex items-center justify-center bg-blue-50 border border-blue-200 rounded-md" style={{ flexShrink: 0 }}>
-                    <p className="text-sm text-blue-600">
+                  <div className="h-[128px] lg:h-[128px] flex items-center justify-center bg-[#FDF8F2] border border-[#E8E2D6] rounded-xl" style={{ flexShrink: 0 }}>
+                    <p className="text-sm text-[#8B8680]">
                       💡 端口主智能体的子智能体通过「智能体分配」界面统一管理
                     </p>
                   </div>

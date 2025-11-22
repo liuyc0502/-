@@ -53,10 +53,10 @@ export default function SubAgentPool({
       <div className="flex flex-col h-full min-h-[300px] lg:min-h-0 overflow-hidden">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-medium mr-2">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#D94527] text-white text-sm font-medium mr-2">
               1
             </div>
-            <h2 className="text-lg font-medium">
+            <h2 className="text-lg font-medium text-[#1A1A1A]">
               {t("subAgentPool.management")}
             </h2>
           </div>
@@ -76,10 +76,10 @@ export default function SubAgentPool({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className={`flex-1 rounded-md p-2 flex items-center cursor-pointer transition-all duration-200 min-h-[70px] ${
+                      className={`flex-1 rounded-xl p-2 flex items-center cursor-pointer transition-all duration-200 min-h-[70px] ${
                         isCreatingNewAgent
-                          ? "bg-blue-100 border border-blue-200 shadow-sm" // Highlight in creation mode
-                          : "bg-white hover:bg-blue-50 hover:shadow-sm"
+                          ? "bg-[#FEF3F2] border border-[#FECDCA] shadow-sm" // Highlight in creation mode
+                          : "bg-white border border-[#E8E2D6] hover:bg-[#FDF8F2] hover:shadow-sm"
                       }`}
                       onClick={() => {
                         if (isCreatingNewAgent) {
@@ -93,10 +93,10 @@ export default function SubAgentPool({
                     >
                       <div
                         className={`flex items-center w-full ${
-                          isCreatingNewAgent ? "text-blue-700" : "text-blue-600"
+                          isCreatingNewAgent ? "text-[#C13D22]" : "text-[#D94527]"
                         }`}
                       >
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 mr-3 flex-shrink-0">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FEF3F2] mr-3 flex-shrink-0">
                           <span className="text-sm font-medium">+</span>
                         </div>
                         <div className="flex-1">
@@ -124,21 +124,21 @@ export default function SubAgentPool({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className={`flex-1 rounded-md p-2 flex items-center transition-all duration-200 min-h-[70px] ${
+                      className={`flex-1 rounded-xl p-2 flex items-center transition-all duration-200 min-h-[70px] ${
                         isImporting
-                          ? "bg-gray-100 cursor-not-allowed" // Importing: disabled state
-                          : "bg-white cursor-pointer hover:bg-green-50 hover:shadow-sm" // Normal state: clickable
+                          ? "bg-[#F5F2ED] cursor-not-allowed border border-[#E8E2D6]" // Importing: disabled state
+                          : "bg-white border border-[#E8E2D6] cursor-pointer hover:bg-[#F0FAF0] hover:shadow-sm" // Normal state: clickable
                       }`}
                       onClick={isImporting ? undefined : onImportAgent}
                     >
                       <div
                         className={`flex items-center w-full ${
-                          isImporting ? "text-gray-400" : "text-green-600" // Use gray when importing
+                          isImporting ? "text-[#8B8680]" : "text-emerald-600" // Use gray when importing
                         }`}
                       >
                         <div
                           className={`flex items-center justify-center w-8 h-8 rounded-full mr-3 flex-shrink-0 ${
-                            isImporting ? "bg-gray-100" : "bg-green-100"
+                            isImporting ? "bg-[#E8E2D6]" : "bg-emerald-100"
                           }`}
                         >
                           <UploadOutlined className="text-sm" />
@@ -169,7 +169,7 @@ export default function SubAgentPool({
 
             {/* Agent list block */}
             <div>
-              <div className="text-sm font-medium text-gray-600 mb-2 px-1">
+              <div className="text-sm font-medium text-[#6B6B6B] mb-2 px-1">
                 {t("subAgentPool.section.agentList")} ({subAgentList.length})
               </div>
               <div className="space-y-0">
@@ -182,10 +182,10 @@ export default function SubAgentPool({
                     <Tooltip key={agent.id}>
                       <TooltipTrigger asChild>
                         <div
-                          className={`py-3 px-2 flex flex-col justify-center transition-colors border-t border-gray-200 h-[80px] ${
+                          className={`py-3 px-2 flex flex-col justify-center transition-colors border-t border-[#E8E2D6] h-[80px] ${
                             isCurrentlyEditing
-                              ? "bg-blue-50 border-l-4 border-l-blue-500" // Highlight editing agent, add left vertical line
-                              : "hover:bg-gray-50 cursor-pointer"
+                              ? "bg-[#FEF3F2] border-l-4 border-l-[#D94527]" // Highlight editing agent, add left vertical line
+                              : "hover:bg-[#FDF8F2] cursor-pointer"
                           }`}
                           onClick={async (e) => {
                             // Prevent event bubbling
@@ -264,7 +264,7 @@ export default function SubAgentPool({
                                       }
                                     }}
                                     disabled={!isAvailable}
-                                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                    className="text-[#D94527] hover:text-[#C13D22] hover:bg-[#FEF3F2]"
                                   />
                                 </TooltipTrigger>
                                 <TooltipContent>

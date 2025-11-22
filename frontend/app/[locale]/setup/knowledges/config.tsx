@@ -58,13 +58,13 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     >
       <div className="text-center">
         {typeof icon === "string" ? (
-          <div className="text-gray-400 text-3xl mb-2">{icon}</div>
+          <div className="text-[#8B8680] text-3xl mb-2">{icon}</div>
         ) : (
-          <div className="text-gray-400 mb-2">{icon}</div>
+          <div className="text-[#8B8680] mb-2">{icon}</div>
         )}
-        <h3 className="text-base font-medium text-gray-700 mb-1">{title}</h3>
+        <h3 className="text-base font-medium text-[#1A1A1A] mb-1">{title}</h3>
         {description && (
-          <p className="text-gray-500 max-w-md text-xs mb-4">{description}</p>
+          <p className="text-[#6B6B6B] max-w-md text-xs mb-4">{description}</p>
         )}
         {action && <div className="mt-2">{action}</div>}
       </div>
@@ -758,9 +758,9 @@ function DataConfig({ isActive }: DataConfigProps) {
   };
 
   return (
-    <div className="w-full h-full bg-white flex flex-col" ref={contentRef}>
+    <div className="w-full h-full bg-[#FAFAF8] flex flex-col" ref={contentRef}>
       {showEmbeddingWarning && (
-        <div className="absolute inset-0 bg-gray-500/45 z-40" />
+        <div className="absolute inset-0 bg-[#8B8680]/45 z-40" />
       )}
       <Modal
         open={showEmbeddingWarning && !!contentRef.current}
@@ -909,7 +909,7 @@ function DataConfig({ isActive }: DataConfigProps) {
                 description={t("knowledgeBase.empty.description")}
                 icon={
                   <InfoCircleFilled
-                    style={{ fontSize: 36, color: "#1677ff" }}
+                    style={{ fontSize: 36, color: "#D94527" }}
                   />
                 }
                 containerHeight="100%"
