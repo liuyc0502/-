@@ -498,6 +498,7 @@ def delete_timeline_images(timeline_id: int, tenant_id: str, user_id: str) -> bo
             image.delete_flag = 'Y'
             image.updated_by = user_id
  
+        session.commit()
         logger.info(f"Deleted {len(images)} images for timeline: {timeline_id}")
         return True
  
@@ -517,6 +518,7 @@ def delete_timeline_metrics(timeline_id: int, tenant_id: str, user_id: str) -> b
             metric.delete_flag = 'Y'
             metric.updated_by = user_id
  
+        session.commit()
         logger.info(f"Deleted {len(metrics)} metrics for timeline: {timeline_id}")
         return True
 
@@ -566,6 +568,6 @@ def delete_timeline_attachments(timeline_id: int, tenant_id: str, user_id: str) 
             attachment.delete_flag = 'Y'
             attachment.updated_by = user_id
 
-
+        session.commit()
         logger.info(f"Deleted {len(attachments)} attachments for timeline: {timeline_id}")
         return True

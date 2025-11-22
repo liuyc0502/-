@@ -1,6 +1,28 @@
 # 更新日志
 ## 2025-11-22
 
+### 修复时间线附件删除功能错误
+
+**问题描述**:
+- 删除时间线附件时出现 "Internal Server Error"
+- `delete_timeline_attachments_service` 函数在 service 层缺失
+- 数据库层删除函数缺少 `session.commit()` 导致更改未保存
+
+**修改文件**:
+- `backend/services/patient_service.py` (更新 - 添加缺失的 `delete_timeline_attachments_service` 函数)
+- `backend/database/patient_db.py` (修复 - 在删除函数中添加 `session.commit()`)
+
+**修复内容**:
+1. ✅ 在 `patient_service.py` 中添加 `delete_timeline_attachments_service` 函数
+2. ✅ 在 `delete_timeline_attachments` 函数中添加 `session.commit()`
+3. ✅ 同时修复了 `delete_timeline_images` 和 `delete_timeline_metrics` 函数缺少 `session.commit()` 的问题
+
+**影响范围**:
+- 修复了时间线附件删除功能
+- 同时修复了时间线图片和指标删除功能的潜在问题
+
+---
+
 ### 代码变更分支创建
 
 **操作内容**:

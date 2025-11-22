@@ -391,3 +391,18 @@ async def delete_attachment_service(attachment_id: int, tenant_id: str, user_id:
     except Exception as e:
         logger.error(f"Failed to delete attachment: {str(e)}")
         raise AgentRunException(f"Failed to delete attachment: {str(e)}")
+
+
+async def delete_timeline_attachments_service(timeline_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete all attachments for a timeline (soft delete)
+    """
+    try:
+        success = patient_db.delete_timeline_attachments(timeline_id, tenant_id, user_id)
+        return {
+            "success": True,
+            "message": "Timeline attachments deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete timeline attachments: {str(e)}")
+        raise AgentRunException(f"Failed to delete timeline attachments: {str(e)}")
