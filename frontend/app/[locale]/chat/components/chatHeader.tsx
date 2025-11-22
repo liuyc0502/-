@@ -169,13 +169,15 @@ export function ChatHeader({
   return (
     <>
       <GradientDefs />
-      <header className="px-16 pt-6 pb-2 border-b border-transparent bg-transparent z-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
+      <header className="px-16 pt-6 pb-4 border-b border-transparent bg-transparent z-10">
+        {/* Top Row: Brand + Title + Actions */}
+        <div className="flex items-start justify-between gap-4">
+          {/* Left: Brand and Title */}
+          <div className="flex-shrink-0">
             <p className="text-[11px] uppercase tracking-[0.35em] text-[#B1997B]">
               {portalConfig.brandName}
             </p>
-            <div className="mt-3">
+            <div className="mt-2">
               {isEditing ? (
                 <Input
                   ref={inputRef}
@@ -188,7 +190,7 @@ export function ChatHeader({
                 />
               ) : (
                 <button
-                  className="text-3xl font-semibold text-[#1A1A1A] font-serif cursor-text hover:text-[#D16E47] transition-colors"
+                  className="text-2xl font-semibold text-[#1A1A1A] font-serif cursor-text hover:text-[#D16E47] transition-colors"
                   onDoubleClick={handleDoubleClick}
                   title={t("chatHeader.doubleClickToEdit")}
                 >
@@ -198,7 +200,61 @@ export function ChatHeader({
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* Center: Patient Linking Info (Doctor Portal) */}
+          {showPatientLinking && (
+            <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-4">
+              {/* Row 1: Patient, Status, Tags */}
+              <div className="flex items-center gap-6 flex-wrap justify-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#999]">关联患者</span>
+                  <PatientSelector
+                    conversationId={conversationId || null}
+                    currentPatientId={patientId}
+                    currentPatientName={patientName}
+                    onPatientChange={onPatientChange}
+                    disabled={!conversationId}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#999]">状态</span>
+                  <ConversationStatus
+                    conversationId={conversationId || null}
+                    currentStatus={conversationStatus}
+                    onStatusChange={onStatusChange}
+                    disabled={!conversationId}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#999]">标签</span>
+                  <TagsManager
+                    conversationId={conversationId || null}
+                    currentTags={conversationTags}
+                    onTagsChange={onTagsChange}
+                    disabled={!conversationId}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Summary */}
+              <div className="flex items-center gap-2 mt-2 w-full max-w-lg">
+                <span className="text-xs text-[#999] flex-shrink-0">摘要</span>
+                <div className="flex-1">
+                  <SummaryEditor
+                    conversationId={conversationId || null}
+                    currentSummary={conversationSummary}
+                    onSummaryChange={onSummaryChange}
+                    disabled={!conversationId}
+                    placeholder="点击添加对话摘要..."
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right: Language & Memory */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <Dropdown
               menu={{
                 items: languageOptions.map((opt) => ({
@@ -231,65 +287,12 @@ export function ChatHeader({
               >
                 <BrainCircuit className="h-5 w-5 text-[#B87345]" />
                 <span className="text-sm text-[#6B6B6B]">
-                  {t("chatHeader.memory", { defaultValue: "Memory" })}
+                  {t("chatHeader.memory", { defaultValue: "记忆" })}
                 </span>
               </ButtonUI>
             </Badge>
           </div>
         </div>
-
-        {/* Conversation-Patient Linking Features Row (Doctor Portal) */}
-        {showPatientLinking && (
-          <div className="mt-4 pt-4 border-t border-[#E5E5E5]">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-[#6B6B6B] min-w-[60px]">Patient:</span>
-                <PatientSelector
-                  conversationId={conversationId || null}
-                  currentPatientId={patientId}
-                  currentPatientName={patientName}
-                  onPatientChange={onPatientChange}
-                  disabled={!conversationId}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-[#6B6B6B] min-w-[60px]">Status:</span>
-                <ConversationStatus
-                  conversationId={conversationId || null}
-                  currentStatus={conversationStatus}
-                  onStatusChange={onStatusChange}
-                  disabled={!conversationId}
-                />
-              </div>
-
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-sm text-[#6B6B6B] min-w-[60px]">Tags:</span>
-                <div className="flex-1">
-                  <TagsManager
-                    conversationId={conversationId || null}
-                    currentTags={conversationTags}
-                    onTagsChange={onTagsChange}
-                    disabled={!conversationId}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Summary Row */}
-            <div className="flex items-start gap-2 mt-3">
-              <span className="text-sm text-[#6B6B6B] min-w-[60px] pt-1">Summary:</span>
-              <div className="flex-1">
-                <SummaryEditor
-                  conversationId={conversationId || null}
-                  currentSummary={conversationSummary}
-                  onSummaryChange={onSummaryChange}
-                  disabled={!conversationId}
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </header>
       {/* Embedding not configured prompt */}
       <Modal

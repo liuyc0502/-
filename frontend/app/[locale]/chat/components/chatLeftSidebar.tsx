@@ -352,10 +352,10 @@ export function ChatSidebar({
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
-                          className="flex-1 justify-start text-left hover:bg-transparent min-w-0 flex-col items-start py-2"
+                          className="flex-1 justify-start text-left hover:bg-transparent min-w-0 flex-col items-start py-2 overflow-hidden"
                           onClick={() => onDialogClick(dialog)}
                         >
-                          <div className="flex items-center w-full">
+                          <div className="flex items-center w-full overflow-hidden">
                             <ConversationStatusIndicator
                               isStreaming={streamingConversations.has(
                                 dialog.conversation_id
@@ -364,36 +364,15 @@ export function ChatSidebar({
                                 dialog.conversation_id
                               )}
                             />
-                            <span className="truncate block text-sm font-medium text-[#1A1A1A] flex-1">
+                            <span className="truncate block text-sm font-medium text-[#1A1A1A] flex-1 min-w-0">
                               {dialog.conversation_title}
                             </span>
                           </div>
-                          {/* Patient info and metadata row */}
-                          {((dialog as any).patient_name || (dialog as any).tags?.length > 0) && (
-                            <div className="flex items-center gap-2 mt-1 w-full">
-                              {(dialog as any).patient_name && (
-                                <div className="flex items-center text-xs text-[#6B6B6B]">
-                                  <UserCircle2 className="h-3 w-3 mr-1" />
-                                  <span className="truncate">{(dialog as any).patient_name}</span>
-                                </div>
-                              )}
-                              {(dialog as any).tags && (dialog as any).tags.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  {(dialog as any).tags.slice(0, 2).map((tag: string, idx: number) => (
-                                    <Tag
-                                      key={idx}
-                                      className="text-xs px-1.5 py-0"
-                                      color="blue"
-                                      style={{ fontSize: "10px", lineHeight: "16px" }}
-                                    >
-                                      {tag}
-                                    </Tag>
-                                  ))}
-                                  {(dialog as any).tags.length > 2 && (
-                                    <span className="text-xs text-[#999]">+{(dialog as any).tags.length - 2}</span>
-                                  )}
-                                </div>
-                              )}
+                          {/* Patient info row - simplified */}
+                          {(dialog as any).patient_name && (
+                            <div className="flex items-center mt-1 w-full overflow-hidden">
+                              <UserCircle2 className="h-3 w-3 mr-1 text-[#999] flex-shrink-0" />
+                              <span className="truncate text-xs text-[#999]">{(dialog as any).patient_name}</span>
                             </div>
                           )}
                         </Button>
@@ -404,7 +383,12 @@ export function ChatSidebar({
                         </p>
                         {(dialog as any).patient_name && (
                           <p className="text-xs text-gray-400 mt-1">
-                            Patient: {(dialog as any).patient_name}
+                            患者: {(dialog as any).patient_name}
+                          </p>
+                        )}
+                        {(dialog as any).tags && (dialog as any).tags.length > 0 && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            标签: {(dialog as any).tags.join(", ")}
                           </p>
                         )}
                       </TooltipContent>
@@ -623,7 +607,7 @@ export function ChatSidebar({
                           color="orange"
                           className="text-xs"
                         >
-                          Status: {statusFilter}
+                          状态: {statusFilter === 'active' ? '进行中' : statusFilter === 'pending_followup' ? '待跟进' : '疑难'}
                         </Tag>
                       )}
                       {tagFilter && (
@@ -633,7 +617,7 @@ export function ChatSidebar({
                           color="blue"
                           className="text-xs"
                         >
-                          Tag: {tagFilter}
+                          标签: {tagFilter}
                         </Tag>
                       )}
                       <button
@@ -644,7 +628,7 @@ export function ChatSidebar({
                         className="text-xs text-[#B3AEA5] hover:text-[#6B6B6B] flex items-center"
                       >
                         <X className="h-3 w-3 mr-1" />
-                        Clear all
+                        清除
                       </button>
                     </div>
                   )}
@@ -659,7 +643,7 @@ export function ChatSidebar({
                           : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
                       }`}
                     >
-                      Active
+                      进行中
                     </button>
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
@@ -669,7 +653,7 @@ export function ChatSidebar({
                           : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
                       }`}
                     >
-                      Follow-up
+                      待跟进
                     </button>
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
@@ -679,7 +663,7 @@ export function ChatSidebar({
                           : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
                       }`}
                     >
-                      Difficult
+                      疑难
                     </button>
                   </div>
                 </div>
