@@ -38,7 +38,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { StaticScrollArea } from "@/components/ui/scrollArea";
 import { getRoleColor } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { Spin, Tag, ConfigProvider, Dropdown } from "antd";
@@ -601,110 +600,110 @@ export function ChatSidebar({
           >
             {expanded && (
               <>
-                <div className="flex flex-col pt-4 pb-6 space-y-4">
-
-                  <div>
-                    <div className="flex items-center rounded-2xl border border-[#EFE8DE] bg-white px-4 h-11">
-                      <Search className="h-4 w-4 text-[#B3AEA5]" />
-                      <Input
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder={portalConfig.searchPlaceholder}
-                        className="border-0 bg-transparent text-sm focus-visible:ring-0 ml-3"
-                      />
-                    </div>
-
-                    {/* Filter Controls */}
-                    {(statusFilter || tagFilter) && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Filter className="h-3 w-3 text-[#B3AEA5]" />
-                        {statusFilter && (
-                          <Tag
-                            closable
-                            onClose={() => setStatusFilter(null)}
-                            color="orange"
-                            className="text-xs"
-                          >
-                            Status: {statusFilter}
-                          </Tag>
-                        )}
-                        {tagFilter && (
-                          <Tag
-                            closable
-                            onClose={() => setTagFilter(null)}
-                            color="blue"
-                            className="text-xs"
-                          >
-                            Tag: {tagFilter}
-                          </Tag>
-                        )}
-                        <button
-                          onClick={() => {
-                            setStatusFilter(null);
-                            setTagFilter(null);
-                          }}
-                          className="text-xs text-[#B3AEA5] hover:text-[#6B6B6B] flex items-center"
-                        >
-                          <X className="h-3 w-3 mr-1" />
-                          Clear all
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Quick filter buttons */}
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <button
-                        onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
-                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                          statusFilter === 'active'
-                            ? 'bg-blue-50 border-blue-200 text-blue-600'
-                            : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
-                        }`}
-                      >
-                        Active
-                      </button>
-                      <button
-                        onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
-                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                          statusFilter === 'pending_followup'
-                            ? 'bg-orange-50 border-orange-200 text-orange-600'
-                            : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
-                        }`}
-                      >
-                        Follow-up
-                      </button>
-                      <button
-                        onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
-                        className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                          statusFilter === 'difficult_case'
-                            ? 'bg-red-50 border-red-200 text-red-600'
-                            : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
-                        }`}
-                      >
-                        Difficult
-                      </button>
-                    </div>
+                {/* Search and Filter Section - Fixed */}
+                <div className="pt-4 pb-4 space-y-3 flex-shrink-0">
+                  <div className="flex items-center rounded-2xl border border-[#EFE8DE] bg-white px-4 h-11">
+                    <Search className="h-4 w-4 text-[#B3AEA5]" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder={portalConfig.searchPlaceholder}
+                      className="border-0 bg-transparent text-sm focus-visible:ring-0 ml-3"
+                    />
                   </div>
 
-                  <StaticScrollArea className="flex-1 pr-2">
-                    {conversationList.length > 0 ? (
-                      <>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
-                          {portalConfig.recentLabel}
-                        </p>
-                        {renderDialogList(today, t("chatLeftSidebar.today"))}
-                        {renderDialogList(week, t("chatLeftSidebar.last7Days"))}
-                        {renderDialogList(older, t("chatLeftSidebar.older"))}
-                      </>
-                    ) : (
-                      <div className="text-center text-sm text-[#6B6B6B] mt-10">
-                        {t("chatLeftSidebar.noHistory")}
-                      </div>
-                    )}
-                  </StaticScrollArea>
+                  {/* Filter Controls */}
+                  {(statusFilter || tagFilter) && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Filter className="h-3 w-3 text-[#B3AEA5]" />
+                      {statusFilter && (
+                        <Tag
+                          closable
+                          onClose={() => setStatusFilter(null)}
+                          color="orange"
+                          className="text-xs"
+                        >
+                          Status: {statusFilter}
+                        </Tag>
+                      )}
+                      {tagFilter && (
+                        <Tag
+                          closable
+                          onClose={() => setTagFilter(null)}
+                          color="blue"
+                          className="text-xs"
+                        >
+                          Tag: {tagFilter}
+                        </Tag>
+                      )}
+                      <button
+                        onClick={() => {
+                          setStatusFilter(null);
+                          setTagFilter(null);
+                        }}
+                        className="text-xs text-[#B3AEA5] hover:text-[#6B6B6B] flex items-center"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Clear all
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Quick filter buttons */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
+                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                        statusFilter === 'active'
+                          ? 'bg-blue-50 border-blue-200 text-blue-600'
+                          : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                      }`}
+                    >
+                      Active
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
+                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                        statusFilter === 'pending_followup'
+                          ? 'bg-orange-50 border-orange-200 text-orange-600'
+                          : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                      }`}
+                    >
+                      Follow-up
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
+                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                        statusFilter === 'difficult_case'
+                          ? 'bg-red-50 border-red-200 text-red-600'
+                          : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                      }`}
+                    >
+                      Difficult
+                    </button>
+                  </div>
                 </div>
 
-                <div className="pb-6">
+                {/* Scrollable Conversation List */}
+                <div className="flex-1 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
+                  {conversationList.length > 0 ? (
+                    <>
+                      <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
+                        {portalConfig.recentLabel}
+                      </p>
+                      {renderDialogList(today, t("chatLeftSidebar.today"))}
+                      {renderDialogList(week, t("chatLeftSidebar.last7Days"))}
+                      {renderDialogList(older, t("chatLeftSidebar.older"))}
+                    </>
+                  ) : (
+                    <div className="text-center text-sm text-[#6B6B6B] mt-10">
+                      {t("chatLeftSidebar.noHistory")}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom User Section - Fixed */}
+                <div className="pb-6 pt-4 flex-shrink-0 border-t border-[#EFE8DE] mt-2">
                   {renderUserSection()}
                   <div className="mt-3 flex items-center justify-between">
                     {!isSpeedMode && userRole ? (

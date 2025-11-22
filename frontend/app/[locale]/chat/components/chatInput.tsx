@@ -8,9 +8,6 @@ import {
   Square,
   X,
   AlertCircle,
-  Plus,
-  SlidersHorizontal,
-  Clock3,
 } from "lucide-react";
 import {
   AiFillFileImage,
@@ -1040,57 +1037,23 @@ export function ChatInput({
 
   const renderInputArea = () => {
     const fileInputId = isInitialMode ? "file-upload-initial" : "file-upload-regular";
-    const toolbarButton = (
-      IconComponent: ComponentType<SVGProps<SVGSVGElement>>,
-      label: string,
-      onClick?: () => void,
-      disabled?: boolean
-    ) => (
-      <button
-        type="button"
-        className="h-11 w-11 rounded-2xl border border-[#E8E2D6] text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#D9CFC0] transition disabled:opacity-50"
-        title={label}
-        onClick={onClick}
-        disabled={disabled}
-      >
-        <IconComponent className="h-5 w-5 mx-auto" />
-      </button>
-    );
 
     return (
       <div ref={dropAreaRef} className="relative">
         {renderDragOverlay()}
         <div className="rounded-[28px] border border-[#E8E2D6] bg-white shadow-[0px_24px_60px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-4 p-4 md:p-6">
-            <div className="flex flex-col gap-3 border-b border-[#F0E8DE] pb-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-2">
-                {toolbarButton(Plus, t("chatInput.uploadFiles"), () =>
-                  document.getElementById(fileInputId)?.click()
-                )}
-                {toolbarButton(
-                  SlidersHorizontal,
-                  t("chatInput.comingSoon", { defaultValue: "更多功能即将上线" }),
-                  undefined,
-                  true
-                )}
-                {toolbarButton(
-                  Clock3,
-                  t("chatLeftSidebar.recentConversations"),
-                  undefined,
-                  true
-                )}
+            {/* Agent Selector - shown only when not hidden */}
+            {!hideAgentSelector && (
+              <div className="flex justify-end">
+                <ChatAgentSelector
+                  selectedAgentId={selectedAgentId}
+                  onAgentSelect={onAgentSelect || (() => {})}
+                  disabled={isLoading || isStreaming}
+                  isInitialMode={isInitialMode}
+                />
               </div>
-              {!hideAgentSelector && (
-                <div className="flex justify-end">
-                  <ChatAgentSelector
-                    selectedAgentId={selectedAgentId}
-                    onAgentSelect={onAgentSelect || (() => {})}
-                    disabled={isLoading || isStreaming}
-                    isInitialMode={isInitialMode}
-                  />
-                </div>
-              )}
-            </div>
+            )}
 
             {renderAttachments()}
 
