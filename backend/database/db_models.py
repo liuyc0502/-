@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, JSON, Numeric, Sequence, String, Text, TIMESTAMP
+from sqlalchemy import Boolean, Column, Integer, JSON, Numeric, Sequence, String, Text, TIMESTAMP,ARRAY
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
 
@@ -25,7 +25,19 @@ class ConversationRecord(TableBase):
     conversation_id = Column(Integer, Sequence(
         "conversation_record_t_conversation_id_seq", schema=SCHEMA), primary_key=True, nullable=False)
     conversation_title = Column(String(100), doc="Conversation title")
-    portal_type = Column(String(50), doc="Portal type: 'doctor', 'student', 'patient', 'admin', or 'general'", default='general')
+    portal_type = Column(String(50), doc="Portal type: 'doctor''patient', or 'general'", default='general')
+     # Patient linking fields
+    patient_id = Column(Integer, doc="Linked patient ID (nullable for general consultations)", default=None)
+    patient_name = Column(String(100), doc="Patient name for quick reference", default=None)
+ 
+    # Status and categorization
+    conversation_status = Column(String(20), doc="Status: active/pending_followup/difficult_case/completed/archived", default='active')
+    tags = Column(ARRAY(String), doc="Custom tags array for categorization", default=[])
+    summary = Column(Text, doc="Conversation summary for display in list", default=None)
+ 
+    # Archiving
+    archived_at = Column(TIMESTAMP(timezone=False), doc="Archive timestamp", default=None)
+    archived_to_timeline = Column(Boolean, doc="Whether archived to patient timeline", default=False)
 
 class ConversationMessage(TableBase):
     """

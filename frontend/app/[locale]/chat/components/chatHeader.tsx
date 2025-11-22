@@ -21,6 +21,10 @@ import { USER_ROLES } from "@/const/modelConfig";
 
 import MemoryManageModal from "../internal/memory/memoryManageModal";
 import type { PortalChatConfig } from "@/const/portalChatConfig";
+import { PatientSelector } from "./PatientSelector";
+import { ConversationStatus } from "./ConversationStatus";
+import { TagsManager } from "./TagsManager";
+import { SummaryEditor } from "./SummaryEditor";
 
 // Gradient definition for BrainCircuit icon
 const GradientDefs = () => (
@@ -38,9 +42,35 @@ interface ChatHeaderProps {
   title: string;
   onRename?: (newTitle: string) => void;
   portalConfig: PortalChatConfig;
+  conversationId?: number | null;
+  patientId?: number | null;
+  patientName?: string | null;
+  conversationStatus?: string;
+  conversationTags?: string[];
+  conversationSummary?: string;
+  onPatientChange?: (patientId: number | null, patientName: string | null) => void;
+  onStatusChange?: (status: string) => void;
+  onTagsChange?: (tags: string[]) => void;
+  onSummaryChange?: (summary: string) => void;
+  showPatientLinking?: boolean; // Show patient linking features (default: false)
 }
 
-export function ChatHeader({ title, onRename, portalConfig }: ChatHeaderProps) {
+export function ChatHeader({ 
+  title, 
+  onRename,
+  portalConfig ,
+  conversationId,
+  patientId,
+  patientName,
+  conversationStatus,
+  conversationTags,
+  conversationSummary,
+  onPatientChange,
+  onStatusChange,
+  onTagsChange,
+  onSummaryChange,
+  showPatientLinking = false,
+  }: ChatHeaderProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
@@ -206,6 +236,59 @@ export function ChatHeader({ title, onRename, portalConfig }: ChatHeaderProps) {
             </Badge>
           </div>
         </div>
+
+        {/* Conversation-Patient Linking Features Row (Doctor Portal) */}
+        {showPatientLinking && (
+          <div className="mt-4 pt-4 border-t border-[#E5E5E5]">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-[#6B6B6B] min-w-[60px]">Patient:</span>
+                <PatientSelector
+                  conversationId={conversationId || null}
+                  currentPatientId={patientId}
+                  currentPatientName={patientName}
+                  onPatientChange={onPatientChange}
+                  disabled={!conversationId}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-[#6B6B6B] min-w-[60px]">Status:</span>
+                <ConversationStatus
+                  conversationId={conversationId || null}
+                  currentStatus={conversationStatus}
+                  onStatusChange={onStatusChange}
+                  disabled={!conversationId}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-sm text-[#6B6B6B] min-w-[60px]">Tags:</span>
+                <div className="flex-1">
+                  <TagsManager
+                    conversationId={conversationId || null}
+                    currentTags={conversationTags}
+                    onTagsChange={onTagsChange}
+                    disabled={!conversationId}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Row */}
+            <div className="flex items-start gap-2 mt-3">
+              <span className="text-sm text-[#6B6B6B] min-w-[60px] pt-1">Summary:</span>
+              <div className="flex-1">
+                <SummaryEditor
+                  conversationId={conversationId || null}
+                  currentSummary={conversationSummary}
+                  onSummaryChange={onSummaryChange}
+                  disabled={!conversationId}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </header>
       {/* Embedding not configured prompt */}
       <Modal

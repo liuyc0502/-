@@ -26,6 +26,13 @@ export const API_ENDPOINTS = {
     sources: `${API_BASE_URL}/conversation/sources`,
     opinion: `${API_BASE_URL}/conversation/message/update_opinion`,
     messageId: `${API_BASE_URL}/conversation/message/id`,
+    linkPatient: `${API_BASE_URL}/conversation/link_patient`,
+    status: `${API_BASE_URL}/conversation/status`,
+    tags: `${API_BASE_URL}/conversation/tags`,
+    summary: `${API_BASE_URL}/conversation/summary`,
+    archive: `${API_BASE_URL}/conversation/archive`,
+    batchArchive: `${API_BASE_URL}/conversation/batch_archive`,
+    byPatient: (patientId: number) => `${API_BASE_URL}/conversation/patient/${patientId}/conversations`,
   },
   agent: {
     run: `${API_BASE_URL}/agent/run`,

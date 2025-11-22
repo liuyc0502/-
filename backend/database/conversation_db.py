@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -13,6 +14,8 @@ from .db_models import (
     ConversationSourceSearch,
 )
 from .utils import add_creation_tracking, add_update_tracking
+
+logger = logging.getLogger("conversation_db")
 
 
 class MessageRecord(TypedDict):
@@ -272,31 +275,50 @@ def get_message_units(message_id: int) -> List[Dict[str, Any]]:
         return list(map(as_dict, records))
 
 
-def get_conversation_list(user_id: Optional[str] = None, portal_type: Optional[str] = None) -> List[Dict[str, Any]]:
-    """
-    Get list of all undeleted conversations, sorted by creation time in descending order
+def get_conversation_list(
+    user_id: Optional[str] = None, 
+    portal_type: Optional[str] = None,
+    patient_id: Optional[int] = None,
+    status: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    data_range: Optional[str] = None,
+    include_archived: bool = False,
+    ) -> List[Dict[str, Any]]:
+     """
+     Get list of all undeleted conversations with enhanced filtering options
+ 
+     Args:
+        user_id: Filter conversations created by this user
+        portal_type: Portal type filter ('doctor', 'student', 'patient', 'admin', or 'general')
+        patient_id: Filter by linked patient ID
+        status: Filter by conversation status
+        tags: Filter by tags (conversations must have any of these tags)
+        date_range: Time range filter ('today', 'this_week', 'this_month', 'archived')
+        include_archived: Whether to include archived conversations (default False)
+ 
+     Returns:
+        List[Dict[str, Any]]: List of conversations with all fields including patient info, status, tags, summary
+     """
 
-    Args:
-        user_id: Reserved parameter for filtering conversations created by this user
-        portal_type: Portal type to filter conversations ('doctor', 'student', 'patient', 'admin', or 'general')
-
-    Returns:
-        List[Dict[str, Any]]: List of conversations, each containing id, title and timestamp information
-    """
-    with get_db_session() as session:
+     with get_db_session() as session:
         # Build the query statement
         stmt = select(
             ConversationRecord.conversation_id,
             ConversationRecord.conversation_title,
             ConversationRecord.portal_type,
+            ConversationRecord.patient_id,
+            ConversationRecord.patient_name,
+            ConversationRecord.conversation_status,
+            ConversationRecord.tags,
+            ConversationRecord.summary,
+            (func.extract('epoch', ConversationRecord.archived_at) * 1000).label('archived_at'),
+            ConversationRecord.archived_to_timeline,
             (func.extract('epoch', ConversationRecord.create_time)
              * 1000).label('create_time'),
             (func.extract('epoch', ConversationRecord.update_time)
              * 1000).label('update_time')
         ).where(
             ConversationRecord.delete_flag == 'N'
-        ).order_by(
-            desc(ConversationRecord.create_time)
         )
 
         # If user_id is provided, additional filter conditions can be added here
@@ -307,6 +329,44 @@ def get_conversation_list(user_id: Optional[str] = None, portal_type: Optional[s
         if portal_type:
             stmt = stmt.where(ConversationRecord.portal_type == portal_type)
 
+       # Patient filter
+        if patient_id is not None:
+            stmt = stmt.where(ConversationRecord.patient_id == patient_id)
+ 
+        # Status filter
+        if status:
+            stmt = stmt.where(ConversationRecord.conversation_status == status)
+ 
+        # Tags filter - check if conversation has any of the specified tags
+        if tags and len(tags) > 0:
+            # Use overlap operator for array overlap check
+            stmt = stmt.where(ConversationRecord.tags.overlap(tags))
+ 
+        # Archived filter
+        if not include_archived:
+            stmt = stmt.where(ConversationRecord.conversation_status != 'archived')
+ 
+        # Date range filter
+        if data_range:
+            from datetime import datetime, timedelta
+            now = datetime.now()
+
+            if data_range == 'today':
+                start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                stmt = stmt.where(ConversationRecord.create_time >= start_of_day)
+            elif data_range == 'this_week':
+                start_of_week = now - timedelta(days=now.weekday())
+                start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+                stmt = stmt.where(ConversationRecord.create_time >= start_of_week)
+            elif data_range == 'this_month':
+                start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                stmt = stmt.where(ConversationRecord.create_time >= start_of_month)
+            elif data_range == 'archived':
+                stmt = stmt.where(ConversationRecord.conversation_status == 'archived')
+ 
+        # Order by update time descending
+        stmt = stmt.order_by(desc(ConversationRecord.update_time))
+
         # Execute the query
         records = session.execute(stmt)
 
@@ -314,8 +374,14 @@ def get_conversation_list(user_id: Optional[str] = None, portal_type: Optional[s
         result = []
         for record in records:
             conversation = as_dict(record)
-            conversation['create_time'] = int(conversation['create_time'])
-            conversation['update_time'] = int(conversation['update_time'])
+            conversation['create_time'] = int(conversation['create_time']) if conversation.get('create_time') else 0
+            conversation['update_time'] = int(conversation['update_time']) if conversation.get('update_time') else 0
+            # Convert archived_at to timestamp if present (already extracted in SQL)
+            if conversation.get('archived_at') is not None:
+                conversation['archived_at'] = int(conversation['archived_at'])
+            # Ensure tags is a list
+            if not conversation.get('tags'):
+                conversation['tags'] = []
             result.append(conversation)
 
         return result
@@ -1024,3 +1090,229 @@ def get_message_id_by_index(conversation_id: int, message_index: int) -> Optiona
         result = session.execute(stmt).scalar()
 
         return result
+
+
+
+# ============================================================================
+# Patient Linking and Status Management Functions
+# ============================================================================
+ 
+def link_conversation_to_patient(conversation_id: int, patient_id: Optional[int], patient_name: Optional[str], user_id: str) -> bool:
+    """
+    Link or unlink a conversation to a patient
+ 
+    Args:
+        conversation_id: Conversation ID
+        patient_id: Patient ID (None to unlink)
+        patient_name: Patient name (None to unlink)
+        user_id: User ID performing the action
+ 
+    Returns:
+        bool: True if successful
+    """
+    with get_db_session() as session:
+        conversation = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id == conversation_id,
+            ConversationRecord.delete_flag == 'N'
+        ).first()
+ 
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+ 
+        conversation.patient_id = patient_id
+        conversation.patient_name = patient_name
+        conversation.updated_by = user_id
+ 
+        session.commit()
+        logger.info(f"Conversation {conversation_id} {'linked to' if patient_id else 'unlinked from'} patient {patient_id}")
+        return True
+ 
+ 
+def update_conversation_status(conversation_id: int, status: str, user_id: str) -> bool:
+    """
+    Update conversation status
+ 
+    Args:
+        conversation_id: Conversation ID
+        status: New status (active/pending_followup/difficult_case/completed/archived)
+        user_id: User ID performing the action
+ 
+    Returns:
+        bool: True if successful
+    """
+    valid_statuses = ['active', 'pending_followup', 'difficult_case', 'completed', 'archived']
+    if status not in valid_statuses:
+        raise ValueError(f"Invalid status: {status}. Must be one of {valid_statuses}")
+ 
+    with get_db_session() as session:
+        conversation = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id == conversation_id,
+            ConversationRecord.delete_flag == 'N'
+        ).first()
+ 
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+ 
+        conversation.conversation_status = status
+        conversation.updated_by = user_id
+ 
+        # If archiving, set archived_at timestamp
+        if status == 'archived' and conversation.archived_at is None:
+            conversation.archived_at = func.now()
+ 
+        session.commit()
+        logger.info(f"Conversation {conversation_id} status updated to {status}")
+        return True
+ 
+ 
+def update_conversation_tags(conversation_id: int, tags: List[str], user_id: str) -> bool:
+    """
+    Update conversation tags
+ 
+    Args:
+        conversation_id: Conversation ID
+        tags: List of tag strings
+        user_id: User ID performing the action
+ 
+    Returns:
+        bool: True if successful
+    """
+    with get_db_session() as session:
+        conversation = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id == conversation_id,
+            ConversationRecord.delete_flag == 'N'
+        ).first()
+ 
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+ 
+        conversation.tags = tags
+        conversation.updated_by = user_id
+ 
+        session.commit()
+        logger.info(f"Conversation {conversation_id} tags updated: {tags}")
+        return True
+ 
+ 
+def update_conversation_summary(conversation_id: int, summary: str, user_id: str) -> bool:
+    """
+    Update conversation summary
+ 
+    Args:
+        conversation_id: Conversation ID
+        summary: Summary text
+        user_id: User ID performing the action
+ 
+    Returns:
+        bool: True if successful
+    """
+    with get_db_session() as session:
+        conversation = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id == conversation_id,
+            ConversationRecord.delete_flag == 'N'
+        ).first()
+ 
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+ 
+        conversation.summary = summary
+        conversation.updated_by = user_id
+ 
+        session.commit()
+        logger.info(f"Conversation {conversation_id} summary updated")
+        return True
+ 
+ 
+def archive_conversation(conversation_id: int, archive_to_timeline: bool, user_id: str) -> bool:
+    """
+    Archive a conversation
+ 
+    Args:
+        conversation_id: Conversation ID
+        archive_to_timeline: Whether to mark as archived to patient timeline
+        user_id: User ID performing the action
+ 
+    Returns:
+        bool: True if successful
+    """
+    with get_db_session() as session:
+        conversation = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id == conversation_id,
+            ConversationRecord.delete_flag == 'N'
+        ).first()
+ 
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+ 
+        conversation.conversation_status = 'archived'
+        conversation.archived_at = func.now()
+        conversation.archived_to_timeline = archive_to_timeline
+        conversation.updated_by = user_id
+ 
+        session.commit()
+        logger.info(f"Conversation {conversation_id} archived (to_timeline={archive_to_timeline})")
+        return True
+
+ 
+def batch_archive_conversations(conversation_ids: List[int], archive_to_timeline: bool, user_id: str) -> int:
+    """
+    Batch archive multiple conversations
+ 
+    Args:
+        conversation_ids: List of conversation IDs
+        archive_to_timeline: Whether to mark as archived to patient timeline
+        user_id: User ID performing the action
+ 
+    Returns:
+        int: Number of conversations archived
+    """
+    with get_db_session() as session:
+        updated = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id.in_(conversation_ids),
+            ConversationRecord.delete_flag == 'N'
+        ).update(
+            {
+                ConversationRecord.conversation_status: 'archived',
+                ConversationRecord.archived_at: func.now(),
+                ConversationRecord.archived_to_timeline: archive_to_timeline,
+                ConversationRecord.updated_by: user_id
+            },
+            synchronize_session=False
+        )
+ 
+        session.commit()
+        logger.info(f"Batch archived {updated} conversations")
+        return updated
+ 
+ 
+def get_patient_conversations(patient_id: int, user_id: str, status: Optional[str] = None, include_archived: bool = False) -> List[dict]:
+    """
+    Get all conversations for a specific patient
+ 
+    Args:
+        patient_id: Patient ID
+        user_id: User ID (for access control)
+        status: Optional status filter
+        include_archived: Whether to include archived conversations
+ 
+    Returns:
+        List[dict]: List of conversation dictionaries
+    """
+    with get_db_session() as session:
+        query = session.query(ConversationRecord).filter(
+            ConversationRecord.patient_id == patient_id,
+            ConversationRecord.created_by == user_id,
+            ConversationRecord.delete_flag == 'N'
+        )
+ 
+        if status:
+            query = query.filter(ConversationRecord.conversation_status == status)
+ 
+        if not include_archived:
+            query = query.filter(ConversationRecord.conversation_status != 'archived')
+ 
+        query = query.order_by(ConversationRecord.create_time.desc())
+ 
+        conversations = query.all()
+ 
+        return [as_dict(conv) for conv in conversations]

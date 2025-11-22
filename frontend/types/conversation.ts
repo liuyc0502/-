@@ -3,6 +3,13 @@ export interface ConversationListItem {
   conversation_title: string;
   create_time: number;
   update_time: number;
+  patient_id?: number | null;
+  patient_name?: string | null;
+  conversation_status?: string;
+  tags?: string[];
+  summary?: string | null;
+  archived_at?: string | null;
+  archived_to_timeline?: boolean;
 }
 
 export interface ConversationListResponse {

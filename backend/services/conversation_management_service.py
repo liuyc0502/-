@@ -318,19 +318,40 @@ def create_new_conversation(title: str, user_id: str, portal_type: str = 'genera
         raise Exception(str(e))
 
 
-def get_conversation_list_service(user_id: str, portal_type: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_conversation_list_service(
+    user_id: str, 
+    portal_type: Optional[str] = None,
+    patient_id: Optional[int] = None,
+    status: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    data_range: Optional[str] = None,
+    include_archived: bool = False,     
+    ) -> List[Dict[str, Any]]:
     """
-    Get all conversation list
+    Get conversation list with enhanced filtering options
 
     Args:
         user_id: User ID
         portal_type: Optional portal type filter
-
+        patient_id: Filter by linked patient ID
+        status: Filter by conversation status
+        tags: Filter by tags
+        date_range: Time range filter ('today', 'this_week', 'this_month', 'archived')
+        include_archived: Whether to include archived conversations
+ 
     Returns:
-        List of conversation data
+        List of conversation data with patient info, status, tags, summary
     """
     try:
-        conversations = get_conversation_list(user_id, portal_type)
+        conversations = get_conversation_list(
+            user_id=user_id,
+            portal_type=portal_type,
+            patient_id=patient_id,
+            status=status,
+            tags=tags,
+            data_range=data_range,
+            include_archived=include_archived,
+        )
         return conversations
     except Exception as e:
         logging.error(f"Failed to get conversation list: {str(e)}")
@@ -699,3 +720,259 @@ async def get_message_id_by_index_impl(conversation_id: int, message_index: int)
     if message_id is None:
         raise Exception("Message not found.")
     return message_id
+
+
+
+# ============================================================================
+# Patient Linking and Status Management Services
+# ============================================================================
+ 
+def link_conversation_to_patient_service(
+    conversation_id: int,
+    patient_id: Optional[int],
+    patient_name: Optional[str],
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Link or unlink a conversation to a patient
+ 
+    Args:
+        conversation_id: Conversation ID
+        patient_id: Patient ID (None to unlink)
+        patient_name: Patient name (None to unlink)
+        user_id: User ID performing the action
+ 
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        from database.conversation_db import link_conversation_to_patient
+
+        success = link_conversation_to_patient(
+            conversation_id=conversation_id,
+            patient_id=patient_id,
+            patient_name=patient_name,
+            user_id=user_id
+        )
+ 
+        action = "linked to patient" if patient_id else "unlinked from patient"
+        return {
+            "success": success,
+            "message": f"Conversation {action} successfully"
+        }
+    except Exception as e:
+        logging.error(f"Failed to link conversation to patient: {str(e)}")
+        raise Exception(f"Failed to link conversation: {str(e)}")
+ 
+
+def update_conversation_status_service(
+    conversation_id: int,
+    status: str,
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Update conversation status
+ 
+    Args:
+        conversation_id: Conversation ID
+        status: New status (active/pending_followup/difficult_case/completed/archived)
+        user_id: User ID performing the action
+ 
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        from database.conversation_db import update_conversation_status
+ 
+        success = update_conversation_status(
+            conversation_id=conversation_id,
+            status=status,
+            user_id=user_id
+        )
+
+
+        return {
+            "success": success,
+            "message": f"Conversation status updated to {status}"
+        }
+    except ValueError as e:
+        logging.error(f"Invalid status value: {str(e)}")
+        raise Exception(str(e))
+    except Exception as e:
+        logging.error(f"Failed to update conversation status: {str(e)}")
+        raise Exception(f"Failed to update status: {str(e)}")
+ 
+ 
+def update_conversation_tags_service(
+    conversation_id: int,
+    tags: List[str],
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Update conversation tags
+
+    Args:
+        conversation_id: Conversation ID
+        tags: List of tag strings
+        user_id: User ID performing the action
+
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        from database.conversation_db import update_conversation_tags
+ 
+        success = update_conversation_tags(
+            conversation_id=conversation_id,
+            tags=tags,
+            user_id=user_id
+        )
+ 
+        return {
+            "success": success,
+            "message": "Conversation tags updated successfully"
+        }
+    except Exception as e:
+        logging.error(f"Failed to update conversation tags: {str(e)}")
+        raise Exception(f"Failed to update tags: {str(e)}")
+ 
+
+def update_conversation_summary_service(
+    conversation_id: int,
+    summary: str,
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Update conversation summary
+ 
+    Args:
+        conversation_id: Conversation ID
+        summary: Summary text
+        user_id: User ID performing the action
+ 
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        from database.conversation_db import update_conversation_summary
+ 
+        success = update_conversation_summary(
+            conversation_id=conversation_id,
+            summary=summary,
+            user_id=user_id
+        )
+ 
+        return {
+            "success": success,
+            "message": "Conversation summary updated successfully"
+        }
+    except Exception as e:
+        logging.error(f"Failed to update conversation summary: {str(e)}")
+        raise Exception(f"Failed to update summary: {str(e)}")
+ 
+ 
+def archive_conversation_service(
+    conversation_id: int,
+    archive_to_timeline: bool,
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Archive a conversation
+ 
+    Args:
+        conversation_id: Conversation ID
+        archive_to_timeline: Whether to mark as archived to patient timeline
+        user_id: User ID performing the action
+
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        from database.conversation_db import archive_conversation
+ 
+        success = archive_conversation(
+            conversation_id=conversation_id,
+            archive_to_timeline=archive_to_timeline,
+            user_id=user_id
+        )
+ 
+        message = "Conversation archived"
+        if archive_to_timeline:
+            message += " and marked for timeline"
+ 
+        return {
+            "success": success,
+            "message": message
+        }
+    except Exception as e:
+        logging.error(f"Failed to archive conversation: {str(e)}")
+        raise Exception(f"Failed to archive: {str(e)}")
+ 
+
+def batch_archive_conversations_service(
+    conversation_ids: List[int],
+    archive_to_timeline: bool,
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Batch archive multiple conversations
+ 
+    Args:
+        conversation_ids: List of conversation IDs
+        archive_to_timeline: Whether to mark as archived to patient timeline
+        user_id: User ID performing the action
+ 
+    Returns:
+        Dict with count of archived conversations
+    """
+    try:
+        from database.conversation_db import batch_archive_conversations
+ 
+        count = batch_archive_conversations(
+            conversation_ids=conversation_ids,
+            archive_to_timeline=archive_to_timeline,
+            user_id=user_id
+        )
+ 
+        return {
+            "success": True,
+            "count": count,
+            "message": f"{count} conversations archived successfully"
+        }
+    except Exception as e:
+        logging.error(f"Failed to batch archive conversations: {str(e)}")
+        raise Exception(f"Failed to batch archive: {str(e)}")
+ 
+
+def get_patient_conversations_service(
+    patient_id: int,
+    user_id: str,
+    status: Optional[str] = None,
+    include_archived: bool = False
+) -> List[Dict[str, Any]]:
+    """
+    Get all conversations for a specific patient
+ 
+    Args:
+        patient_id: Patient ID
+        user_id: User ID (for access control)
+        status: Optional status filter
+        include_archived: Whether to include archived conversations
+ 
+    Returns:
+        List of conversation dictionaries
+    """
+    try:
+        from database.conversation_db import get_patient_conversations
+ 
+        conversations = get_patient_conversations(
+            patient_id=patient_id,
+            user_id=user_id,
+            status=status,
+            include_archived=include_archived
+        )
+ 
+        return conversations
+    except Exception as e:
+        logging.error(f"Failed to get patient conversations: {str(e)}")
+        raise Exception(f"Failed to get conversations: {str(e)}")

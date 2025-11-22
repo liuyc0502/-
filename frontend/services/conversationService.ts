@@ -58,6 +58,172 @@ export const conversationService = {
     throw new ApiError(data.code, data.message);
   },
 
+   // Conversation-Patient Linking Feature Services
+
+  // Link or unlink conversation to patient
+  async linkPatient(params: {
+    conversation_id: number;
+    patient_id: number | null;
+    patient_name?: string | null;
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.linkPatient, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+ 
+    const data = await response.json();
+ 
+    if (data.code === 0) {
+      return data.data;
+    }
+ 
+    throw new ApiError(data.code, data.message);
+  },
+ 
+  // Update conversation status
+  async updateStatus(params: {
+    conversation_id: number;
+    status: 'active' | 'pending_followup' | 'difficult_case' | 'completed' | 'archived';
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.status, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+ 
+    const data = await response.json();
+ 
+    if (data.code === 0) {
+      return data.data;
+    }
+ 
+    throw new ApiError(data.code, data.message);
+  },
+ 
+  // Update conversation tags
+  async updateTags(params: {
+    conversation_id: number;
+    tags: string[];
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.tags, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+ 
+    const data = await response.json();
+ 
+    if (data.code === 0) {
+      return data.data;
+    }
+ 
+    throw new ApiError(data.code, data.message);
+  },
+ 
+  // Update conversation summary
+  async updateSummary(params: {
+    conversation_id: number;
+    summary: string;
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.summary, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+ 
+    const data = await response.json();
+ 
+    if (data.code === 0) {
+      return data.data;
+    }
+ 
+    throw new ApiError(data.code, data.message);
+  },
+ 
+  // Archive conversation
+  async archive(params: {
+    conversation_id: number;
+    archive_to_timeline?: boolean;
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.archive, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        conversation_id: params.conversation_id,
+        archive_to_timeline: params.archive_to_timeline || false,
+      }),
+    });
+ 
+    const data = await response.json();
+ 
+    if (data.code === 0) {
+      return data.data;
+    }
+ 
+    throw new ApiError(data.code, data.message);
+  },
+ 
+  // Batch archive conversations
+  async batchArchive(params: {
+    conversation_ids: number[];
+    archive_to_timeline?: boolean;
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.batchArchive, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        conversation_ids: params.conversation_ids,
+        archive_to_timeline: params.archive_to_timeline || false,
+      }),
+    });
+
+
+    const data = await response.json();
+
+
+    if (data.code === 0) {
+      return data.data;
+    }
+ 
+    throw new ApiError(data.code, data.message);
+  },
+ 
+  // Get conversations by patient ID
+  async getByPatientId(params: {
+    patient_id: number;
+    status?: string;
+    include_archived?: boolean;
+  }) {
+    let url = API_ENDPOINTS.conversation.byPatient(params.patient_id);
+    const queryParams = [];
+ 
+    if (params.status) {
+      queryParams.push(`status=${params.status}`);
+    }
+ 
+    if (params.include_archived !== undefined) {
+      queryParams.push(`include_archived=${params.include_archived}`);
+    }
+
+
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
+ 
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    const data = await response.json();
+    if (data.code === 0) {
+      return data.data
+    }
+
+    throw new ApiError(data.code, data.message);
+  },
+
   // Rename conversation
   async rename(conversationId: number, name: string) {
     const response = await fetch(API_ENDPOINTS.conversation.rename, {
