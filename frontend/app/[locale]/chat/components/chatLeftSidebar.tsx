@@ -12,7 +12,6 @@ import {
   Search,
   ChevronDown,
   UserCircle2,
-  Filter,
   X,
 } from "lucide-react";
 
@@ -48,8 +47,8 @@ import type { ChatSidebarProps, ConversationListItem } from "@/types/chat";
 
 const SIDEBAR_EXPANDED_WIDTH = 200;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
-const TEXT_FADE_IN_DELAY = 100;
-const TEXT_FADE_OUT_DURATION = 100;
+const TEXT_FADE_IN_DELAY = 50;
+const TEXT_FADE_OUT_DURATION = 50;
 
 // conversation status indicator component
 const ConversationStatusIndicator = ({
@@ -218,15 +217,13 @@ export function ChatSidebar({
     onDropdownOpenChange(false, null);
   };
 
-  // Text content transition with delay on expand, immediate on collapse
-  const slidingContentClass = `transition-all ease-out pointer-events-auto ${
-    showText
-      ? "opacity-100 translate-x-0 duration-200 delay-100"
-      : "opacity-0 -translate-x-2 duration-100 delay-0 pointer-events-none"
+  // Text content transition - simplified to reduce lag
+  const slidingContentClass = `transition-opacity duration-150 ease-out ${
+    showText ? "opacity-100" : "opacity-0 pointer-events-none"
   }`;
 
-  const fadingContentClass = `transition-opacity ease-in-out ${
-    showText ? "opacity-100 duration-200 delay-100" : "opacity-0 duration-100 delay-0"
+  const fadingContentClass = `transition-opacity duration-150 ease-out ${
+    showText ? "opacity-100" : "opacity-0"
   }`;
 
   const handleSubmitEdit = () => {
@@ -350,12 +347,11 @@ export function ChatSidebar({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex-1 justify-start text-left hover:bg-transparent min-w-0 flex-col items-start py-2 overflow-hidden"
+                        <button
+                          className="flex-1 text-left min-w-0 py-1.5 px-1 rounded hover:bg-transparent"
                           onClick={() => onDialogClick(dialog)}
                         >
-                          <div className="flex items-center w-full overflow-hidden">
+                          <div className="flex items-center w-full">
                             <ConversationStatusIndicator
                               isStreaming={streamingConversations.has(
                                 dialog.conversation_id
@@ -364,18 +360,18 @@ export function ChatSidebar({
                                 dialog.conversation_id
                               )}
                             />
-                            <span className="truncate block text-sm font-medium text-[#1A1A1A] flex-1 min-w-0">
+                            <span className="text-sm font-medium text-[#1A1A1A] truncate">
                               {dialog.conversation_title}
                             </span>
                           </div>
                           {/* Patient info row - simplified */}
                           {(dialog as any).patient_name && (
-                            <div className="flex items-center mt-1 w-full overflow-hidden">
+                            <div className="flex items-center mt-1">
                               <UserCircle2 className="h-3 w-3 mr-1 text-[#999] flex-shrink-0" />
-                              <span className="truncate text-xs text-[#999]">{(dialog as any).patient_name}</span>
+                              <span className="text-xs text-[#999] truncate">{(dialog as any).patient_name}</span>
                             </div>
                           )}
-                        </Button>
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <p className="break-words">
@@ -476,10 +472,8 @@ export function ChatSidebar({
             )}
           </div>
           <div
-            className={`text-left min-w-0 transition-all ease-out ${
-              showText
-                ? "opacity-100 translate-x-0 duration-200 delay-100"
-                : "opacity-0 -translate-x-2 duration-100 delay-0 pointer-events-none"
+            className={`text-left min-w-0 transition-opacity duration-150 ease-out ${
+              showText ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
             <p className="text-sm font-semibold text-[#1A1A1A] truncate">
@@ -488,10 +482,10 @@ export function ChatSidebar({
             <p className="text-xs text-[#6B6B6B]">Pro plan</p>
           </div>
         </div>
-        <ChevronDown 
-          className={`h-4 w-4 text-[#6B6B6B] flex-shrink-0 transition-all ease-in-out ${
-            showText ? "opacity-100 duration-200 delay-100" : "opacity-0 duration-100 delay-0"
-          }`} 
+        <ChevronDown
+          className={`h-4 w-4 text-[#6B6B6B] flex-shrink-0 transition-opacity duration-150 ease-out ${
+            showText ? "opacity-100" : "opacity-0"
+          }`}
         />
       </button>
     );
@@ -533,10 +527,8 @@ export function ChatSidebar({
               >
                 <Plus className="h-5 w-5" />
               </button>
-              <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-all ease-out ${
-                showText
-                  ? "opacity-100 translate-x-0 duration-200 delay-100"
-                  : "opacity-0 -translate-x-2 duration-100 delay-0"
+              <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
+                showText ? "opacity-100" : "opacity-0"
               }`}>
                 {t("chatLeftSidebar.newConversation")}
               </span>
@@ -559,13 +551,9 @@ export function ChatSidebar({
                     <div className="h-11 w-11 flex items-center justify-center flex-shrink-0">
                       <item.icon className="h-6 w-6" />
                     </div>
-                    <span className={`ml-3 text-lg whitespace-nowrap transition-all ease-out ${
+                    <span className={`ml-3 text-lg whitespace-nowrap transition-opacity duration-150 ease-out ${
                       isActive ? "text-[#1A1A1A] font-medium" : "text-[#4D4D4D]"
-                    } ${
-                      showText
-                        ? "opacity-100 translate-x-0 duration-200 delay-100"
-                        : "opacity-0 -translate-x-2 duration-100 delay-0"
-                    }`}>
+                    } ${showText ? "opacity-100" : "opacity-0"}`}>
                       {item.label}
                     </span>
                   </button>
@@ -584,87 +572,70 @@ export function ChatSidebar({
           >
             {expanded && (
               <>
-                {/* Search and Filter Section - Fixed */}
-                <div className="pt-4 pb-4 space-y-3 flex-shrink-0">
-                  <div className="flex items-center rounded-2xl border border-[#EFE8DE] bg-white px-4 h-11">
-                    <Search className="h-4 w-4 text-[#B3AEA5]" />
+                {/* Search and Filter Section - Compact Design */}
+                <div className="pt-4 pb-3 flex-shrink-0">
+                  {/* Search Input */}
+                  <div className="flex items-center rounded-xl border border-[#E8E2D6] bg-white px-3 h-9">
+                    <Search className="h-3.5 w-3.5 text-[#B3AEA5] flex-shrink-0" />
                     <Input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder={portalConfig.searchPlaceholder}
-                      className="border-0 bg-transparent text-sm focus-visible:ring-0 ml-3"
+                      placeholder="搜索对话..."
+                      className="border-0 bg-transparent text-xs focus-visible:ring-0 ml-2 h-7 px-0"
                     />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="text-[#B3AEA5] hover:text-[#6B6B6B] ml-1"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
 
-                  {/* Filter Controls */}
-                  {(statusFilter || tagFilter) && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Filter className="h-3 w-3 text-[#B3AEA5]" />
-                      {statusFilter && (
-                        <Tag
-                          closable
-                          onClose={() => setStatusFilter(null)}
-                          color="orange"
-                          className="text-xs"
-                        >
-                          状态: {statusFilter === 'active' ? '进行中' : statusFilter === 'pending_followup' ? '待跟进' : '疑难'}
-                        </Tag>
-                      )}
-                      {tagFilter && (
-                        <Tag
-                          closable
-                          onClose={() => setTagFilter(null)}
-                          color="blue"
-                          className="text-xs"
-                        >
-                          标签: {tagFilter}
-                        </Tag>
-                      )}
-                      <button
-                        onClick={() => {
-                          setStatusFilter(null);
-                          setTagFilter(null);
-                        }}
-                        className="text-xs text-[#B3AEA5] hover:text-[#6B6B6B] flex items-center"
-                      >
-                        <X className="h-3 w-3 mr-1" />
-                        清除
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Quick filter buttons */}
-                  <div className="flex flex-wrap gap-1.5">
+                  {/* Filter Pills - inline style */}
+                  <div className="flex items-center gap-1 mt-2">
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
-                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
                         statusFilter === 'active'
-                          ? 'bg-blue-50 border-blue-200 text-blue-600'
-                          : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
                       }`}
                     >
                       进行中
                     </button>
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
-                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
                         statusFilter === 'pending_followup'
-                          ? 'bg-orange-50 border-orange-200 text-orange-600'
-                          : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
                       }`}
                     >
                       待跟进
                     </button>
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
-                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
                         statusFilter === 'difficult_case'
-                          ? 'bg-red-50 border-red-200 text-red-600'
-                          : 'border-[#EFE8DE] text-[#6B6B6B] hover:bg-[#F5F5F5]'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
                       }`}
                     >
                       疑难
                     </button>
+                    {(statusFilter || tagFilter) && (
+                      <button
+                        onClick={() => {
+                          setStatusFilter(null);
+                          setTagFilter(null);
+                        }}
+                        className="text-[10px] px-1.5 py-0.5 text-[#B3AEA5] hover:text-[#6B6B6B]"
+                      >
+                        重置
+                      </button>
+                    )}
                   </div>
                 </div>
 
