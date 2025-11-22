@@ -84,12 +84,12 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
 
 
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-md flex flex-col" style={{ height: containerHeight }}>
+    <div className="w-full bg-white border border-[#E8E2D6] rounded-xl flex flex-col" style={{ height: containerHeight }}>
       {/* Fixed header area */}
-      <div className={`${KB_LAYOUT.HEADER_PADDING} border-b border-gray-200 shrink-0`}>
+      <div className={`${KB_LAYOUT.HEADER_PADDING} border-b border-[#E8E2D6] shrink-0 bg-[#FDF8F2]`}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className={`${KB_LAYOUT.TITLE_MARGIN} ${KB_LAYOUT.TITLE_TEXT} text-gray-800`}>
+            <h3 className={`${KB_LAYOUT.TITLE_MARGIN} ${KB_LAYOUT.TITLE_TEXT} text-[#1A1A1A]`}>
               {t('knowledgeBase.list.title')}
             </h3>
           </div>
@@ -101,11 +101,12 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
-                backgroundColor: "#1677ff",
+                backgroundColor: "#D94527",
                 color: "white",
-                border: "none"
+                border: "none",
+                borderRadius: "12px"
               }}
-              className="hover:!bg-blue-600"
+              className="hover:!bg-[#C13D22]"
               type="primary"
               onClick={onCreateNew}
               icon={<PlusOutlined />}
@@ -119,11 +120,12 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
-                backgroundColor: "#1677ff",
+                backgroundColor: "#D94527",
                 color: "white",
-                border: "none"
+                border: "none",
+                borderRadius: "12px"
               }}
-              className="hover:!bg-blue-600"
+              className="hover:!bg-[#C13D22]"
               type="primary"
               onClick={onSync}
             >
@@ -143,12 +145,12 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
       </div>
 
       {/* Fixed selection status area */}
-      <div className="border-b border-gray-200 shrink-0 relative z-10 shadow-md">
-        <div className="px-5 py-2 bg-blue-50">
+      <div className="border-b border-[#E8E2D6] shrink-0 relative z-10 shadow-sm">
+        <div className="px-5 py-2 bg-[#FEF3F2]">
           <div className="flex items-center">
-            <span className="font-medium text-blue-700">{t('knowledgeBase.selected.prefix')} </span>
-            <span className="mx-1 text-blue-600 font-bold text-lg">{selectedIds.length}</span>
-            <span className="font-medium text-blue-700">{t('knowledgeBase.selected.suffix')}</span>
+            <span className="font-medium text-[#C13D22]">{t('knowledgeBase.selected.prefix')} </span>
+            <span className="mx-1 text-[#D94527] font-bold text-lg">{selectedIds.length}</span>
+            <span className="font-medium text-[#C13D22]">{t('knowledgeBase.selected.suffix')}</span>
           </div>
 
           {selectedIds.length > 0 && (
@@ -158,7 +160,7 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                 return kb ? (
                   <span
                     key={id}
-                    className="inline-flex items-center justify-center bg-blue-100 text-blue-800 rounded text-sm font-medium group"
+                    className="inline-flex items-center justify-center bg-[#FECDCA] text-[#C13D22] rounded-md text-sm font-medium group"
                     style={{ maxWidth: "fit-content", padding: "2px 6px" }}
                   >
                     <span
@@ -172,7 +174,7 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                       {kb.name}
                     </span>
                     <button
-                      className="ml-1.5 text-blue-600 hover:text-blue-800 flex-shrink-0 text-sm leading-none"
+                      className="ml-1.5 text-[#D94527] hover:text-[#C13D22] flex-shrink-0 text-sm leading-none"
                       onClick={() => onSelect(id)}
                       aria-label={t("knowledgeBase.button.removeKb", {
                         name: kb.name,
@@ -201,12 +203,12 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
               return (
                 <div
                   key={kb.id}
-                  className={`${KB_LAYOUT.ROW_PADDING} px-2 hover:bg-gray-50 cursor-pointer transition-colors ${index > 0 ? "border-t border-gray-200" : ""}`}
+                  className={`${KB_LAYOUT.ROW_PADDING} px-2 hover:bg-[#FDF8F2] cursor-pointer transition-colors ${index > 0 ? "border-t border-[#E8E2D6]" : ""}`}
                   style={{
                     borderLeftWidth: '4px',
                     borderLeftStyle: 'solid',
-                    borderLeftColor: isActive ? '#3b82f6' : 'transparent',
-                    backgroundColor: isActive ? 'rgb(226, 240, 253)' : 'inherit'
+                    borderLeftColor: isActive ? '#D94527' : 'transparent',
+                    backgroundColor: isActive ? '#FEF3F2' : 'inherit'
                   }}
                   onClick={() => {
                     onClick(kb);
@@ -231,8 +233,8 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                         <ConfigProvider
                           theme={{
                             token: {
-                              // If selected with model mismatch, use light blue, otherwise default blue
-                              colorPrimary: isMismatchedAndSelected ? '#90caf9' : '#1677ff',
+                              // If selected with model mismatch, use light orange, otherwise default orange
+                              colorPrimary: isMismatchedAndSelected ? '#FECDCA' : '#D94527',
                             },
                           }}
                         >
@@ -254,7 +256,7 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p
-                          className="text-base font-medium text-gray-800 truncate"
+                          className="text-base font-medium text-[#1A1A1A] truncate"
                           style={{
                             maxWidth: KB_LAYOUT.KB_NAME_MAX_WIDTH,
                             ...KB_LAYOUT.KB_NAME_OVERFLOW
@@ -264,7 +266,7 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                           {kb.name}
                         </p>
                         <button
-                          className="text-red-500 hover:text-red-700 text-xs font-medium ml-2"
+                          className="text-[#D94527] hover:text-[#C13D22] text-xs font-medium ml-2"
                           onClick={(e) => {
                             e.stopPropagation()
                             onDelete(kb.id)
@@ -275,22 +277,22 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
                       </div>
                       <div className={`flex flex-wrap items-center ${KB_LAYOUT.TAG_MARGIN} ${KB_LAYOUT.TAG_SPACING}`}>
                         {/* Document count tag */}
-                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-gray-200 text-gray-800 border border-gray-200 mr-1`}>
+                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-[#F5F2ED] text-[#6B6B6B] border border-[#E8E2D6] mr-1`}>
                           {t('knowledgeBase.tag.documents', { count: kb.documentCount || 0 })}
                         </span>
 
                         {/* Chunk count tag */}
-                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-gray-200 text-gray-800 border border-gray-200 mr-1`}>
+                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-[#F5F2ED] text-[#6B6B6B] border border-[#E8E2D6] mr-1`}>
                           {t('knowledgeBase.tag.chunks', { count: kb.chunkCount || 0 })}
                         </span>
 
                         {/* Knowledge base source tag */}
-                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-gray-200 text-gray-800 border border-gray-200 mr-1`}>
+                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-[#F5F2ED] text-[#6B6B6B] border border-[#E8E2D6] mr-1`}>
                           {t('knowledgeBase.tag.source', { source: kb.source })}
                         </span>
 
                         {/* Creation date tag - only show date */}
-                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-gray-200 text-gray-800 border border-gray-200 mr-1`}>
+                        <span className={`inline-flex items-center ${KB_LAYOUT.TAG_PADDING} ${KB_LAYOUT.TAG_ROUNDED} ${KB_LAYOUT.TAG_TEXT} bg-[#F5F2ED] text-[#6B6B6B] border border-[#E8E2D6] mr-1`}>
                           {t('knowledgeBase.tag.createdAt', { date: formatDate(kb.createdAt) })}
                         </span>
 
@@ -314,7 +316,7 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
             })}
           </div>
         ) : (
-          <div className={`${KB_LAYOUT.EMPTY_STATE_PADDING} text-center text-gray-500`}>
+          <div className={`${KB_LAYOUT.EMPTY_STATE_PADDING} text-center text-[#8B8680]`}>
             {t('knowledgeBase.list.empty')}
           </div>
         )}

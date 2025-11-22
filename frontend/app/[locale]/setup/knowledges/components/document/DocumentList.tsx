@@ -331,25 +331,25 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
     // Refactored: Style is embedded within the component
     return (
       <div
-        className={`flex flex-col w-full bg-white border border-gray-200 rounded-md shadow-sm h-full h-[${containerHeight}]`}
+        className={`flex flex-col w-full bg-white border border-[#E8E2D6] rounded-xl shadow-sm h-full h-[${containerHeight}]`}
       >
         {/* Title bar */}
         <div
-          className={`${LAYOUT.KB_HEADER_PADDING} border-b border-gray-200 flex-shrink-0 flex items-center h-[${titleBarHeight}]`}
+          className={`${LAYOUT.KB_HEADER_PADDING} border-b border-[#E8E2D6] flex-shrink-0 flex items-center h-[${titleBarHeight}] bg-[#FDF8F2]`}
         >
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center">
               {isCreatingMode ? (
                 false ? (
                   <div className="flex items-center">
-                    <span className="text-blue-600 mr-2">📚</span>
+                    <span className="text-[#D94527] mr-2">📚</span>
                     <h3
-                      className={`${LAYOUT.KB_TITLE_MARGIN} ${LAYOUT.KB_TITLE_SIZE} font-semibold text-gray-800`}
+                      className={`${LAYOUT.KB_TITLE_MARGIN} ${LAYOUT.KB_TITLE_SIZE} font-semibold text-[#1A1A1A]`}
                     >
                       {knowledgeBaseName}
                     </h3>
                     {isUploading && (
-                      <div className="ml-3 px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-md border border-blue-100">
+                      <div className="ml-3 px-2 py-0.5 bg-[#FEF3F2] text-[#D94527] text-xs font-medium rounded-md border border-[#FECDCA]">
                         {t("document.status.creating")}
                       </div>
                     )}
@@ -363,7 +363,7 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
                     placeholder={t("document.input.knowledgeBaseName")}
                     className={`${LAYOUT.KB_TITLE_MARGIN} w-[320px] font-medium my-[2px]`}
                     size="large"
-                    prefix={<span className="text-blue-600">📚</span>}
+                    prefix={<span className="text-[#D94527]">📚</span>}
                     autoFocus
                     disabled={
                       hasDocuments || isUploading || docState.isLoadingDocuments
@@ -372,7 +372,7 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
                 )
               ) : (
                 <h3
-                  className={`${LAYOUT.KB_TITLE_MARGIN} ${LAYOUT.KB_TITLE_SIZE} font-semibold text-blue-500 flex items-center`}
+                  className={`${LAYOUT.KB_TITLE_MARGIN} ${LAYOUT.KB_TITLE_SIZE} font-semibold text-[#D94527] flex items-center`}
                 >
                   {knowledgeBaseName}
                 </h3>
@@ -473,30 +473,30 @@ const DocumentListContainer = forwardRef<DocumentListRef, DocumentListProps>(
               </div>
             </div>
           ) : docState.isLoadingDocuments ? (
-            <div className="flex items-center justify-center h-full border border-gray-200 rounded-md">
+            <div className="flex items-center justify-center h-full border border-[#E8E2D6] rounded-xl">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D94527] mx-auto mb-2"></div>
+                <p className="text-sm text-[#6B6B6B]">
                   {t("document.status.loadingList")}
                 </p>
               </div>
             </div>
           ) : isCreatingMode ? (
-            <div className="flex items-center justify-center border border-gray-200 rounded-md h-full">
+            <div className="flex items-center justify-center border border-[#E8E2D6] rounded-xl h-full">
               <div className="text-center p-6">
-                <div className="mb-4 text-blue-600 text-[36px]">
+                <div className="mb-4 text-[#D94527] text-[36px]">
                   <InfoCircleFilled />
                 </div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">
+                <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">
                   {t("document.title.createNew")}
                 </h3>
-                <p className="text-gray-500 text-sm max-w-md">
+                <p className="text-[#6B6B6B] text-sm max-w-md">
                   {t("document.hint.uploadToCreate")}
                 </p>
               </div>
             </div>
           ) : sortedDocuments.length > 0 ? (
-            <div className="overflow-y-auto border border-gray-200 rounded-md h-full">
+            <div className="overflow-y-auto border border-[#E8E2D6] rounded-xl h-full">
               <table className="min-w-full bg-white">
                 <thead
                   className={`${LAYOUT.TABLE_HEADER_BG} sticky top-0 z-10`}
