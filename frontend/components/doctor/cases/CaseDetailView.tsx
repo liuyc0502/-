@@ -24,8 +24,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input, Select, InputNumber, App, Modal, Form, Checkbox } from "antd";
+import { Input, Select, InputNumber, App, Modal, Form, Checkbox, Upload } from "antd";
+import { UploadOutlined, LoadingOutlined } from "@ant-design/icons";
+import type { UploadProps } from "antd";
 import { medicalCaseService, type MedicalCaseDetail } from "@/services/medicalCaseService";
+import { storageService } from "@/services/storageService";
 const { TextArea } = Input;
 interface CaseDetailViewProps {
   caseId: string;
@@ -38,6 +41,77 @@ const caseCategories = [
   { value: "typical", label: "典型病例" },
   { value: "complex", label: "复杂病例" },
 ];
+
+// Case Image Uploader Component
+function CaseImageUploader({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>(value || '');
+
+  useEffect(() => {
+    setPreviewUrl(value || '');
+  }, [value]);
+
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const result = await storageService.uploadFiles([file], 'case-images');
+      if (result.files && result.files.length > 0) {
+        const url = result.files[0].url;
+        setPreviewUrl(url);
+        onChange?.(url);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+    return false;
+  };
+
+  const uploadProps: UploadProps = {
+    accept: 'image/*',
+    showUploadList: false,
+    beforeUpload: handleUpload,
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Upload {...uploadProps}>
+          <Button icon={uploading ? <LoadingOutlined /> : <UploadOutlined />} disabled={uploading}>
+            {uploading ? '上传中...' : '选择图片'}
+          </Button>
+        </Upload>
+        <span className="text-gray-400 text-sm">或</span>
+        <Input
+          placeholder="输入图片URL"
+          value={previewUrl}
+          onChange={(e) => {
+            setPreviewUrl(e.target.value);
+            onChange?.(e.target.value);
+          }}
+          className="flex-1"
+        />
+      </div>
+      {previewUrl && (
+        <div className="mt-2">
+          <img
+            src={previewUrl}
+            alt="预览"
+            className="max-h-48 rounded-lg border border-gray-200"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
   const { message, modal } = App.useApp();
   const [caseData, setCaseData] = useState<MedicalCaseDetail | null>(null);
@@ -1122,8 +1196,12 @@ const handleDeleteAllLabResults = () => {
       <Modal
         title="添加影像资料"
         open={isImageModalOpen}
-        onCancel={() => setIsImageModalOpen(false)}
+        onCancel={() => {
+          setIsImageModalOpen(false);
+          imageForm.resetFields();
+        }}
         footer={null}
+        width={600}
       >
         <Form
           form={imageForm}
@@ -1132,10 +1210,10 @@ const handleDeleteAllLabResults = () => {
         >
           <Form.Item
             name="image_url"
-            label="影像URL"
-            rules={[{ required: true, message: '请输入影像URL' }]}
+            label="影像图片"
+            rules={[{ required: true, message: '请上传或输入影像URL' }]}
           >
-            <Input placeholder="请输入影像文件的URL地址" />
+            <CaseImageUploader />
           </Form.Item>
           <Form.Item
             name="image_type"
@@ -1146,6 +1224,7 @@ const handleDeleteAllLabResults = () => {
               <Select.Option value="CT">CT</Select.Option>
               <Select.Option value="MRI">MRI</Select.Option>
               <Select.Option value="病理切片">病理切片</Select.Option>
+              <Select.Option value="超声">超声</Select.Option>
               <Select.Option value="其他">其他</Select.Option>
             </Select>
           </Form.Item>
@@ -1155,14 +1234,11 @@ const handleDeleteAllLabResults = () => {
           >
             <TextArea rows={3} placeholder="请描述影像发现或特征" />
           </Form.Item>
-          <Form.Item
-            name="thumbnail_url"
-            label="缩略图URL（可选）"
-          >
-            <Input placeholder="可选：缩略图URL" />
-          </Form.Item>
           <Form.Item className="mb-0 flex justify-end gap-2">
-            <Button onClick={() => setIsImageModalOpen(false)}>取消</Button>
+            <Button onClick={() => {
+              setIsImageModalOpen(false);
+              imageForm.resetFields();
+            }}>取消</Button>
             <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
               添加
             </Button>
