@@ -24,6 +24,7 @@ import type { PortalChatConfig } from "@/const/portalChatConfig";
 import { PatientSelector } from "./PatientSelector";
 import { ConversationStatus } from "./ConversationStatus";
 import { TagsManager } from "./TagsManager";
+import { SummaryEditor } from "./SummaryEditor";
 
 // Gradient definition for BrainCircuit icon
 const GradientDefs = () => (
@@ -47,9 +48,11 @@ interface ChatHeaderProps {
   patientName?: string | null;
   conversationStatus?: string;
   conversationTags?: string[];
+  conversationSummary?: string; // Summary field
   onPatientChange?: (patientId: number | null, patientName: string | null) => void;
   onStatusChange?: (status: string) => void;
   onTagsChange?: (tags: string[]) => void;
+  onSummaryChange?: (summary: string) => void; // Summary change callback
   showPatientLinking?: boolean; // Show patient linking features (default: false)
 }
 
@@ -62,9 +65,11 @@ export function ChatHeader({
   patientName,
   conversationStatus,
   conversationTags,
+  conversationSummary,
   onPatientChange,
   onStatusChange,
   onTagsChange,
+  onSummaryChange,
   showPatientLinking = false,
 }: ChatHeaderProps) {
   const router = useRouter();
@@ -268,6 +273,19 @@ export function ChatHeader({
                     disabled={!conversationId}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Summary Row */}
+            <div className="flex items-start gap-2 mt-3">
+              <span className="text-sm text-[#6B6B6B] min-w-[60px] pt-1">Summary:</span>
+              <div className="flex-1">
+                <SummaryEditor
+                  conversationId={conversationId || null}
+                  currentSummary={conversationSummary}
+                  onSummaryChange={onSummaryChange}
+                  disabled={!conversationId}
+                />
               </div>
             </div>
           </div>
