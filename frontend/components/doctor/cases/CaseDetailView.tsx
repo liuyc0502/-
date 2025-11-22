@@ -24,8 +24,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input, Select, InputNumber, App, Modal, Form, Checkbox } from "antd";
+import { Input, Select, InputNumber, App, Modal, Form, Checkbox, Upload, Button as AntButton } from "antd";
+import { UploadOutlined, LoadingOutlined } from "@ant-design/icons";
+import type { UploadProps } from "antd";
 import { medicalCaseService, type MedicalCaseDetail } from "@/services/medicalCaseService";
+import { storageService } from "@/services/storageService";
 const { TextArea } = Input;
 interface CaseDetailViewProps {
   caseId: string;
@@ -38,6 +41,74 @@ const caseCategories = [
   { value: "typical", label: "典型病例" },
   { value: "complex", label: "复杂病例" },
 ];
+function CaseImageUploader({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>(value || '');
+ 
+  useEffect(() => {
+    setPreviewUrl(value || '');
+  }, [value]);
+ 
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const result = await storageService.uploadFiles([file], 'case-images');
+      if (result.results && result.results.length > 0 && result.results[0].success) {
+        const url = result.results[0].url;
+        setPreviewUrl(url);
+        onChange?.(url);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+    return false;
+  };
+ 
+  const uploadProps: UploadProps = {
+    accept: 'image/*',
+    showUploadList: false,
+    beforeUpload: handleUpload,
+  };
+ 
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Upload {...uploadProps}>
+          <AntButton icon={uploading ? <LoadingOutlined /> : <UploadOutlined />} disabled={uploading}>
+            {uploading ? '上传中...' : '选择图片'}
+          </AntButton>
+        </Upload>
+        <span className="text-gray-400 text-sm">或</span>
+        <Input
+          placeholder="输入图片URL"
+          value={previewUrl}
+          onChange={(e) => {
+            setPreviewUrl(e.target.value);
+            onChange?.(e.target.value);
+          }}
+          className="flex-1"
+        />
+      </div>
+      {previewUrl && (
+        <div className="mt-2">
+          <img
+            src={previewUrl}
+            alt="预览"
+            className="max-h-48 rounded-lg border border-gray-200"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
   const { message, modal } = App.useApp();
   const [caseData, setCaseData] = useState<MedicalCaseDetail | null>(null);

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Modal, Form, Input, Button, Card, App, Tabs, Upload, message as antdMessage } from "antd";
-import { PlusOutlined, DeleteOutlined,UploadOutlined, FileOutlined } from "@ant-design/icons";
+import { Modal, Form, Input, Button, Card, App, Tabs, Upload } from "antd";
+import { PlusOutlined, DeleteOutlined, UploadOutlined, FileOutlined, LoadingOutlined } from "@ant-design/icons";
 import type { UploadFile, UploadProps } from "antd";
 import patientService from "@/services/patientService";
 import { storageService } from "@/services/storageService";
+
 // Types
 interface EditTimelineDetailModalProps {
   open: boolean;
@@ -35,6 +36,144 @@ interface AttachmentFormData {
   file_url: string;
   file_size: number;
 }
+
+function ImageUploader({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>(value || '');
+
+  useEffect(() => {
+    setPreviewUrl(value || '');
+  }, [value]);
+
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const result = await storageService.uploadFiles([file], 'medical-images');
+      if (result.results && result.results.length > 0 && result.results[0].success) {
+        const url = result.results[0].url;
+        setPreviewUrl(url);
+        onChange?.(url);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+    return false; // Prevent default upload
+  };
+
+  const uploadProps: UploadProps = {
+    accept: 'image/*',
+    showUploadList: false,
+    beforeUpload: handleUpload,
+  };
+
+  return (
+    <div className="flex items-start gap-4">
+      <Upload {...uploadProps}>
+        <Button icon={uploading ? <LoadingOutlined /> : <UploadOutlined />} disabled={uploading}>
+          {uploading ? '上传中...' : '选择图片'}
+        </Button>
+      </Upload>
+      {previewUrl && (
+        <div className="flex-1">
+          <img
+            src={previewUrl}
+            alt="预览"
+            className="max-h-32 rounded border border-gray-200"
+          />
+          <p className="text-xs text-gray-500 mt-1 truncate max-w-xs">{previewUrl}</p>
+        </div>
+      )}
+      {!previewUrl && (
+        <Input
+          placeholder="或输入图片URL"
+          value={value}
+          onChange={(e) => {
+            setPreviewUrl(e.target.value);
+            onChange?.(e.target.value);
+          }}
+          className="flex-1"
+        />
+      )}
+    </div>
+  );
+}
+
+// File Uploader Component
+function FileUploader({
+  value,
+  onChange,
+}: {
+  value?: AttachmentFormData;
+  onChange?: (data: AttachmentFormData) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      const result = await storageService.uploadFiles([file], 'attachments');
+      if (result.results && result.results.length > 0 && result.results[0].success) {
+        const uploadedFile = result.results[0];
+        onChange?.({
+          file_name: uploadedFile.file_name || file.name,
+          file_type: file.name.split('.').pop() || 'unknown',
+          file_url: uploadedFile.url,
+          file_size: uploadedFile.file_size || file.size,
+        });
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+    return false; // Prevent default upload
+  };
+
+  const uploadProps: UploadProps = {
+    showUploadList: false,
+    beforeUpload: handleUpload,
+  };
+
+  return (
+    <div className="space-y-2">
+      <Upload {...uploadProps}>
+        <Button icon={uploading ? <LoadingOutlined /> : <UploadOutlined />} disabled={uploading}>
+          {uploading ? '上传中...' : '选择文件'}
+        </Button>
+      </Upload>
+      {value?.file_url && (
+        <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+          <FileOutlined className="text-blue-500" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{value.file_name}</p>
+            <p className="text-xs text-gray-500">
+              {value.file_type?.toUpperCase()} · {value.file_size ? `${(value.file_size / 1024).toFixed(1)} KB` : ''}
+            </p>
+          </div>
+          <a
+            href={value.file_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 text-sm hover:underline"
+          >
+            查看
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ 
+
 export function EditTimelineDetailModal({
   open,
   onClose,
@@ -287,48 +426,58 @@ export function EditTimelineDetailModal({
           <Form.List name="images">
             {(fields, { add, remove }) => (
               <>
-                {fields.map((field) => (
-                  <Card
-                    key={field.key}
-                    size="small"
-                    className="mb-3"
-                    extra={
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    }
-                  >
-                    <div className="grid grid-cols-2 gap-3">
-                      <Form.Item
-                        name={[field.name, "image_type"]}
-                        fieldKey={[field.name, "image_type"]}
-                        label="影像类型"
-                        className="mb-2"
-                      >
-                        <Input placeholder="病理切片" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "image_label"]}
-                        fieldKey={[field.name, "image_label"]}
-                        label="影像标签"
-                        className="mb-2"
-                      >
-                        <Input placeholder="关节X光片" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "image_url"]}
-                        fieldKey={[field.name, "image_url"]}
-                        label="影像URL"
-                        className="col-span-2 mb-0"
-                      >
-                        <Input placeholder="https://example.com/image.jpg" />
-                      </Form.Item>
-                    </div>
-                  </Card>
-                ))}
+                {fields.map((field) => {
+                  const imageUrl = form.getFieldValue(['images', field.name, 'image_url']);
+
+                  return (
+                    <Card
+                      key={field.key}
+                      size="small"
+                      className="mb-3"
+                      extra={
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => remove(field.name)}
+                        />
+                      }
+                    >
+                      <div className="grid grid-cols-2 gap-3">
+                        <Form.Item
+                          name={[field.name, "image_type"]}
+                          label="影像类型"
+                          className="mb-2"
+                        >
+                          <Input placeholder="病理切片" />
+                        </Form.Item>
+                        <Form.Item
+                          name={[field.name, "image_label"]}
+                          label="影像标签"
+                          className="mb-2"
+                          rules={[{ required: true, message: '请输入影像标签' }]}
+                        >
+                          <Input placeholder="关节X光片" />
+                        </Form.Item>
+                        <Form.Item
+                          name={[field.name, "image_url"]}
+                          label="影像"
+                          className="col-span-2 mb-0"
+                          rules={[{ required: true, message: '请上传影像' }]}
+                        >
+                          <ImageUploader
+                            value={imageUrl}
+                            onChange={(url) => {
+                              const images = form.getFieldValue('images') || [];
+                              images[field.name] = { ...images[field.name], image_url: url };
+                              form.setFieldsValue({ images });
+                            }}
+                          />
+                        </Form.Item>
+                      </div>
+                    </Card>
+                  );
+                })}
                 <Button
                   type="dashed"
                   onClick={() => add()}
@@ -439,58 +588,39 @@ export function EditTimelineDetailModal({
           <Form.List name="attachments">
             {(fields, { add, remove }) => (
               <>
-                {fields.map((field) => (
-                  <Card
-                    key={field.key}
-                    size="small"
-                    className="mb-3"
-                    extra={
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(field.name)}
+                {fields.map((field) => {
+                  const attachment = form.getFieldValue(['attachments', field.name]) || {};
+
+                  return (
+                    <Card
+                      key={field.key}
+                      size="small"
+                      className="mb-3"
+                      extra={
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => remove(field.name)}
+                        />
+                      }
+                    >
+                      <FileUploader
+                        value={attachment}
+                        onChange={(fileData) => {
+                          const attachments = form.getFieldValue('attachments') || [];
+                          attachments[field.name] = fileData;
+                          form.setFieldsValue({ attachments });
+                        }}
                       />
-                    }
-                  >
-                    <div className="grid grid-cols-2 gap-3">
-                      <Form.Item
-                        name={[field.name, "file_name"]}
-                        fieldKey={[field.name, "file_name"]}
-                        label="文件名"
-                        className="mb-2"
-                        rules={[{ required: true, message: '请输入文件名' }]}
-                      >
-                        <Input placeholder="检查报告.pdf" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "file_type"]}
-                        fieldKey={[field.name, "file_type"]}
-                        label="文件类型"
-                        className="mb-2"
-                      >
-                        <Input placeholder="pdf/excel/dicom/zip" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "file_url"]}
-                        fieldKey={[field.name, "file_url"]}
-                        label="文件URL"
-                        className="col-span-2 mb-2"
-                        rules={[{ required: true, message: '请输入文件URL' }]}
-                      >
-                        <Input placeholder="https://example.com/file.pdf" />
-                      </Form.Item>
-                      <Form.Item
-                        name={[field.name, "file_size"]}
-                        fieldKey={[field.name, "file_size"]}
-                        label="文件大小(bytes)"
-                        className="mb-0"
-                      >
-                        <Input type="number" placeholder="1024" />
-                      </Form.Item>
-                    </div>
-                  </Card>
-                ))}
+                      {/* Hidden form items to store data */}
+                      <Form.Item name={[field.name, "file_name"]} hidden><Input /></Form.Item>
+                      <Form.Item name={[field.name, "file_type"]} hidden><Input /></Form.Item>
+                      <Form.Item name={[field.name, "file_url"]} hidden><Input /></Form.Item>
+                      <Form.Item name={[field.name, "file_size"]} hidden><Input /></Form.Item>
+                    </Card>
+                  );
+                })}
                 <Button
                   type="dashed"
                   onClick={() => add()}
