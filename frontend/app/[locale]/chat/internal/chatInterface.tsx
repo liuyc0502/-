@@ -135,6 +135,13 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     ? sessionMessages[conversationManagement.selectedConversationId] || []
     : [];
 
+  // Get current conversation from the list (for patient linking info)
+  const currentConversation = conversationManagement.selectedConversationId
+    ? conversationManagement.conversationList.find(
+        (c) => c.conversation_id === conversationManagement.selectedConversationId
+      )
+    : null;
+
   // Monitor changes in currentMessages
   // Calculate if the current conversation is streaming
   const isCurrentConversationStreaming =
@@ -1681,6 +1688,27 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   title={conversationManagement.conversationTitle}
                   onRename={handleTitleRename}
                   portalConfig={portalConfig}
+                  // Conversation-patient linking props (doctor portal only)
+                  showPatientLinking={variant === "doctor"}
+                  conversationId={conversationManagement.selectedConversationId}
+                  patientId={currentConversation?.patient_id}
+                  patientName={currentConversation?.patient_name}
+                  conversationStatus={currentConversation?.conversation_status}
+                  conversationTags={currentConversation?.tags}
+                  conversationSummary={currentConversation?.summary || undefined}
+                  onPatientChange={(patientId, patientName) => {
+                    // Refresh conversation list to get updated data
+                    conversationManagement.fetchConversationList(variant);
+                  }}
+                  onStatusChange={(status) => {
+                    conversationManagement.fetchConversationList(variant);
+                  }}
+                  onTagsChange={(tags) => {
+                    conversationManagement.fetchConversationList(variant);
+                  }}
+                  onSummaryChange={(summary) => {
+                    conversationManagement.fetchConversationList(variant);
+                  }}
                 />
 
                 <ChatStreamMain
