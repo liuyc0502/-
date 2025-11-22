@@ -425,14 +425,14 @@ function ToolPool({
 
     const item = (
       <div
-        className={`border-2 rounded-md p-2 flex items-center transition-all duration-300 ease-in-out min-h-[52px] shadow-sm ${
+        className={`border rounded-xl p-2 flex items-center transition-all duration-300 ease-in-out min-h-[52px] ${
           !isEffectivelyAvailable
             ? isSelected
-              ? "bg-blue-100 border-blue-400 opacity-60"
-              : "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
+              ? "bg-[#FEF3F2] border-[#FECDCA] opacity-60"
+              : "bg-[#F5F2ED] border-[#E8E2D6] opacity-60 cursor-not-allowed"
             : isSelected
-            ? "bg-blue-100 border-blue-400 shadow-md"
-            : "border-gray-200 hover:border-blue-300 hover:shadow-md"
+            ? "bg-[#FEF3F2] border-[#FECDCA] shadow-sm"
+            : "bg-white border-[#E8E2D6] hover:border-[#D94527] hover:bg-[#FDF8F2] hover:shadow-sm"
         } ${
           isDisabled
             ? "opacity-50 cursor-not-allowed"
@@ -507,8 +507,8 @@ function ToolPool({
             title={t("toolPool.button.settings", { defaultValue: "Settings" })}
             className={`flex-shrink-0 flex items-center justify-center bg-transparent ${
               localIsGenerating || isGeneratingAgent
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-gray-500 hover:text-blue-500"
+                ? "text-[#C4BFB8] cursor-not-allowed"
+                : "text-[#8B8680] hover:text-[#D94527]"
             }`}
             style={{ border: "none", padding: "4px" }}
           >
@@ -622,7 +622,7 @@ function ToolPool({
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center">
-          <h4 className="text-md font-medium text-gray-700">
+          <h4 className="text-md font-medium text-[#1A1A1A]">
             {t("toolPool.title")}
           </h4>
         </div>
@@ -633,7 +633,7 @@ function ToolPool({
             icon={isRefreshing ? <LoadingOutlined /> : <ReloadOutlined />}
             onClick={handleRefreshTools}
             disabled={localIsGenerating || isRefreshing || isGeneratingAgent}
-            className="text-green-500 hover:text-green-600 hover:bg-green-50"
+            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
             title={t("toolManagement.refresh.title")}
           >
             {isRefreshing
@@ -646,7 +646,7 @@ function ToolPool({
             icon={<ApiOutlined />}
             onClick={() => setIsMcpModalOpen(true)}
             disabled={localIsGenerating || isGeneratingAgent}
-            className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+            className="text-[#D94527] hover:text-[#C13D22] hover:bg-[#FEF3F2]"
             title={t("toolManagement.mcp.title")}
           >
             {t("toolManagement.mcp.button")}
@@ -658,14 +658,14 @@ function ToolPool({
           )}
         </div>
       </div>
-      <div className="flex-1 min-h-0 border-t pt-2 pb-2 overflow-hidden">
+      <div className="flex-1 min-h-0 border-t border-[#E8E2D6] pt-2 pb-2 overflow-hidden">
         {loadingTools ? (
           <div className="flex items-center justify-center h-full">
-            <span className="text-gray-500">{t("toolPool.loadingTools")}</span>
+            <span className="text-[#8B8680]">{t("toolPool.loadingTools")}</span>
           </div>
         ) : toolGroups.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <span className="text-gray-500">{t("toolPool.noTools")}</span>
+            <span className="text-[#8B8680]">{t("toolPool.noTools")}</span>
           </div>
         ) : (
           <div style={{ height: "100%" }}>

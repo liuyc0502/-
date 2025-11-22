@@ -926,7 +926,8 @@ export const ModelConfigSection = forwardRef<
             padding: "12px 24px",
             flexShrink: 0,
             flexWrap: "wrap",
-            borderBottom: "1px solid #f0f0f0",
+            borderBottom: "1px solid #E8E2D6",
+            backgroundColor: "#FDF8F2",
           }}
         >
           <Select

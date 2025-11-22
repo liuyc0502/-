@@ -488,7 +488,7 @@ export default function AgentConfigModal({
     <div className="p-4 agent-info-content">
       {/* Agent Display Name */}
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
           {t("agent.displayName")}:
         </label>
         <Input
@@ -521,7 +521,7 @@ export default function AgentConfigModal({
 
       {/* Agent Name */}
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
           {t("agent.name")}:
         </label>
         <Input
@@ -552,7 +552,7 @@ export default function AgentConfigModal({
 
       {/* Model Selection */}
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
           {t("businessLogic.config.model")}:
         </label>
         <Select
@@ -592,7 +592,7 @@ export default function AgentConfigModal({
 
       {/* Max Steps */}
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
           {t("businessLogic.config.maxSteps")}:
         </label>
         <InputNumber
@@ -608,7 +608,7 @@ export default function AgentConfigModal({
 
       {/* Agent Description */}
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
           {t("agent.description")}:
         </label>
         <Input.TextArea
@@ -628,7 +628,7 @@ export default function AgentConfigModal({
 
       {/* Agent Role Category */}
       <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
           智能体角色分类 <span className="text-red-500">*</span>:
         </label>
         <Select
@@ -658,7 +658,7 @@ export default function AgentConfigModal({
       {/* Portal Type - Only show for portal_main agents */}
       {agentRoleCategory === "portal_main" && (
         <div className="mb-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
             所属端口 <span className="text-red-500">*</span>:
           </label>
           <Select
@@ -683,7 +683,7 @@ export default function AgentConfigModal({
       {/* Agent Category - Only show for tool agents */}
       {agentRoleCategory === "tool" && (
         <div className="mb-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[#1A1A1A] mb-1">
             智能体类型:
           </label>
           <Select
@@ -768,7 +768,7 @@ export default function AgentConfigModal({
       {/* Section Title */}
       <div className="flex justify-between items-center mb-2 flex-shrink-0">
         <div className="flex items-center">
-          <h3 className="text-sm font-medium text-gray-700">
+          <h3 className="text-sm font-medium text-[#1A1A1A]">
             {t("agent.detailContent.title")}
           </h3>
         </div>
@@ -777,13 +777,13 @@ export default function AgentConfigModal({
       {/* Segmented Control */}
       <div className="flex justify-center mb-4 flex-shrink-0">
         <div className="w-full max-w-4xl">
-          <div className="flex bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="flex bg-white border border-[#E8E2D6] rounded-xl shadow-sm overflow-hidden">
             <button
               onClick={handleSegmentClick.bind(null, "agent-info")}
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors text-sm segment-button ${
                 activeSegment === "agent-info"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#D94527] text-white"
+                  : "bg-white text-[#6B6B6B] hover:bg-[#FDF8F2]"
               }`}
               style={{ fontSize: "14px" }}
               type="button"
@@ -794,8 +794,8 @@ export default function AgentConfigModal({
               onClick={handleSegmentClick.bind(null, "duty")}
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors relative text-sm segment-button ${
                 activeSegment === "duty"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#D94527] text-white"
+                  : "bg-white text-[#6B6B6B] hover:bg-[#FDF8F2]"
               }`}
               style={{ fontSize: "14px" }}
               type="button"
@@ -809,8 +809,8 @@ export default function AgentConfigModal({
               onClick={handleSegmentClick.bind(null, "constraint")}
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors relative text-sm segment-button ${
                 activeSegment === "constraint"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#D94527] text-white"
+                  : "bg-white text-[#6B6B6B] hover:bg-[#FDF8F2]"
               }`}
               style={{ fontSize: "14px" }}
               type="button"
@@ -824,8 +824,8 @@ export default function AgentConfigModal({
               onClick={handleSegmentClick.bind(null, "few-shots")}
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors relative text-sm segment-button ${
                 activeSegment === "few-shots"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-[#D94527] text-white"
+                  : "bg-white text-[#6B6B6B] hover:bg-[#FDF8F2]"
               }`}
               style={{ fontSize: "14px" }}
               type="button"
@@ -840,7 +840,7 @@ export default function AgentConfigModal({
       </div>
 
       {/* Content area - flexible height */}
-      <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden w-full max-w-4xl mx-auto min-h-0 relative">
+      <div className="flex-1 bg-white border border-[#E8E2D6] rounded-xl shadow-sm overflow-hidden w-full max-w-4xl mx-auto min-h-0 relative">
         {/* Floating expand buttons - positioned outside scrollable content */}
         {(activeSegment === "duty" ||
           activeSegment === "constraint" ||
@@ -983,7 +983,7 @@ export default function AgentConfigModal({
               size="middle"
               icon={<BugOutlined />}
               onClick={onDebug}
-              className="bg-blue-500 hover:bg-blue-600 responsive-button"
+              className="bg-[#D94527] hover:bg-[#C13D22] responsive-button"
               title={t("systemPrompt.button.debug")}
             >
               {t("systemPrompt.button.debug")}

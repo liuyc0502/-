@@ -123,7 +123,7 @@ function ExpandEditModal({
           </div>
           <button
             onClick={handleSave}
-            className="px-4 py-1.5 rounded-md text-sm bg-blue-500 text-white hover:bg-blue-600"
+            className="px-4 py-1.5 rounded-xl text-sm bg-[#D94527] text-white hover:bg-[#C13D22]"
             style={{ border: "none" }}
           >
             {t("systemPrompt.expandEdit.close")}
@@ -535,21 +535,21 @@ export default function PromptManager({
       {/* Main title */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-medium mr-2">
+          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#D94527] text-white text-sm font-medium mr-2">
             3
           </div>
-          <h2 className="text-lg font-medium">
+          <h2 className="text-lg font-medium text-[#1A1A1A]">
             {t("guide.steps.describeBusinessLogic.title")}
           </h2>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col border-t pt-2 system-prompt-container overflow-hidden">
+      <div className="flex-1 flex flex-col border-t border-[#E8E2D6] pt-2 system-prompt-container overflow-hidden">
         {/* Business logic description section */}
         <div className="flex-shrink-0 mb-4">
           <div className="mb-2">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
+            <h3 className="text-sm font-medium text-[#1A1A1A] mb-2">
               {t("businessLogic.title")}
             </h3>
           </div>
@@ -574,7 +574,7 @@ export default function PromptManager({
             {/* Generate button */}
             <div className="absolute bottom-2 right-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">{t("businessLogic.config.model")}：</span>
+                <span className="text-xs text-[#6B6B6B]">{t("businessLogic.config.model")}：</span>
                 <Select
                   value={businessLogicModelId || (selectedGenerateModel ?? internalSelectedModel)?.id}
                   onChange={handleModelSelect}
@@ -588,7 +588,7 @@ export default function PromptManager({
                 {isGeneratingAgent ? (
                   <button
                     disabled={true}
-                    className="px-3 py-1.5 rounded-md flex items-center justify-center text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 rounded-xl flex items-center justify-center text-sm bg-[#D94527] text-white hover:bg-[#C13D22] disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ border: "none" }}
                   >
                     <LoadingOutlined spin className="mr-1" />
@@ -598,7 +598,7 @@ export default function PromptManager({
                   <button
                     onClick={handleGenerateClick}
                     disabled={loadingModels || availableModels.length === 0}
-                    className="px-3 py-1.5 rounded-md flex items-center justify-center text-sm bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 rounded-xl flex items-center justify-center text-sm bg-[#D94527] text-white hover:bg-[#C13D22] disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ border: "none" }}
                   >
                     {loadingModels ? (
