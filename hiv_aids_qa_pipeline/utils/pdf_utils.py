@@ -1,20 +1,23 @@
-# utils/pdf_utils.py
 from typing import List
-from PyPDF2 import PdfReader
+import pdfplumber  # 更强大的PDF提取库
 from .logging_utils import setup_logger
 
 logger = setup_logger("pdf_utils")
 
 def extract_pages(pdf_path: str) -> List[str]:
-    """从 PDF 抽取每页文本"""
-    reader = PdfReader(pdf_path)
+    """从 PDF 抽取每页文本,使用pdfplumber提高质量"""
     pages = []
-    for i, page in enumerate(reader.pages):
-        try:
-            text = page.extract_text() or ""
-        except Exception as e:
-            logger.error(f"Error extracting page {i}: {e}")
-            text = ""
-        pages.append(text)
-    logger.info(f"Extracted {len(pages)} pages from {pdf_path}")
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            for i, page in enumerate(pdf.pages):
+                try:
+                    text = page.extract_text() or ""
+                    pages.append(text)
+                except Exception as e:
+                    logger.error(f"Error extracting page {i}: {e}")
+                    pages.append("")
+        logger.info(f"Extracted {len(pages)} pages from {pdf_path}")
+    except Exception as e:
+        logger.error(f"Failed to open PDF {pdf_path}: {e}")
+        raise
     return pages
