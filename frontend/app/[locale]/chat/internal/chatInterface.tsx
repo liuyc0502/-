@@ -878,7 +878,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     } catch (error) {
       // If user actively canceled, don't show error message
       const err = error as Error;
-      if (err.name === "AbortError") {
+      // Handle AbortError and BodyStreamBuffer aborted errors gracefully
+      if (err.name === "AbortError" || err.message?.includes("aborted") || err.message?.includes("BodyStreamBuffer")) {
         setSessionMessages((prev) => {
           const newMessages = { ...prev };
           const lastMsg =

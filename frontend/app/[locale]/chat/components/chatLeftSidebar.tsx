@@ -623,10 +623,10 @@ export function ChatSidebar({
                   </div>
 
                   {/* Filter Pills - inline style */}
-                  <div className="flex items-center gap-1 mt-2">
+                  <div className="flex items-center gap-1.5 mt-2 flex-nowrap overflow-x-auto">
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
-                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
                         statusFilter === 'active'
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
@@ -634,10 +634,10 @@ export function ChatSidebar({
                     >
                       进行中
                     </button>
-
+ 
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
-                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
                         statusFilter === 'pending_followup'
                           ? 'bg-amber-100 text-amber-700'
                           : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
@@ -645,10 +645,10 @@ export function ChatSidebar({
                     >
                       待跟进
                     </button>
-
+ 
                     <button
                       onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
-                      className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
                         statusFilter === 'difficult_case'
                           ? 'bg-rose-100 text-rose-700'
                           : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
@@ -656,14 +656,14 @@ export function ChatSidebar({
                     >
                       疑难
                     </button>
-
+ 
                     {(statusFilter || tagFilter) && (
                       <button
                         onClick={() => {
                           setStatusFilter(null);
                           setTagFilter(null);
                         }}
-                        className="text-[10px] px-1.5 py-0.5 text-[#B3AEA5] hover:text-[#6B6B6B]"
+                        className="text-[11px] font-medium px-1.5 py-1 text-[#B3AEA5] hover:text-[#6B6B6B] whitespace-nowrap flex-shrink-0"
                       >
                         重置
                       </button>

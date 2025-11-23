@@ -57,16 +57,12 @@ def insert_config(insert_data: Dict[str, Any]) -> bool:
 
 
 def delete_config_by_config_id(config_id: int, updated_by: str) -> bool:
-    """Soft-delete a record by id, set delete_flag='Y' and updated_by."""
+    """Hard delete a record by id."""
     with get_db_session() as session:
         try:
             session.query(MemoryUserConfig).filter(
-                MemoryUserConfig.config_id == config_id,
-                MemoryUserConfig.delete_flag == "N",
-            ).update({
-                "delete_flag": "Y",
-                "updated_by": updated_by,
-            })
+                MemoryUserConfig.config_id == config_id
+            ).delete()
             session.commit()
             return True
         except Exception:
@@ -90,19 +86,13 @@ def update_config_by_id(config_id: int, update_data: Dict[str, Any]) -> bool:
             return False
 
 
-def soft_delete_all_configs_by_user_id(user_id: str, actor: str) -> bool:
-    """Soft-delete all memory user config records for a user."""
+def delete_all_configs_by_user_id(user_id: str, actor: str) -> bool:
+    """Hard delete all memory user config records for a user."""
     with get_db_session() as session:
         try:
             session.query(MemoryUserConfig).filter(
-                MemoryUserConfig.user_id == user_id,
-                MemoryUserConfig.delete_flag == "N",
-            ).update({
-                "delete_flag": "Y",
-                "updated_by": actor,
-            })
-            session.commit()
-            return True
+                MemoryUserConfig.user_id == user_id
+            ).delete()
         except Exception:
             session.rollback()
             return False

@@ -718,7 +718,17 @@ async def list_all_agent_info_impl(tenant_id: str) -> list[dict]:
             tool_info = search_tools_for_sub_agent(
                 agent_id=agent["agent_id"], tenant_id=tenant_id)
             tool_id_list = [tool["tool_id"] for tool in tool_info]
-            is_available = all(check_tool_is_available(tool_id_list))
+            # If no tools assigned, agent is considered available
+            if not tool_id_list:
+                is_available = True
+            else:
+                tool_availability_list = check_tool_is_available(tool_id_list)
+                # Check if all tools are available
+                # If tool_availability_list is shorter than tool_id_list, some tools are missing
+                if len(tool_availability_list) != len(tool_id_list):
+                    is_available = False
+                else:
+                    is_available = all(tool_availability_list) if tool_availability_list else False
 
             simple_agent_list.append({
                 "agent_id": agent["agent_id"],

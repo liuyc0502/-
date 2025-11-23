@@ -83,7 +83,20 @@ export const handleStreamResponse = async (
 
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      let readResult;
+      try {
+        readResult = await reader.read();
+      } catch (readError: any) {
+        // Handle AbortError gracefully - this is expected when user stops the stream
+        if (readError?.name === 'AbortError' || readError?.message?.includes('aborted')) {
+          log.log(t("chatStreamHandler.streamAbortedByUser") || "Stream aborted by user");
+          break;
+        }
+        // Re-throw other errors
+        throw readError;
+      }
+      
+      const { done, value } = readResult;
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
@@ -914,7 +927,21 @@ export const handleStreamResponse = async (
 
     // Reset the conversation switch status
     setIsSwitchedConversation(false);
-  } catch (error) {
+  } catch (error: any) {
+    // Handle AbortError gracefully - don't log as error since it's expected when user stops
+    if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+      log.log(t("chatStreamHandler.streamAbortedByUser") || "Stream aborted by user");
+      // Mark message as complete when aborted
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg && lastMsg.role === ROLE_ASSISTANT) {
+          lastMsg.isComplete = true;
+        }
+        return newMessages;
+      });
+      return { finalAnswer };
+    }
     log.error(t("chatStreamHandler.streamResponseError"), error);
     throw error; // Pass the error back to the original function for processing
   }

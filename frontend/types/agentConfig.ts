@@ -24,6 +24,7 @@ export interface Agent {
   is_available?: boolean;
   sub_agent_id_list?: number[];
   agent_category?: string; // 'portal_main' or 'tool'
+  agent_role_category?: string; // 'doctor', 'student', 'patient' or null
   portal_type?: string | null; // 'doctor', 'student', 'patient' or null
 }
 

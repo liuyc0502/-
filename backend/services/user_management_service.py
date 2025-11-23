@@ -16,9 +16,9 @@ from consts.const import INVITE_CODE, SUPABASE_URL, SUPABASE_KEY
 from consts.exceptions import NoInviteCodeException, IncorrectInviteCodeException, UserRegistrationException, UnauthorizedError
 
 from database.model_management_db import create_model_record
-from database.user_tenant_db import insert_user_tenant, soft_delete_user_tenant_by_user_id
-from database.memory_config_db import soft_delete_all_configs_by_user_id
-from database.conversation_db import soft_delete_all_conversations_by_user
+from database.user_tenant_db import insert_user_tenant, delete_user_tenant_by_user_id
+from database.memory_config_db import delete_all_configs_by_user_id
+from database.conversation_db import delete_all_conversations_by_user
 from utils.memory_utils import build_memory_config
 from nexent.memory.memory_service import clear_memory
 
@@ -321,21 +321,21 @@ async def revoke_regular_user(user_id: str, tenant_id: str) -> None:
         logging.debug(f"Start deleting user {user_id} related data...")
         # 1) PostgreSQL soft-deletes
         try:
-            soft_delete_user_tenant_by_user_id(user_id, actor=user_id)
+            delete_user_tenant_by_user_id(user_id, actor=user_id)
             logging.debug("\tTenant relationship deleted.")
         except Exception as e:
             logging.error(
                 f"Failed soft-deleting user-tenant for user {user_id}: {e}")
 
         try:
-            soft_delete_all_configs_by_user_id(user_id, actor=user_id)
+            delete_all_configs_by_user_id(user_id, actor=user_id)
             logging.debug("\tMemory user configs deleted.")
         except Exception as e:
             logging.error(
                 f"Failed soft-deleting memory user configs for user {user_id}: {e}")
 
         try:
-            deleted_convs = soft_delete_all_conversations_by_user(user_id)
+            deleted_convs = delete_all_conversations_by_user(user_id)
             logging.debug(f"\t{deleted_convs} conversations deleted")
         except Exception as e:
             logging.error(

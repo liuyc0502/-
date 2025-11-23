@@ -5,6 +5,7 @@ Patient Management Tools - MCP Format
 import logging
 from typing import Optional, List, Dict, Any
 from fastmcp import FastMCP
+from consts.const import DEFAULT_TENANT_ID
 from database.patient_db import (
     get_patient_by_id,
     get_patient_timeline,
@@ -21,20 +22,18 @@ patient_tools = FastMCP("patient_management")
 )
 async def get_patient_basic_info(
     patient_id: int,
-    tenant_id: str,
     include_summary: bool = True
 ) -> Dict[str, Any]:
     """
     Get patient basic information including demographics and diagnosis.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
         include_summary: Whether to include diagnosis summary
     Returns:
         Patient information dictionary
     """
     try:
-        patient = get_patient_by_id(patient_id, tenant_id)
+        patient = get_patient_by_id(patient_id, DEFAULT_TENANT_ID)
         if not patient:
             return {"error": "Patient not found", "patient_id": patient_id}
         result = {
@@ -66,20 +65,18 @@ async def get_patient_basic_info(
 )
 async def get_patient_timeline_tool(
     patient_id: int,
-    tenant_id: str,
     include_details: bool = False
 ) -> Dict[str, Any]:
     """
     Get patient's complete diagnostic and treatment timeline.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
         include_details: Whether to include detailed information for each stage
     Returns:
         Timeline information with stages
     """
     try:
-        timeline = get_patient_timeline(patient_id, tenant_id)
+        timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         if not timeline:
             return {
                 "patient_id": patient_id,
@@ -101,7 +98,7 @@ async def get_patient_timeline_tool(
                 "status": stage.get("status")
             }
             if include_details:
-                detail = get_timeline_detail(stage.get("timeline_id"), tenant_id)
+                detail = get_timeline_detail(stage.get("timeline_id"), DEFAULT_TENANT_ID)
                 if detail:
                     stage_info["detail"] = detail.get("detail")
                     stage_info["images"] = detail.get("images", [])
@@ -121,7 +118,6 @@ async def get_patient_timeline_tool(
 )
 async def get_patient_medical_images(
     patient_id: int,
-    tenant_id: str,
     image_type: Optional[str] = None,
     limit: int = 20
 ) -> Dict[str, Any]:
@@ -129,17 +125,16 @@ async def get_patient_medical_images(
     Get patient's medical images including pathology slides, CT, X-ray, MRI, etc.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
         image_type: Filter by image type (病理切片/X光/CT/MRI/临床照片/超声)
         limit: Maximum number of images to return
     Returns:
         List of medical images with URLs and descriptions
     """
     try:
-        timeline = get_patient_timeline(patient_id, tenant_id)
+        timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         all_images = []
         for stage in timeline:
-            detail = get_timeline_detail(stage.get("timeline_id"), tenant_id)
+            detail = get_timeline_detail(stage.get("timeline_id"), DEFAULT_TENANT_ID)
             if detail and detail.get("images"):
                 for img in detail.get("images", []):
                     if image_type and img.get("image_type") != image_type:
@@ -172,23 +167,21 @@ async def get_patient_medical_images(
 )
 async def analyze_patient_metrics(
     patient_id: int,
-    tenant_id: str,
     metric_names: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Analyze patient's lab results and metric trends.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
         metric_names: Specific metrics to analyze (e.g., ["ESR", "CRP", "RF"])
     Returns:
         Metrics analysis with trends
     """
     try:
-        timeline = get_patient_timeline(patient_id, tenant_id)
+        timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         metrics_by_name = {}
         for stage in timeline:
-            detail = get_timeline_detail(stage.get("timeline_id"), tenant_id)
+            detail = get_timeline_detail(stage.get("timeline_id"), DEFAULT_TENANT_ID)
             if detail and detail.get("metrics"):
                 for metric in detail.get("metrics", []):
                     name = metric.get("metric_name")
@@ -247,7 +240,6 @@ async def analyze_patient_metrics(
 )
 async def get_patient_todos_tool(
     patient_id: int,
-    tenant_id: str,
     status: Optional[str] = None,
     priority: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -255,14 +247,13 @@ async def get_patient_todos_tool(
     Get patient's pending todos and tasks.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
         status: Filter by status (pending/completed/overdue)
         priority: Filter by priority (high/medium/low)
     Returns:
         List of todos with details
     """
     try:
-        todos = get_patient_todos(patient_id, tenant_id, status)
+        todos = get_patient_todos(patient_id, DEFAULT_TENANT_ID, status)
         if priority:
             todos = [t for t in todos if t.get("priority") == priority]
         result = {
@@ -295,7 +286,6 @@ async def get_patient_todos_tool(
 )
 async def get_patient_examination_reports(
     patient_id: int,
-    tenant_id: str,
     report_type: Optional[str] = None,
     status: Optional[str] = None,
     limit: int = 10
@@ -304,7 +294,6 @@ async def get_patient_examination_reports(
     Get patient's examination reports.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
         report_type: Filter by report type
         status: Filter by status (已解读/待解读)
         limit: Maximum number of reports
@@ -312,10 +301,10 @@ async def get_patient_examination_reports(
         List of examination reports
     """
     try:
-        timeline = get_patient_timeline(patient_id, tenant_id)
+        timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         reports = []
         for stage in timeline:
-            detail = get_timeline_detail(stage.get("timeline_id"), tenant_id)
+            detail = get_timeline_detail(stage.get("timeline_id"), DEFAULT_TENANT_ID)
             if detail:
                 # Construct report from timeline detail
                 report = {
@@ -342,4 +331,41 @@ async def get_patient_examination_reports(
         }
     except Exception as e:
         logger.error(f"Error getting patient examination reports: {str(e)}")
+        return {"error": str(e)}
+
+
+@patient_tools.tool(
+name="list_all_patients",
+description="List all patients in the system. Use when doctor asks about available patients, patient list, or wants to see all patients in the database."
+
+)
+
+async def list_all_patients_tool(
+    limit: int = 50
+) -> Dict[str, Any]:
+    """
+    List all patients in the system.
+    Args:
+        limit: Maximum number of patients to return
+    Returns:
+        List of patients with basic info
+    """
+    try:
+        patients = list_patients(tenant_id=DEFAULT_TENANT_ID, limit=limit)
+        return {
+            "total_patients": len(patients),
+            "patients": [
+                {
+                    "patient_id": p.get("patient_id"),
+                    "name": p.get("name"),
+                    "gender": p.get("gender"),
+                    "age": p.get("age"),
+                    "medical_record_no": p.get("medical_record_no"),
+                    "diagnosis": p.get("diagnosis")
+                }
+                for p in patients
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error listing patients: {str(e)}")
         return {"error": str(e)}

@@ -116,23 +116,21 @@ def update_care_plan(plan_id: int, plan_data: dict, tenant_id: str, user_id: str
 
 def delete_care_plan(plan_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete care plan
+    Hard delete care plan
     """
     with get_db_session() as session:
         plan = session.query(CarePlan).filter(
             CarePlan.plan_id == plan_id,
-            CarePlan.tenant_id == tenant_id,
-            CarePlan.delete_flag != 'Y'
+            CarePlan.tenant_id == tenant_id
         ).first()
-
+ 
         if not plan:
             return False
-
-        plan.delete_flag = 'Y'
-        plan.updated_by = user_id
+ 
+        session.delete(plan)
         session.commit()
-
-        logger.info(f"Deleted care plan: {plan_id}")
+ 
+        logger.info(f"Hard deleted care plan: {plan_id}")
         return True
 
 
@@ -211,23 +209,21 @@ def update_medication(medication_id: int, medication_data: dict,
 
 def delete_medication(medication_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete medication
+    Hard delete medication
     """
     with get_db_session() as session:
         medication = session.query(CarePlanMedication).filter(
             CarePlanMedication.medication_id == medication_id,
-            CarePlanMedication.tenant_id == tenant_id,
-            CarePlanMedication.delete_flag != 'Y'
+            CarePlanMedication.tenant_id == tenant_id
         ).first()
-
+ 
         if not medication:
             return False
-
-        medication.delete_flag = 'Y'
-        medication.updated_by = user_id
+ 
+        session.delete(medication)
         session.commit()
-
-        logger.info(f"Deleted medication: {medication_id}")
+ 
+        logger.info(f"Hard deleted medication: {medication_id}")
         return True
 
 
@@ -305,23 +301,21 @@ def update_task(task_id: int, task_data: dict, tenant_id: str, user_id: str) -> 
 
 def delete_task(task_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete task
+    Hard delete task
     """
     with get_db_session() as session:
         task = session.query(CarePlanTask).filter(
             CarePlanTask.task_id == task_id,
-            CarePlanTask.tenant_id == tenant_id,
-            CarePlanTask.delete_flag != 'Y'
+            CarePlanTask.tenant_id == tenant_id
         ).first()
-
+ 
         if not task:
             return False
-
-        task.delete_flag = 'Y'
-        task.updated_by = user_id
+ 
+        session.delete(task)
         session.commit()
-
-        logger.info(f"Deleted task: {task_id}")
+ 
+        logger.info(f"Hard deleted task: {task_id}")
         return True
 
 
@@ -370,23 +364,21 @@ def list_precautions_by_plan(plan_id: int, tenant_id: str) -> List[dict]:
 
 def delete_precaution(precaution_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete precaution
+    Hard delete precaution
     """
     with get_db_session() as session:
         precaution = session.query(CarePlanPrecaution).filter(
             CarePlanPrecaution.precaution_id == precaution_id,
-            CarePlanPrecaution.tenant_id == tenant_id,
-            CarePlanPrecaution.delete_flag != 'Y'
+            CarePlanPrecaution.tenant_id == tenant_id
         ).first()
-
+ 
         if not precaution:
             return False
-
-        precaution.delete_flag = 'Y'
-        precaution.updated_by = user_id
+ 
+        session.delete(precaution)
         session.commit()
-
-        logger.info(f"Deleted precaution: {precaution_id}")
+ 
+        logger.info(f"Hard deleted precaution: {precaution_id}")
         return True
 
 

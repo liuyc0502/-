@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TypedDict
 
-from sqlalchemy import asc, desc, func, insert, select, update
+from sqlalchemy import asc,delete, desc, func, insert, select, update
 
 from .client import as_dict, get_db_session
 from .db_models import (
@@ -486,66 +486,54 @@ def delete_conversation(conversation_id: int, user_id: Optional[str] = None) -> 
         return conversation_result.rowcount > 0
 
 
-def soft_delete_all_conversations_by_user(user_id: str) -> int:
+def delete_all_conversations_by_user(user_id: str) -> int:
     """
-    Soft-delete all conversations and related records created by a user.
-
-    Returns the number of conversations marked as deleted.
+    Hard delete all conversations and related records created by a user.
+ 
+    Returns the number of conversations deleted.
     """
     with get_db_session() as session:
-        update_data = {
-            "delete_flag": 'Y',
-            "update_time": func.current_timestamp()
-        }
-
         # 1) Find all conversation ids created by the user
         conv_ids = session.scalars(
             select(ConversationRecord.conversation_id).where(
-                ConversationRecord.delete_flag == 'N',
                 ConversationRecord.created_by == user_id,
             )
         ).all()
-
+ 
         if not conv_ids:
             return 0
-
-        # 2) Mark conversations as deleted
+ 
+        # 2) Delete image sources
         session.execute(
-            update(ConversationRecord)
-            .where(ConversationRecord.conversation_id.in_(conv_ids), ConversationRecord.delete_flag == 'N')
-            .values(update_data)
+            delete(ConversationSourceImage)
+            .where(ConversationSourceImage.conversation_id.in_(conv_ids))
         )
-
-        # 3) Mark messages as deleted
+ 
+        # 3) Delete search sources
         session.execute(
-            update(ConversationMessage)
-            .where(ConversationMessage.conversation_id.in_(conv_ids), ConversationMessage.delete_flag == 'N')
-            .values(update_data)
+            delete(ConversationSourceSearch)
+            .where(ConversationSourceSearch.conversation_id.in_(conv_ids))
         )
-
-        # 4) Mark message units as deleted
+ 
+        # 4) Delete message units
         session.execute(
-            update(ConversationMessageUnit)
-            .where(ConversationMessageUnit.conversation_id.in_(conv_ids), ConversationMessageUnit.delete_flag == 'N')
-            .values(update_data)
+            delete(ConversationMessageUnit)
+            .where(ConversationMessageUnit.conversation_id.in_(conv_ids))
         )
-
-        # 5) Mark search sources as deleted
+ 
+        # 5) Delete messages
         session.execute(
-            update(ConversationSourceSearch)
-            .where(ConversationSourceSearch.conversation_id.in_(conv_ids), ConversationSourceSearch.delete_flag == 'N')
-            .values(update_data)
+            delete(ConversationMessage)
+            .where(ConversationMessage.conversation_id.in_(conv_ids))
         )
-
-        # 6) Mark image sources as deleted
+ 
+        # 6) Delete conversations
         session.execute(
-            update(ConversationSourceImage)
-            .where(ConversationSourceImage.conversation_id.in_(conv_ids), ConversationSourceImage.delete_flag == 'N')
-            .values(update_data)
-        )
+            delete(ConversationRecord)
+            .where(ConversationRecord.conversation_id.in_(conv_ids))
+            )
 
         return len(conv_ids)
-
 
 def update_message_opinion(message_id: int, opinion: str, user_id: Optional[str] = None) -> bool:
     """

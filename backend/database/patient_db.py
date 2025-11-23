@@ -130,23 +130,21 @@ def update_patient(patient_id: int, patient_data: dict, tenant_id: str, user_id:
  
 def delete_patient(patient_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete patient (set delete_flag='Y')
+    Hard delete patient record from database
     """
     with get_db_session() as session:
         patient = session.query(PatientInfo).filter(
             PatientInfo.patient_id == patient_id,
-            PatientInfo.tenant_id == tenant_id,
-            PatientInfo.delete_flag != 'Y'
+            PatientInfo.tenant_id == tenant_id
         ).first()
  
         if not patient:
             return False
  
-        patient.delete_flag = 'Y'
-        patient.updated_by = user_id
+        session.delete(patient)
         session.commit()
  
-        logger.info(f"Deleted patient: {patient_id}")
+        logger.info(f"Hard deleted patient: {patient_id}")
         return True
  
  
@@ -438,23 +436,21 @@ def update_todo_status(todo_id: int, status: str, tenant_id: str, user_id: str) 
 
 def delete_timeline(timeline_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete timeline (set delete_flag='Y')
+    Hard delete timeline record from database
     """
     with get_db_session() as session:
         timeline = session.query(PatientTimeline).filter(
             PatientTimeline.timeline_id == timeline_id,
             PatientTimeline.tenant_id == tenant_id,
-            PatientTimeline.delete_flag != 'Y'
         ).first()
 
         if not timeline:
             return False
 
-        timeline.delete_flag = 'Y'
-        timeline.updated_by = user_id
+        session.delete(timeline)
         session.commit()
 
-        logger.info(f"Deleted timeline: {timeline_id}")
+        logger.info(f"Hard deleted timeline: {timeline_id}")
         return True
 
  
@@ -463,63 +459,51 @@ def delete_timeline(timeline_id: int, tenant_id: str, user_id: str) -> bool:
 
 def delete_patient_todo(todo_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete patient todo (set delete_flag='Y')
+    Hard delete patient todo record from database
     """
     with get_db_session() as session:
         todo = session.query(PatientTodo).filter(
             PatientTodo.todo_id == todo_id,
             PatientTodo.tenant_id == tenant_id,
-            PatientTodo.delete_flag != 'Y'
         ).first()
 
         if not todo:
             return False
 
-        todo.delete_flag = 'Y'
-        todo.updated_by = user_id
+        session.delete(todo)
         session.commit()
 
-        logger.info(f"Deleted patient todo: {todo_id}")
+        logger.info(f"Hard deleted patient todo: {todo_id}")
         return True
 
 
 def delete_timeline_images(timeline_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Delete all images for a timeline (soft delete)
+    Hard delete all images for a timeline
     """
     with get_db_session() as session:
-        images = session.query(PatientMedicalImage).filter(
+        deleted_count = session.query(PatientMedicalImage).filter(
             PatientMedicalImage.timeline_id == timeline_id,
-            PatientMedicalImage.tenant_id == tenant_id,
-            PatientMedicalImage.delete_flag != 'Y'
-        ).all()
- 
-        for image in images:
-            image.delete_flag = 'Y'
-            image.updated_by = user_id
+            PatientMedicalImage.tenant_id == tenant_id
+        ).delete()
  
         session.commit()
-        logger.info(f"Deleted {len(images)} images for timeline: {timeline_id}")
+        logger.info(f"Hard deleted {deleted_count} images for timeline: {timeline_id}")
         return True
  
  
 def delete_timeline_metrics(timeline_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Delete all metrics for a timeline (soft delete)
+    Hard delete all metrics for a timeline
     """
     with get_db_session() as session:
-        metrics = session.query(PatientMetrics).filter(
+        deleted_count = session.query(PatientMetrics).filter(
             PatientMetrics.timeline_id == timeline_id,
-            PatientMetrics.tenant_id == tenant_id,
-            PatientMetrics.delete_flag != 'Y'
-        ).all()
- 
-        for metric in metrics:
-            metric.delete_flag = 'Y'
-            metric.updated_by = user_id
+            PatientMetrics.tenant_id == tenant_id
+        ).delete()
  
         session.commit()
-        logger.info(f"Deleted {len(metrics)} metrics for timeline: {timeline_id}")
+        logger.info(f"Hard deleted {deleted_count} metrics for timeline: {timeline_id}")
         return True
 
 
@@ -555,19 +539,14 @@ def create_attachment(attachment_data: dict, tenant_id: str, user_id: str) -> di
  
 def delete_timeline_attachments(timeline_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Delete all attachments for a timeline (soft delete)
+    Hard delete all attachments for a timeline
     """
     with get_db_session() as session:
-        attachments = session.query(PatientAttachment).filter(
+        deleted_count = session.query(PatientAttachment).filter(
             PatientAttachment.timeline_id == timeline_id,
-            PatientAttachment.tenant_id == tenant_id,
-            PatientAttachment.delete_flag != 'Y'
-        ).all()
+            PatientAttachment.tenant_id == tenant_id
+        ).delete()
  
-        for attachment in attachments:
-            attachment.delete_flag = 'Y'
-            attachment.updated_by = user_id
-
         session.commit()
-        logger.info(f"Deleted {len(attachments)} attachments for timeline: {timeline_id}")
+        logger.info(f"Hard deleted {deleted_count} attachments for timeline: {timeline_id}")
         return True

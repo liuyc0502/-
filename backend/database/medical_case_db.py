@@ -210,23 +210,21 @@ def update_medical_case(case_id: int, case_data: dict, tenant_id: str, user_id: 
 
 def delete_medical_case(case_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete medical case (set delete_flag='Y')
+    Hard delete medical case
     """
     with get_db_session() as session:
         case = session.query(MedicalCase).filter(
             MedicalCase.case_id == case_id,
-            MedicalCase.tenant_id == tenant_id,
-            MedicalCase.delete_flag != 'Y'
+            MedicalCase.tenant_id == tenant_id
         ).first()
-
+ 
         if not case:
             return False
-
-        case.delete_flag = 'Y'
-        case.updated_by = user_id
+ 
+        session.delete(case)
         session.commit()
-
-        logger.info(f"Deleted medical case: {case_id}")
+ 
+        logger.info(f"Hard deleted medical case: {case_id}")
         return True
 
 
@@ -445,21 +443,16 @@ def batch_create_lab_results(lab_results_data: List[dict], tenant_id: str, user_
 
 def delete_case_lab_results(case_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete all lab results for a case
+    Hard delete all lab results for a case
     """
     with get_db_session() as session:
-        lab_results = session.query(MedicalCaseLabResult).filter(
+        deleted_count = session.query(MedicalCaseLabResult).filter(
             MedicalCaseLabResult.case_id == case_id,
-            MedicalCaseLabResult.tenant_id == tenant_id,
-            MedicalCaseLabResult.delete_flag != 'Y'
-        ).all()
- 
-        for lab_result in lab_results:
-            lab_result.delete_flag = 'Y'
-            lab_result.updated_by = user_id
+            MedicalCaseLabResult.tenant_id == tenant_id
+        ).delete()
  
         session.commit()
-        logger.info(f"Deleted {len(lab_results)} lab results for case: {case_id}")
+        logger.info(f"Hard deleted {deleted_count} lab results for case: {case_id}")
         return True
  
  
@@ -496,41 +489,32 @@ def batch_create_case_images(images_data: List[dict], tenant_id: str, user_id: s
  
 def delete_case_images(case_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete all images for a case
+    Hard delete all images for a case
     """
     with get_db_session() as session:
-        images = session.query(MedicalCaseImage).filter(
+        deleted_count = session.query(MedicalCaseImage).filter(
             MedicalCaseImage.case_id == case_id,
-            MedicalCaseImage.tenant_id == tenant_id,
-            MedicalCaseImage.delete_flag != 'Y'
-        ).all()
- 
-        for image in images:
-            image.delete_flag = 'Y'
-            image.updated_by = user_id
+            MedicalCaseImage.tenant_id == tenant_id
+        ).delete()
  
         session.commit()
-        logger.info(f"Deleted {len(images)} images for case: {case_id}")
+        logger.info(f"Hard deleted {deleted_count} images for case: {case_id}")
+
         return True
  
  
 def delete_case_symptoms(case_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Soft delete all symptoms for a case
+    Hard delete all symptoms for a case
     """
     with get_db_session() as session:
-        symptoms = session.query(MedicalCaseSymptom).filter(
+        deleted_count = session.query(MedicalCaseSymptom).filter(
             MedicalCaseSymptom.case_id == case_id,
-            MedicalCaseSymptom.tenant_id == tenant_id,
-            MedicalCaseSymptom.delete_flag != 'Y'
-        ).all()
- 
-        for symptom in symptoms:
-            symptom.delete_flag = 'Y'
-            symptom.updated_by = user_id
+            MedicalCaseSymptom.tenant_id == tenant_id
+        ).delete()
  
         session.commit()
-        logger.info(f"Deleted {len(symptoms)} symptoms for case: {case_id}")
+        logger.info(f"Hard deleted {deleted_count} symptoms for case: {case_id}")
         return True
 
 
@@ -574,24 +558,22 @@ def add_favorite(case_id: int, user_id: str, tenant_id: str) -> dict:
 
 def remove_favorite(case_id: int, user_id: str, tenant_id: str) -> bool:
     """
-    Remove case from user favorites
+    Hard delete case from user favorites
     """
     with get_db_session() as session:
         favorite = session.query(MedicalCaseFavorite).filter(
             MedicalCaseFavorite.case_id == case_id,
             MedicalCaseFavorite.user_id == user_id,
-            MedicalCaseFavorite.tenant_id == tenant_id,
-            MedicalCaseFavorite.delete_flag != 'Y'
+            MedicalCaseFavorite.tenant_id == tenant_id
         ).first()
-
+ 
         if not favorite:
             return False
-
-        favorite.delete_flag = 'Y'
-        favorite.updated_by = user_id
+ 
+        session.delete(favorite)
         session.commit()
-
-        logger.info(f"Removed favorite for case: {case_id}, user: {user_id}")
+ 
+        logger.info(f"Hard deleted favorite for case: {case_id}, user: {user_id}")
         return True
 
 

@@ -161,11 +161,17 @@ def add_tool_field(tool_info):
             ToolInfo.tool_id == tool_info["tool_id"])
         tool = query.first()
 
+        # If tool not found, return tool_info as is
+        if tool is None:
+            logger.warning(f"Tool with tool_id {tool_info.get('tool_id')} not found in ToolInfo table")
+            return tool_info
+
         # add tool params
         tool_params = tool.params
-        for ele in tool_params:
-            param_name = ele["name"]
-            ele["default"] = tool_info["params"].get(param_name)
+        if tool_params:
+            for ele in tool_params:
+                param_name = ele["name"]
+                ele["default"] = tool_info["params"].get(param_name)
 
         tool_dict = as_dict(tool)
         tool_dict["params"] = tool_params
@@ -199,6 +205,9 @@ def check_tool_is_available(tool_id_list: List[int]):
     """
     Check if the tool is available
     """
+    if not tool_id_list:
+        return []
+    
     with get_db_session() as session:
         tools = session.query(ToolInfo).filter(ToolInfo.tool_id.in_(
             tool_id_list), ToolInfo.delete_flag != 'Y').all()

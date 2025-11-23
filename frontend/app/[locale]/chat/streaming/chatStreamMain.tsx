@@ -594,6 +594,7 @@ export function ChatStreamMain({
 
       {/* Input box in non-initial mode */}
       {processedMessages.finalMessages.length > 0 && (
+      <div className="px-4 md:px-12 pb-6">
         <AnimatePresence mode="wait">
           <motion.div
             key="regular-chat-input"
@@ -622,6 +623,7 @@ export function ChatStreamMain({
             />
           </motion.div>
         </AnimatePresence>
+        </div>
       )}
 
       {/* Add animation keyframes */}

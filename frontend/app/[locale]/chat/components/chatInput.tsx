@@ -559,7 +559,7 @@ export function ChatInput({
     if (!textarea) return;
 
     // Reset height
-    textarea.style.height = "60px";
+    textarea.style.height = "40px";
 
     // Get the scroll height as the new height
     const scrollHeight = textarea.scrollHeight;
@@ -1071,9 +1071,9 @@ export function ChatInput({
                 className="px-1 py-2 text-lg resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
                 rows={1}
                 style={{
-                  minHeight: "60px",
+                  minHeight: "40px",
                   overflow: "auto",
-                  fontSize: "18px",
+                  fontSize: "16px",
                 }}
               />
             </div>
