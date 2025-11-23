@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Input, Button } from "antd";
+import { Input, Button, Tooltip } from "antd";
 import { EditOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { conversationService } from "@/services/conversationService";
- 
+
 const { TextArea } = Input;
  
 interface SummaryEditorProps {
@@ -27,42 +27,81 @@ export function SummaryEditor({
   const [editValue, setEditValue] = useState(currentSummary);
   const [saving, setSaving] = useState(false);
   const textAreaRef = useRef<any>(null);
- 
+  // Track pending summary when no conversationId
+  const pendingSummaryRef = useRef<string | null>(null);
+  const prevConversationIdRef = useRef<number | null>(null);
+
   // Update summary when prop changes
   useEffect(() => {
     setSummary(currentSummary);
     setEditValue(currentSummary);
   }, [currentSummary]);
- 
+
   // Focus textarea when editing starts
   useEffect(() => {
     if (isEditing && textAreaRef.current) {
       textAreaRef.current.focus();
     }
   }, [isEditing]);
- 
+
+  // Auto-save pending summary when conversationId becomes available
+  useEffect(() => {
+    const savePendingSummary = async () => {
+      if (
+        conversationId &&
+        !prevConversationIdRef.current &&
+        pendingSummaryRef.current !== null
+      ) {
+        try {
+          await conversationService.updateSummary({
+            conversation_id: conversationId,
+            summary: pendingSummaryRef.current,
+          });
+
+          if (onSummaryChange) {
+            onSummaryChange(pendingSummaryRef.current);
+          }
+        } catch (error) {
+          console.error("Failed to save pending summary:", error);
+        }
+        pendingSummaryRef.current = null;
+      }
+      prevConversationIdRef.current = conversationId;
+    };
+
+    savePendingSummary();
+  }, [conversationId, onSummaryChange]);
+
   // Handle save
   const handleSave = async () => {
-    if (!conversationId) return;
- 
     const trimmedValue = editValue.trim();
- 
+
     // Only save if changed
     if (trimmedValue === summary) {
       setIsEditing(false);
       return;
     }
- 
+
+    // Update local state immediately
+    setSummary(trimmedValue);
+    setIsEditing(false);
+
+    // If no conversationId, store as pending
+    if (!conversationId) {
+      pendingSummaryRef.current = trimmedValue;
+      if (onSummaryChange) {
+        onSummaryChange(trimmedValue);
+      }
+      return;
+    }
+
     try {
       setSaving(true);
       await conversationService.updateSummary({
         conversation_id: conversationId,
         summary: trimmedValue,
       });
- 
-      setSummary(trimmedValue);
-      setIsEditing(false);
- 
+
       // Notify parent
       if (onSummaryChange) {
         onSummaryChange(trimmedValue);

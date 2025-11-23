@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Select, Tag } from "antd";
+import { useState, useEffect, useRef } from "react";
+import { Select, Tag, Tooltip } from "antd";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -57,29 +57,66 @@ export function ConversationStatus({
 }: ConversationStatusProps) {
   const [selectedStatus, setSelectedStatus] = useState<string>(currentStatus);
   const [loading, setLoading] = useState(false);
- 
+  // Track pending status when no conversationId
+  const pendingStatusRef = useRef<string | null>(null);
+  const prevConversationIdRef = useRef<number | null>(null);
+
   // Update selected status when prop changes
   useEffect(() => {
     setSelectedStatus(currentStatus);
   }, [currentStatus]);
- 
+
+  // Auto-save pending status when conversationId becomes available
+  useEffect(() => {
+    const savePendingStatus = async () => {
+      if (
+        conversationId &&
+        !prevConversationIdRef.current &&
+        pendingStatusRef.current
+      ) {
+        try {
+          await conversationService.updateStatus({
+            conversation_id: conversationId,
+            status: pendingStatusRef.current as any,
+          });
+
+          if (onStatusChange) {
+            onStatusChange(pendingStatusRef.current);
+          }
+        } catch (error) {
+          console.error("Failed to save pending status:", error);
+        }
+        pendingStatusRef.current = null;
+      }
+      prevConversationIdRef.current = conversationId;
+    };
+
+    savePendingStatus();
+  }, [conversationId, onStatusChange]);
+
   // Handle status change
   const handleChange = async (value: string) => {
+    // Update local state immediately
+    setSelectedStatus(value);
+
+    // If no conversationId, store as pending
     if (!conversationId) {
+      pendingStatusRef.current = value;
+      if (onStatusChange) {
+        onStatusChange(value);
+      }
       return;
     }
- 
+
     try {
       setLoading(true);
- 
+
       // Call API to update status
       await conversationService.updateStatus({
         conversation_id: conversationId,
         status: value as any,
       });
- 
-     setSelectedStatus(value);
- 
+
       // Notify parent component
       if (onStatusChange) {
         onStatusChange(value);
@@ -106,24 +143,32 @@ export function ConversationStatus({
   const currentConfig =
     STATUS_CONFIG[selectedStatus as StatusType] || STATUS_CONFIG.active;
  
+  // Show hint when no conversation exists and status changed
+  const showPendingHint = !conversationId && selectedStatus !== "active";
+
   return (
-    <Select
-      value={selectedStatus}
-      onChange={handleChange}
-      options={options}
-      style={{ minWidth: 160 }}
-      disabled={disabled || !conversationId || loading}
-      loading={loading}
-      tagRender={(props) => {
-        const { value } = props;
-        const config =
-          STATUS_CONFIG[value as StatusType] || STATUS_CONFIG.active;
-        return (
-          <Tag color={config.color} icon={config.icon}>
-            {config.label}
-          </Tag>
-        );
-      }}
-    />
+    <Tooltip
+      title={showPendingHint ? "Will be saved when conversation starts" : ""}
+      open={showPendingHint ? undefined : false}
+    >
+      <Select
+        value={selectedStatus}
+        onChange={handleChange}
+        options={options}
+        style={{ minWidth: 160 }}
+        disabled={disabled || loading}
+        loading={loading}
+        tagRender={(props) => {
+          const { value } = props;
+          const config =
+            STATUS_CONFIG[value as StatusType] || STATUS_CONFIG.active;
+          return (
+            <Tag color={config.color} icon={config.icon}>
+              {config.label}
+            </Tag>
+          );
+        }}
+      />
+    </Tooltip>
   );
 }

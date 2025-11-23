@@ -212,31 +212,28 @@ export function ChatHeader({
                     currentPatientId={patientId}
                     currentPatientName={patientName}
                     onPatientChange={onPatientChange}
-                    disabled={!conversationId}
                   />
                 </div>
- 
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[#999]">状态</span>
                   <ConversationStatus
                     conversationId={conversationId || null}
                     currentStatus={conversationStatus}
                     onStatusChange={onStatusChange}
-                    disabled={!conversationId}
                   />
                 </div>
- 
+
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[#999]">标签</span>
                   <TagsManager
                     conversationId={conversationId || null}
                     currentTags={conversationTags}
                     onTagsChange={onTagsChange}
-                    disabled={!conversationId}
                   />
                 </div>
               </div>
- 
+
               {/* Row 2: Summary */}
               <div className="flex items-center gap-2 mt-2 w-full max-w-lg">
                 <span className="text-xs text-[#999] flex-shrink-0">摘要</span>
@@ -245,7 +242,6 @@ export function ChatHeader({
                     conversationId={conversationId || null}
                     currentSummary={conversationSummary}
                     onSummaryChange={onSummaryChange}
-                    disabled={!conversationId}
                     placeholder="点击添加对话摘要..."
                   />
                 </div>
