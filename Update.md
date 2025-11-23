@@ -1,4 +1,27 @@
 # 更新日志
+## 2025-11-23
+
+### 清除ImageAnnotator.tsx文件空行并创建新分支
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/remove-blank-lines-20251123`
+- 📦 **提交更改**: 21 个文件，118475 行新增，1145 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+- `frontend/components/image-annotation/ImageAnnotator.tsx` (更新 - 清除所有空行，优化代码格式)
+
+**功能说明**:
+- 🧹 **代码清理**: 清除 ImageAnnotator.tsx 文件中的所有空行和空白行，使代码更紧凑
+- 📝 **格式优化**: 统一代码格式，提升代码可读性
+
+**分支信息**:
+- 分支名称: `feature/remove-blank-lines-20251123`
+- 远程仓库: `origin/feature/remove-blank-lines-20251123`
+- 提交 ID: `aebfca6b`
+
+---
+
 ## 2025-11-22
 
 ### 修复时间线附件删除功能错误
