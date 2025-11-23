@@ -115,7 +115,7 @@ export function PatientSelector({
         label: (
           <span>
             <UserOutlined style={{ marginRight: 8 }} />
-            {patient.name} ({patient.patient_id})
+            {patient.name} ({patient.medical_record_no || patient.patient_id})
           </span>
         ),
       })),
