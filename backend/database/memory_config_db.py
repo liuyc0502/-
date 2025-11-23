@@ -86,17 +86,13 @@ def update_config_by_id(config_id: int, update_data: Dict[str, Any]) -> bool:
             return False
 
 
-def soft_delete_all_configs_by_user_id(user_id: str, actor: str) -> bool:
-    """Soft-delete all memory user config records for a user."""
+def delete_all_configs_by_user_id(user_id: str, actor: str) -> bool:
+    """Hard delete all memory user config records for a user."""
     with get_db_session() as session:
         try:
             session.query(MemoryUserConfig).filter(
-                MemoryUserConfig.user_id == user_id,
-                MemoryUserConfig.delete_flag == "N",
-            ).update({
-                "delete_flag": "Y",
-                "updated_by": actor,
-            })
+                MemoryUserConfig.user_id == user_id
+            ).delete()
             session.commit()
             return True
         except Exception:
