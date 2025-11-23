@@ -49,6 +49,10 @@ export interface AgentConfigModalProps {
   mainAgentMaxStep?: number;
   onModelChange?: (value: string, modelId?: number) => void;
   onMaxStepChange?: (value: number | null) => void;
+  // VLM (Visual Language Model) props
+  vlmModel?: string;
+  vlmModelId?: number | null;
+  onVLMModelChange?: (value: string | null, modelId?: number | null) => void;
   onSavePrompt?: () => void;
   onExpandCard?: (index: number) => void;
   isGeneratingAgent?: boolean;
@@ -90,6 +94,10 @@ export default function AgentConfigModal({
   mainAgentMaxStep = 5,
   onModelChange,
   onMaxStepChange,
+  // VLM props
+  vlmModel = "",
+  vlmModelId = null,
+  onVLMModelChange,
   onExpandCard,
   isGeneratingAgent = false,
   // Add new props for action buttons
@@ -141,20 +149,29 @@ export default function AgentConfigModal({
   // Local fallback for selected main model display name (used when parent has not yet propagated)
   const [localMainAgentModel, setLocalMainAgentModel] = useState<string>("");
 
-  // Load LLM models on component mount
+  // Add state for VLM models
+  const [vlmModels, setVlmModels] = useState<ModelOption[]>([]);
+  // Local fallback for selected VLM display name
+  const [localVlmModel, setLocalVlmModel] = useState<string>(vlmModel || "");
+
+  // Load LLM and VLM models on component mount
   useEffect(() => {
-    const loadLLMModels = async () => {
+    const loadModels = async () => {
       try {
-        const models = await modelService.getLLMModels();
-        setLlmModels(models);
+        const [llmList, vlmList] = await Promise.all([
+          modelService.getLLMModels(),
+          modelService.getVLMModels(),
+        ]);
+        setLlmModels(llmList);
+        setVlmModels(vlmList);
       } catch (error) {
-        log.error("Failed to load LLM models:", error);
+        log.error("Failed to load models:", error);
         setLlmModels([]);
-      } finally {
+        setVlmModels([]);
       }
     };
 
-    loadLLMModels();
+    loadModels();
   }, []);
 
   // Default to globally configured model when creating a new agent
@@ -586,6 +603,51 @@ export default function AgentConfigModal({
         {llmModels.length === 0 && (
           <p className="mt-1 text-sm text-gray-500">
             {t("businessLogic.config.error.noAvailableModels")}
+          </p>
+        )}
+      </div>
+
+      {/* VLM Model Selection (Optional) */}
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("businessLogic.config.vlmModel", { defaultValue: "视觉模型 (可选)" })}:
+        </label>
+        <Select
+          value={
+            isCreatingNewAgent
+              ? (localVlmModel || vlmModel || undefined)
+              : (vlmModel || localVlmModel || undefined)
+          }
+          onChange={(value, option) => {
+            const modelId = option && 'key' in option ? Number(option.key) : undefined;
+            setLocalVlmModel(value || "");
+            onVLMModelChange?.(value || null, modelId || null);
+          }}
+          size="large"
+          disabled={false}
+          style={{ width: "100%" }}
+          placeholder={t("businessLogic.config.vlmModelPlaceholder", { defaultValue: "选择视觉模型用于图像分析（可选）" })}
+          allowClear
+          onClear={() => {
+            setLocalVlmModel("");
+            onVLMModelChange?.(null, null);
+          }}
+        >
+          {vlmModels.map((model) => (
+            <Select.Option
+              key={model.id}
+              value={model.displayName}
+              disabled={model.connect_status !== "available"}
+            >
+              <div className="flex items-center justify-between">
+                <span>{model.displayName}</span>
+              </div>
+            </Select.Option>
+          ))}
+        </Select>
+        {vlmModels.length === 0 && (
+          <p className="mt-1 text-sm text-gray-500">
+            {t("businessLogic.config.noVlmModels", { defaultValue: "暂无可用的视觉模型，请先在模型管理中配置" })}
           </p>
         )}
       </div>

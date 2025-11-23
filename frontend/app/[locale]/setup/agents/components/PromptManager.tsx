@@ -191,6 +191,10 @@ export interface PromptManagerProps {
   mainAgentModel?: string;
   mainAgentModelId?: number | null;
   mainAgentMaxStep?: number;
+  // VLM (Visual Language Model) props
+  vlmModel?: string;
+  vlmModelId?: number | null;
+  onVLMModelChange?: (value: string | null, modelId?: number | null) => void;
 
   // Business Logic Model (independent from main agent model)
   businessLogicModel?: string | null;
@@ -247,6 +251,9 @@ export default function PromptManager({
   mainAgentModel = "",
   mainAgentModelId = null,
   mainAgentMaxStep = 5,
+  vlmModel = "",
+  vlmModelId = null,
+  onVLMModelChange,
   businessLogicModel = null,
   businessLogicModelId = null,
   isEditingMode = false,
@@ -640,6 +647,9 @@ export default function PromptManager({
             mainAgentModel={mainAgentModel}
             mainAgentModelId={mainAgentModelId}
             mainAgentMaxStep={mainAgentMaxStep}
+            vlmModel={vlmModel}
+            vlmModelId={vlmModelId}
+            onVLMModelChange={onVLMModelChange}
             onModelChange={onModelChange}
             onMaxStepChange={onMaxStepChange}
             onSavePrompt={handleSavePrompt}

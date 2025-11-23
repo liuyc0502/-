@@ -471,6 +471,39 @@ export const modelService = {
       return [];
     }
   },
+
+  // Get VLM (Visual Language Model) list for image analysis
+  getVLMModels: async (): Promise<ModelOption[]> => {
+    try {
+      // VLM models are fetched from custom models filtered by type
+      const response = await fetch(API_ENDPOINTS.model.customModelList, {
+        headers: getAuthHeaders(),
+      });
+      const result = await response.json();
+
+      if (response.status === STATUS_CODES.SUCCESS && result.data) {
+        // Filter for VLM type models only
+        return result.data
+          .filter((model: any) => model.model_type === MODEL_TYPES.VLM)
+          .map((model: any) => ({
+            id: model.model_id || model.id,
+            name: model.model_name || model.name,
+            type: MODEL_TYPES.VLM,
+            maxTokens: model.max_tokens || 0,
+            source: model.model_factory || MODEL_SOURCES.OPENAI_API_COMPATIBLE,
+            apiKey: model.api_key || "",
+            apiUrl: model.base_url || "",
+            displayName: model.display_name || model.model_name || model.name,
+            connect_status: model.connect_status as ModelConnectStatus,
+          }));
+      }
+
+      return [];
+    } catch (error) {
+      log.warn("Failed to load VLM models:", error);
+      return [];
+    }
+  },
 };
 
 // -------- Provider detection helpers (for UI rendering) --------

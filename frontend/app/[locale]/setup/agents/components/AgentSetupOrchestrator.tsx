@@ -42,6 +42,11 @@ export default function AgentSetupOrchestrator({
   setMainAgentModelId,
   mainAgentMaxStep,
   setMainAgentMaxStep,
+  // VLM (Visual Language Model) props
+  vlmModel,
+  setVlmModel,
+  vlmModelId,
+  setVlmModelId,
   businessLogicModel,
   setBusinessLogicModel,
   businessLogicModelId,
@@ -456,7 +461,8 @@ export default function AgentSetupOrchestrator({
             businessLogicModelId ?? undefined,
             agentCategory || undefined,
             agentRoleCategory || "tool",
-            effectivePortalType
+            effectivePortalType,
+            vlmModelId ?? undefined
           );
         } else {
           result = await updateAgent(
@@ -477,7 +483,8 @@ export default function AgentSetupOrchestrator({
             businessLogicModelId ?? undefined,
             agentCategory || undefined,
             agentRoleCategory || "tool",
-            effectivePortalType
+            effectivePortalType,
+            vlmModelId ?? undefined
           );
         }
 
@@ -600,6 +607,9 @@ export default function AgentSetupOrchestrator({
       setMainAgentModel(agentDetail.model);
       setMainAgentModelId(agentDetail.model_id);
       setMainAgentMaxStep(agentDetail.max_step);
+      // Load VLM model if available
+      setVlmModel?.(agentDetail.vlm_model_id ? String(agentDetail.vlm_model_id) : null);
+      setVlmModelId?.(agentDetail.vlm_model_id || null);
       setBusinessLogic(agentDetail.business_description || "");
       setBusinessLogicModel(agentDetail.business_logic_model_name || null);
       setBusinessLogicModelId(agentDetail.business_logic_model_id || null);
@@ -1029,6 +1039,12 @@ export default function AgentSetupOrchestrator({
               mainAgentModel={mainAgentModel ?? undefined}
               mainAgentModelId={mainAgentModelId}
               mainAgentMaxStep={mainAgentMaxStep}
+              vlmModel={vlmModel ?? undefined}
+              vlmModelId={vlmModelId}
+              onVLMModelChange={(value: string | null, modelId?: number | null) => {
+                setVlmModel?.(value);
+                setVlmModelId?.(modelId ?? null);
+              }}
               onModelChange={(value: string, modelId?: number) =>
                 handleModelChange(value, modelId)
               }

@@ -326,7 +326,8 @@ export const updateAgent = async (
   businessLogicModelId?: number,
   category?: string,
   agentRoleCategory?: string,
-  portalType?: string | null
+  portalType?: string | null,
+  vlmModelId?: number | null
 ) => {
   try {
     const response = await fetch(API_ENDPOINTS.agent.update, {
@@ -339,6 +340,7 @@ export const updateAgent = async (
         display_name: displayName,
         model_name: modelName,
         model_id: modelId,
+        vlm_model_id: vlmModelId,
         max_steps: maxSteps,
         provide_run_summary: provideRunSummary,
         enabled: enabled,
@@ -509,6 +511,7 @@ export const searchAgentInfo = async (agentId: number) => {
       description: data.description,
       model: data.model_name,
       model_id: data.model_id,
+      vlm_model_id: data.vlm_model_id,
       max_step: data.max_steps,
       duty_prompt: data.duty_prompt,
       constraint_prompt: data.constraint_prompt,

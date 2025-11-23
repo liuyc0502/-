@@ -12,6 +12,7 @@ export interface Agent {
   description: string;
   model: string;
   model_id?: number;
+  vlm_model_id?: number | null; // VLM (Visual Language Model) ID for image analysis
   max_step: number;
   provide_run_summary: boolean;
   tools: Tool[];
@@ -100,6 +101,11 @@ export interface AgentSetupOrchestratorProps {
   setMainAgentModelId: (value: number | null) => void;
   mainAgentMaxStep: number;
   setMainAgentMaxStep: (value: number) => void;
+  // VLM (Visual Language Model) props
+  vlmModel?: string | null;
+  setVlmModel?: (value: string | null) => void;
+  vlmModelId?: number | null;
+  setVlmModelId?: (value: number | null) => void;
   businessLogicModel: string | null;
   setBusinessLogicModel: (value: string | null) => void;
   businessLogicModelId: number | null;

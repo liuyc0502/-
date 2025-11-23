@@ -49,6 +49,9 @@ export default function AgentConfig() {
   const [mainAgentModel, setMainAgentModel] = useState<string | null>(null);
   const [mainAgentModelId, setMainAgentModelId] = useState<number | null>(null);
   const [mainAgentMaxStep, setMainAgentMaxStep] = useState(5);
+  // VLM (Visual Language Model) state
+  const [vlmModel, setVlmModel] = useState<string | null>(null);
+  const [vlmModelId, setVlmModelId] = useState<number | null>(null);
   const [businessLogicModel, setBusinessLogicModel] = useState<string | null>(null);
   const [businessLogicModelId, setBusinessLogicModelId] = useState<number | null>(null);
   const [tools, setTools] = useState<any[]>([]);
@@ -433,6 +436,10 @@ export default function AgentConfig() {
               setMainAgentModelId={setMainAgentModelId}
               mainAgentMaxStep={mainAgentMaxStep}
               setMainAgentMaxStep={setMainAgentMaxStep}
+              vlmModel={vlmModel}
+              setVlmModel={setVlmModel}
+              vlmModelId={vlmModelId}
+              setVlmModelId={setVlmModelId}
               businessLogicModel={businessLogicModel}
               setBusinessLogicModel={setBusinessLogicModel}
               businessLogicModelId={businessLogicModelId}

@@ -215,6 +215,7 @@ class AgentInfo(TableBase):
     category = Column(String(50), doc="Agent category/type (e.g., diagnosis, analysis, teaching, consultation)")
     agent_role_category = Column(String(50), doc="Agent role category: 'portal_main' for portal main agents, 'tool' for tool agents", default='tool')
     portal_type = Column(String(50), doc="Portal type for main agents: 'doctor', 'student', 'patient', or null for tool agents")
+    vlm_model_id = Column(Integer, doc="VLM (Visual Language Model) ID, optional foreign key reference to model_record_t.model_id for image analysis")
 
 class ToolInstance(TableBase):
     """

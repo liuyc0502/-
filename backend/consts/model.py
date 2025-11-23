@@ -217,6 +217,7 @@ class AgentInfoRequest(BaseModel):
     category: Optional[str] = None
     agent_role_category: Optional[str] = None
     portal_type: Optional[str] = None
+    vlm_model_id: Optional[int] = None
 
 
 class AgentIDRequest(BaseModel):
