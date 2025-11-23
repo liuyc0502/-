@@ -8,6 +8,7 @@ import {
   Square,
   X,
   AlertCircle,
+  PenTool,
 } from "lucide-react";
 import {
   AiFillFileImage,
@@ -333,6 +334,8 @@ interface ChatInputProps {
   portalConfig?: PortalChatConfig;
   userDisplayName?: string;
   hideAgentSelector?: boolean;
+  // Image annotation callback - called when user wants to annotate an image
+  onAnnotateImage?: (imageUrl: string, attachment: FilePreview) => void;
 }
 
 export function ChatInput({
@@ -354,6 +357,7 @@ export function ChatInput({
   portalConfig,
   userDisplayName,
   hideAgentSelector = false,
+  onAnnotateImage,
 }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState<
@@ -945,7 +949,7 @@ export function ChatInput({
                       </div>
                       <div className="flex-1 overflow-hidden">
                         <span
-                          className="text-sm truncate block max-w-[110px] font-medium"
+                          className="text-sm truncate block max-w-[80px] font-medium"
                           title={attachment.file.name}
                         >
                           {attachment.file.name || t("chatInput.image")}
@@ -954,6 +958,19 @@ export function ChatInput({
                           {formatFileSize(attachment.file.size)}
                         </span>
                       </div>
+                      {/* Annotate button for images */}
+                      {onAnnotateImage && attachment.previewUrl && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAnnotateImage(attachment.previewUrl!, attachment);
+                          }}
+                          className="p-1.5 bg-blue-500 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600"
+                          title={t("chatInput.annotateImage", { defaultValue: "Annotate" })}
+                        >
+                          <PenTool className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 w-full">

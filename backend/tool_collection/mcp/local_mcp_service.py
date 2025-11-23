@@ -16,6 +16,7 @@ from tool_collection.mcp.diagnostic_assistance_tools import diagnostic_tools
 from tool_collection.mcp.pathology_image_tools import pathology_image_tools
 from tool_collection.mcp.image_annotation_tools import annotation_tools
 from tool_collection.mcp.multimodal_tools import multimodal_tools
+from tool_collection.mcp.ai_summary_tools import ai_summary_tools
 
 
 # Export all tool servers for registration
@@ -28,7 +29,8 @@ __all__ = [
     "diagnostic_tools",
     "pathology_image_tools",
     "annotation_tools",
-    "multimodal_tools"
+    "multimodal_tools",
+    "ai_summary_tools"
 ]
 
 
@@ -134,6 +136,18 @@ TOOL_COLLECTIONS = {
             "image_to_text_description",
             "similar_image_search"
         ]
+    },
+    "ai_summary": {
+        "server": ai_summary_tools,
+        "description": "6 tools for AI-powered content summarization",
+        "tools": [
+            "generate_conversation_summary",
+            "generate_patient_summary",
+            "generate_case_summary",
+            "generate_report_interpretation",
+            "generate_image_analysis_summary",
+            "batch_generate_summaries"
+        ]
     }
 }
 
@@ -148,7 +162,8 @@ def get_all_tool_servers():
         diagnostic_tools,
         pathology_image_tools,
         annotation_tools,
-        multimodal_tools
+        multimodal_tools,
+        ai_summary_tools
     ]
 
 
