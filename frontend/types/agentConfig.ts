@@ -23,7 +23,8 @@ export interface Agent {
   business_logic_model_id?: number;
   is_available?: boolean;
   sub_agent_id_list?: number[];
-  agent_category?: string; // 'portal_main' or 'tool'
+  agent_category?: string; // Agent type category: '诊断', '分析', '教学', etc.
+  agent_role_category?: string; // Role category: 'portal_main' or 'tool'
   portal_type?: string | null; // 'doctor', 'student', 'patient' or null
 }
 

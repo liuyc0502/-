@@ -520,7 +520,8 @@ export const searchAgentInfo = async (agentId: number) => {
       enabled: data.enabled,
       is_available: data.is_available,
       sub_agent_id_list: data.sub_agent_id_list || [], // Add sub_agent_id_list
-      agent_category: data.agent_category,
+      agent_category: data.category,
+      agent_role_category: data.agent_role_category,
       portal_type: data.portal_type,
       tools: data.tools
         ? data.tools.map((tool: any) => {

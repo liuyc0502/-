@@ -590,7 +590,7 @@ export default function AgentSetupOrchestrator({
       setAgentName?.(agentDetail.name || "");
       setAgentDescription?.(agentDetail.description || "");
       setAgentDisplayName?.(agentDetail.display_name || "");
-      setAgentRoleCategory(agentDetail.agent_category || "tool");
+      setAgentRoleCategory(agentDetail.agent_role_category || "tool");
       setPortalType(agentDetail.portal_type || null);
 
       // Notify external editing state change (use complete data)
