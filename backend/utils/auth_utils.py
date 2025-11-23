@@ -393,3 +393,29 @@ def get_current_user_info(authorization: Optional[str] = None, request: Request 
     user_id, tenant_id = get_current_user_id(authorization)
     language = get_user_language(request)
     return user_id, tenant_id, language
+
+
+# ---------------------------------------------------------------------------
+# Default ID helpers for MCP tools and background tasks
+# ---------------------------------------------------------------------------
+
+def get_default_tenant_id() -> str:
+    """
+    Get default tenant ID for use in MCP tools and background tasks
+    where no authorization context is available.
+
+    Returns:
+        str: Default tenant ID from configuration
+    """
+    return DEFAULT_TENANT_ID
+
+
+def get_default_user_id() -> str:
+    """
+    Get default user ID for use in MCP tools and background tasks
+    where no authorization context is available.
+
+    Returns:
+        str: Default user ID from configuration
+    """
+    return DEFAULT_USER_ID
