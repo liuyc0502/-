@@ -289,6 +289,8 @@ async def get_patient_todos_tool(
     except Exception as e:
         logger.error(f"Error getting patient todos: {str(e)}")
         return {"error": str(e)}
+
+
 @patient_tools.tool(
     name="get_patient_examination_reports",
     description="Get examination reports with AI interpretations for a patient. Use when doctor asks about pathology reports, test results, or needs to see detailed examination findings."
