@@ -85,34 +85,25 @@ def update_knowledge_record(query: Dict[str, Any]) -> bool:
 
 def delete_knowledge_record(query: Dict[str, Any]) -> bool:
     """
-    Delete a knowledge base record (soft delete)
+    Hard delete a knowledge base record
 
     Args:
         query: Dictionary containing delete data, must include:
             - index_name: Knowledge base name
-            - user_id: Optional user ID for updated_by field
 
     Returns:
         bool: Whether the operation was successful
     """
     try:
         with get_db_session() as session:
-            # Find the record to update
             record = session.query(KnowledgeRecord).filter(
-                KnowledgeRecord.index_name == query['index_name'],
-                KnowledgeRecord.delete_flag != 'Y'
+                KnowledgeRecord.index_name == query['index_name']
             ).first()
 
             if not record:
                 return False
 
-            # Update record for soft delete
-            record.delete_flag = 'Y'
-            record.update_time = func.current_timestamp()
-            if query.get('user_id'):
-                record.updated_by = query['user_id']
-
-            session.flush()
+            session.delete(record)
             session.commit()
             return True
     except SQLAlchemyError as e:

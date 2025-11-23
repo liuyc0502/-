@@ -181,44 +181,37 @@ def delete_record(
     tenant_id: str
 ) -> bool:
     """
-    Soft delete a learning record
+    Hard delete a learning record
     """
     with get_db_session() as session:
         record = session.query(DoctorLearningRecord).filter(
             DoctorLearningRecord.record_id == record_id,
             DoctorLearningRecord.user_id == user_id,
-            DoctorLearningRecord.tenant_id == tenant_id,
-            DoctorLearningRecord.delete_flag != 'Y'
+            DoctorLearningRecord.tenant_id == tenant_id
         ).first()
-        
+
         if not record:
             return False
-        
-        record.delete_flag = 'Y'
-        record.updated_by = user_id
+
+        session.delete(record)
         session.commit()
-        
-        logger.info(f"Deleted learning record: {record_id}")
+
+        logger.info(f"Hard deleted learning record: {record_id}")
         return True
 
 
 def clear_all_records(user_id: str, tenant_id: str) -> bool:
     """
-    Soft delete all learning records for a user
+    Hard delete all learning records for a user
     """
     with get_db_session() as session:
-        records = session.query(DoctorLearningRecord).filter(
+        deleted_count = session.query(DoctorLearningRecord).filter(
             DoctorLearningRecord.user_id == user_id,
-            DoctorLearningRecord.tenant_id == tenant_id,
-            DoctorLearningRecord.delete_flag != 'Y'
-        ).all()
-        
-        for record in records:
-            record.delete_flag = 'Y'
-            record.updated_by = user_id
-        
+            DoctorLearningRecord.tenant_id == tenant_id
+        ).delete()
+
         session.commit()
-        
-        logger.info(f"Cleared all learning records for user: {user_id}")
+
+        logger.info(f"Hard deleted {deleted_count} learning records for user: {user_id}")
         return True
 

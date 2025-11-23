@@ -57,16 +57,12 @@ def insert_config(insert_data: Dict[str, Any]) -> bool:
 
 
 def delete_config_by_config_id(config_id: int, updated_by: str) -> bool:
-    """Soft-delete a record by id, set delete_flag='Y' and updated_by."""
+    """Hard delete a record by id."""
     with get_db_session() as session:
         try:
             session.query(MemoryUserConfig).filter(
-                MemoryUserConfig.config_id == config_id,
-                MemoryUserConfig.delete_flag == "N",
-            ).update({
-                "delete_flag": "Y",
-                "updated_by": updated_by,
-            })
+                MemoryUserConfig.config_id == config_id
+            ).delete()
             session.commit()
             return True
         except Exception:
