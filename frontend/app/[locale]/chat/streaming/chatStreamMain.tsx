@@ -594,15 +594,16 @@ export function ChatStreamMain({
 
       {/* Input box in non-initial mode */}
       {processedMessages.finalMessages.length > 0 && (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key="regular-chat-input"
-            initial="initial"
-            animate="animate"
-            variants={chatInputVariants}
-            transition={chatInputTransition}
-          >
-            <ChatInput
+        <div className="px-4 md:px-12 pb-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="regular-chat-input"
+              initial="initial"
+              animate="animate"
+              variants={chatInputVariants}
+              transition={chatInputTransition}
+            >
+              <ChatInput
               input={input}
               isLoading={isLoading}
               isStreaming={isStreaming}
@@ -620,8 +621,9 @@ export function ChatStreamMain({
               userDisplayName={userDisplayName}
               hideAgentSelector={hideAgentSelector}
             />
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       )}
 
       {/* Add animation keyframes */}
