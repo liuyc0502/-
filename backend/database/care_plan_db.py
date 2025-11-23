@@ -9,6 +9,7 @@ from database.db_models import (
     CarePlan, CarePlanMedication, CarePlanTask,
     CarePlanPrecaution, CarePlanCompletion
 )
+from database.patient_db import get_patient_by_medical_record_no
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +63,31 @@ def get_care_plan_by_id(plan_id: int, tenant_id: str) -> Optional[dict]:
         return None
 
 
-def list_care_plans_by_patient(patient_id: int, tenant_id: str,
+def list_care_plans_by_patient(medical_record_no: str, tenant_id: str,
                                 status: Optional[str] = None) -> List[dict]:
     """
-    List all care plans for a specific patient
+    List all care plans for a specific patient by medical record number
+    
+    Args:
+        medical_record_no: Patient's medical record number (病历号)
+        tenant_id: Tenant ID for data isolation
+        status: Optional status filter (active/completed/paused)
+    
+    Returns:
+        List of care plans for the patient
     """
+    # First, get patient_id from medical_record_no
+    patient = get_patient_by_medical_record_no(medical_record_no, tenant_id)
+    if not patient:
+        logger.warning(f"Patient not found with medical_record_no: {medical_record_no}")
+        return []
+    
+    patient_id = patient.get('patient_id')
+    if not patient_id:
+        logger.warning(f"Patient ID not found for medical_record_no: {medical_record_no}")
+        return []
+    
+    # Then query care plans by patient_id
     with get_db_session() as session:
         query = session.query(CarePlan).filter(
             CarePlan.patient_id == patient_id,
