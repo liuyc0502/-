@@ -5,6 +5,7 @@ Patient Management Tools - MCP Format
 import logging
 from typing import Optional, List, Dict, Any
 from fastmcp import FastMCP
+from consts.const import DEFAULT_TENANT_ID
 from database.patient_db import (
     get_patient_by_id,
     get_patient_timeline,
@@ -12,7 +13,7 @@ from database.patient_db import (
     get_patient_todos,
     list_patients
 )
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
 patient_tools = FastMCP("patient_management")
 
 @patient_tools.tool(
@@ -21,14 +22,14 @@ patient_tools = FastMCP("patient_management")
 )
 async def get_patient_basic_info(
     patient_id: int,
-    tenant_id: str,
+    tenant_id: str = DEFAULT_TENANT_ID,
     include_summary: bool = True
 ) -> Dict[str, Any]:
     """
     Get patient basic information including demographics and diagnosis.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
         include_summary: Whether to include diagnosis summary
     Returns:
         Patient information dictionary
@@ -66,14 +67,14 @@ async def get_patient_basic_info(
 )
 async def get_patient_timeline_tool(
     patient_id: int,
-    tenant_id: str,
+    tenant_id: str = DEFAULT_TENANT_ID,
     include_details: bool = False
 ) -> Dict[str, Any]:
     """
     Get patient's complete diagnostic and treatment timeline.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
         include_details: Whether to include detailed information for each stage
     Returns:
         Timeline information with stages
@@ -121,7 +122,7 @@ async def get_patient_timeline_tool(
 )
 async def get_patient_medical_images(
     patient_id: int,
-    tenant_id: str,
+    tenant_id: str = DEFAULT_TENANT_ID,
     image_type: Optional[str] = None,
     limit: int = 20
 ) -> Dict[str, Any]:
@@ -129,7 +130,7 @@ async def get_patient_medical_images(
     Get patient's medical images including pathology slides, CT, X-ray, MRI, etc.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
         image_type: Filter by image type (病理切片/X光/CT/MRI/临床照片/超声)
         limit: Maximum number of images to return
     Returns:
@@ -172,14 +173,14 @@ async def get_patient_medical_images(
 )
 async def analyze_patient_metrics(
     patient_id: int,
-    tenant_id: str,
+    tenant_id: str = DEFAULT_TENANT_ID,
     metric_names: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Analyze patient's lab results and metric trends.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
         metric_names: Specific metrics to analyze (e.g., ["ESR", "CRP", "RF"])
     Returns:
         Metrics analysis with trends
@@ -247,7 +248,7 @@ async def analyze_patient_metrics(
 )
 async def get_patient_todos_tool(
     patient_id: int,
-    tenant_id: str,
+    tenant_id: str = DEFAULT_TENANT_ID,
     status: Optional[str] = None,
     priority: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -255,7 +256,7 @@ async def get_patient_todos_tool(
     Get patient's pending todos and tasks.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
         status: Filter by status (pending/completed/overdue)
         priority: Filter by priority (high/medium/low)
     Returns:
@@ -297,7 +298,7 @@ async def get_patient_todos_tool(
 )
 async def get_patient_examination_reports(
     patient_id: int,
-    tenant_id: str,
+    tenant_id: str = DEFAULT_TENANT_ID,
     report_type: Optional[str] = None,
     status: Optional[str] = None,
     limit: int = 10
@@ -306,7 +307,7 @@ async def get_patient_examination_reports(
     Get patient's examination reports.
     Args:
         patient_id: The unique patient identifier
-        tenant_id: Tenant ID for data isolation
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
         report_type: Filter by report type
         status: Filter by status (已解读/待解读)
         limit: Maximum number of reports
@@ -344,4 +345,41 @@ async def get_patient_examination_reports(
         }
     except Exception as e:
         logger.error(f"Error getting patient examination reports: {str(e)}")
+        return {"error": str(e)}
+
+
+@patient_tools.tool(
+    name="list_all_patients",
+    description="List all patients in the system. Use when doctor asks about available patients, patient list, or wants to see all patients in the database."
+)
+async def list_all_patients_tool(
+    tenant_id: str = DEFAULT_TENANT_ID,
+    limit: int = 50
+) -> Dict[str, Any]:
+    """
+    List all patients in the system.
+    Args:
+        tenant_id: Tenant ID for data isolation (defaults to system tenant)
+        limit: Maximum number of patients to return
+    Returns:
+        List of patients with basic info
+    """
+    try:
+        patients = list_patients(tenant_id, limit)
+        return {
+            "total_patients": len(patients),
+            "patients": [
+                {
+                    "patient_id": p.get("patient_id"),
+                    "name": p.get("name"),
+                    "gender": p.get("gender"),
+                    "age": p.get("age"),
+                    "medical_record_no": p.get("medical_record_no"),
+                    "diagnosis": p.get("diagnosis")
+                }
+                for p in patients
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error listing patients: {str(e)}")
         return {"error": str(e)}
