@@ -1,6 +1,55 @@
 # 更新日志
 ## 2025-11-23
 
+### 代码更新：修复数据库操作和前端组件优化
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/code-updates-20251123`
+- 📦 **提交更改**: 22 个文件，322 行新增，286 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+
+**后端文件**:
+- `backend/database/care_plan_db.py` (更新)
+- `backend/database/conversation_db.py` (更新)
+- `backend/database/knowledge_db.py` (更新)
+- `backend/database/learning_record_db.py` (更新)
+- `backend/database/medical_case_db.py` (更新)
+- `backend/database/memory_config_db.py` (更新)
+- `backend/database/patient_db.py` (更新)
+- `backend/database/tool_db.py` (更新)
+- `backend/database/user_tenant_db.py` (更新)
+- `backend/services/agent_service.py` (更新)
+- `backend/services/user_management_service.py` (更新)
+- `backend/tool_collection/mcp/patient_management_tools.py` (更新)
+
+**前端文件**:
+- `frontend/app/[locale]/chat/components/chatInput.tsx` (更新)
+- `frontend/app/[locale]/chat/components/chatLeftSidebar.tsx` (更新)
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
+- `frontend/app/[locale]/chat/streaming/chatStreamHandler.tsx` (更新)
+- `frontend/app/[locale]/chat/streaming/chatStreamMain.tsx` (更新)
+- `frontend/app/[locale]/setup/agents/components/AgentSetupOrchestrator.tsx` (更新)
+- `frontend/services/agentConfigService.ts` (更新)
+- `frontend/types/agentConfig.ts` (更新)
+
+**新增文件**:
+- `backend/scripts/delete_tool_info.py` (新建 - 数据库清理脚本)
+
+**功能说明**:
+- 🔧 **数据库操作优化**: 更新多个数据库操作文件，改进数据访问和处理逻辑
+- 🎨 **前端组件优化**: 优化聊天界面相关组件，改进用户体验
+- 🛠️ **服务层改进**: 更新代理服务和用户管理服务，提升功能稳定性
+- 📝 **工具脚本**: 新增数据库清理脚本，用于维护数据库
+
+**分支信息**:
+- 分支名称: `feature/code-updates-20251123`
+- 远程仓库: `origin/feature/code-updates-20251123`
+- 提交 ID: `d1403441`
+
+---
+
 ### 清除ImageAnnotator.tsx文件空行并创建新分支
 
 **操作内容**:
