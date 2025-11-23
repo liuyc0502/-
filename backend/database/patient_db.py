@@ -78,6 +78,21 @@ def get_patient_by_email(email: str, tenant_id: str) -> Optional[dict]:
         return None
 
 
+def get_patient_by_medical_record_no(medical_record_no: str, tenant_id: str) -> Optional[dict]:
+    """
+    Get patient by medical record number
+    """
+    with get_db_session() as session:
+        patient = session.query(PatientInfo).filter(
+            PatientInfo.medical_record_no == medical_record_no,
+            PatientInfo.tenant_id == tenant_id,
+            PatientInfo.delete_flag != 'Y'
+        ).first()
+        if patient:
+            return as_dict(patient)
+        return None
+
+
 def list_patients(tenant_id: str, search_query: Optional[str] = None,
                  filter_type: Optional[str] = None, limit: int = 100, offset: int = 0) -> List[dict]:
     """

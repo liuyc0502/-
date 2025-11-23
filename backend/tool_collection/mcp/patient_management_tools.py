@@ -8,6 +8,7 @@ from fastmcp import FastMCP
 from consts.const import DEFAULT_TENANT_ID
 from database.patient_db import (
     get_patient_by_id,
+    get_patient_by_medical_record_no,
     get_patient_timeline,
     get_timeline_detail,
     get_patient_todos,
@@ -19,8 +20,48 @@ patient_tools = FastMCP("patient_management")
 
 
 @patient_tools.tool(
+    name="get_patient_by_record_no",
+    description="Get patient information by medical record number (病历号). Use when doctor asks about a patient using their medical record number like '1号病人', '病历号1', 'record number 1', etc."
+)
+async def get_patient_by_record_no(
+    medical_record_no: str
+) -> Dict[str, Any]:
+    """
+    Get patient information by medical record number.
+    Args:
+        medical_record_no: The medical record number (病历号)
+    Returns:
+        Patient information dictionary
+    """
+    try:
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
+        if not patient:
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
+        result = {
+            "patient_id": patient.get("patient_id"),
+            "name": patient.get("name"),
+            "gender": patient.get("gender"),
+            "age": patient.get("age"),
+            "date_of_birth": patient.get("date_of_birth"),
+            "medical_record_no": patient.get("medical_record_no"),
+            "phone": patient.get("phone"),
+            "email": patient.get("email"),
+            "address": patient.get("address"),
+            "allergies": patient.get("allergies", []),
+            "family_history": patient.get("family_history"),
+            "past_medical_history": patient.get("past_medical_history", []),
+            "diagnosis": patient.get("diagnosis")
+        }
+        logger.info(f"Retrieved patient by medical record no: {medical_record_no}")
+        return result
+    except Exception as e:
+        logger.error(f"Error getting patient by medical record no: {str(e)}")
+        return {"error": str(e)}
+
+
+@patient_tools.tool(
     name="get_patient_basic_info",
-    description="Get patient demographics and diagnosis summary. Use when doctor asks about patient's basic information, age, gender, diagnosis, medical record number, allergies, or family history."
+    description="Get patient demographics and diagnosis summary by patient ID. Use when doctor asks about patient's basic information, age, gender, diagnosis, medical record number, allergies, or family history."
 )
 async def get_patient_basic_info(
     patient_id: int,
