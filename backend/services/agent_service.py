@@ -694,12 +694,14 @@ def load_default_agents_json_file(default_agent_path):
     return all_json_files
 
 
-async def list_all_agent_info_impl(tenant_id: str) -> list[dict]:
+async def list_all_agent_info_impl(tenant_id: str, exclude_portal_main: bool = True) -> list[dict]:
     """
     list all agent info
 
     Args:
         tenant_id (str): tenant id
+        exclude_portal_main (bool): whether to exclude portal_main agents from the list,
+                                    defaults to True for admin resource pool
 
     Raises:
         ValueError: failed to query all agent info
@@ -714,6 +716,11 @@ async def list_all_agent_info_impl(tenant_id: str) -> list[dict]:
         for agent in agent_list:
             # check agent is available
             if not agent["enabled"]:
+                continue
+
+            # Skip portal_main agents if exclude_portal_main is True
+            # Portal main agents should not appear in the admin resource pool
+            if exclude_portal_main and agent.get("agent_role_category") == "portal_main":
                 continue
             tool_info = search_tools_for_sub_agent(
                 agent_id=agent["agent_id"], tenant_id=tenant_id)
