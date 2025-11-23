@@ -345,7 +345,7 @@ async def list_all_patients_tool(
         List of patients with basic info
     """
     try:
-        patients = list_patients(DEFAULT_TENANT_ID, limit)
+        patients = list_patients(tenant_id=DEFAULT_TENANT_ID, limit=limit)
         return {
             "total_patients": len(patients),
             "patients": [
