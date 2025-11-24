@@ -1,5 +1,5 @@
 import { chatConfig } from "@/const/chatConfig";
-import type { PortalChatConfig } from "@/const/portalChatConfig";
+import type { PortalChatConfig, PortalChatVariant } from "@/const/portalChatConfig";
 
 export type PortalNavItemId = PortalChatConfig["navItems"][number]["id"];
 
@@ -280,7 +280,7 @@ export interface ChatSidebarProps {
   onDialogClick: (dialog: ConversationListItem) => void;
   onRename: (dialogId: number, title: string) => void;
   onDelete: (dialogId: number) => void;
-  onSettingsClick: () => void;
+  onSettingsClick?: () => void;
   settingsMenuItems?: SettingsMenuItem[];
   onDropdownOpenChange: (open: boolean, id: string | null) => void;
   onToggleSidebar: () => void;
@@ -292,6 +292,8 @@ export interface ChatSidebarProps {
   portalConfig: PortalChatConfig;
   onNavItemClick?: (itemId: PortalNavItemId) => void;
   activeNavItem?: PortalNavItemId;
+  /** Portal variant type (general, doctor, patient, admin) */
+  variant?: PortalChatVariant;
 }
 
 // Image item type for chat right panel

@@ -82,6 +82,17 @@ app.include_router(remote_mcp_router)
 monitoring_manager.setup_fastapi_app(app)
 
 
+# Health check endpoint at root path
+@app.get("/")
+async def root():
+    """Root endpoint for health check"""
+    return {
+        "status": "healthy",
+        "service": "nexent-api",
+        "message": "Service is running. API endpoints are available under /api prefix."
+    }
+
+
 # Global exception handler for HTTP exceptions
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):

@@ -40,8 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getRoleColor } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
-import { Spin, Tag, ConfigProvider, Dropdown } from "antd";
-import type { MenuProps } from "antd";
+import { Spin, Tag } from "antd";
 import { useTranslation } from "react-i18next";
 
 import type { ChatSidebarProps, ConversationListItem } from "@/types/chat";
@@ -148,8 +147,6 @@ export function ChatSidebar({
   onDialogClick,
   onRename,
   onDelete,
-  onSettingsClick,
-  settingsMenuItems,
   onDropdownOpenChange,
   onToggleSidebar,
   expanded,
@@ -160,6 +157,7 @@ export function ChatSidebar({
   portalConfig,
   onNavItemClick,
   activeNavItem = "chats",
+  variant = "general",
 }: ChatSidebarProps) {
   const { t } = useTranslation();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -175,6 +173,7 @@ export function ChatSidebar({
   const accentColor = portalConfig.accentColor || "#D94527";
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const isAdminView = variant === "admin";
 
   // Memoize filtered conversations to avoid recalculating on every render
   const filteredConversations = useMemo(
@@ -282,59 +281,6 @@ export function ChatSidebar({
       setIsDeleteDialogOpen(false);
       setDialogToDelete(null);
     }
-  };
-
-  const renderSettingsButton = (isCollapsed: boolean = false) => {
-    const button = (
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`rounded-full border border-transparent hover:border-[#E5E5E5] hover:shadow-sm transition-all duration-200 ${
-          isCollapsed ? "h-12 w-12" : "h-10 w-10"
-        }`}
-        onClick={settingsMenuItems ? undefined : onSettingsClick}
-      >
-        <span className="sr-only">{t("chatLeftSidebar.settings")}</span>
-        <svg
-          className="h-5 w-5 text-[#6B6B6B] transition-transform duration-200"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .69.28 1.35.77 1.84.49.49 1.15.77 1.84.77H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-      </Button>
-    );
-
-    if (settingsMenuItems && settingsMenuItems.length > 0) {
-      const dropdownMenu: MenuProps = {
-        items: settingsMenuItems.map((item) => ({
-          key: item.key,
-          label: item.label,
-          onClick: item.onClick,
-          style: { padding: "8px 16px" },
-        })),
-        style: {
-          minWidth: "220px",
-          borderRadius: "12px",
-          boxShadow: "0 18px 40px rgba(0,0,0,0.1)",
-        },
-      };
-
-      return (
-        <ConfigProvider getPopupContainer={() => document.body}>
-          <Dropdown menu={dropdownMenu} trigger={["click"]} placement="topRight">
-            <div>{button}</div>
-          </Dropdown>
-        </ConfigProvider>
-      );
-    }
-
-    return button;
   };
 
   const renderDialogList = (dialogs: ConversationListItem[], title: string) => {
@@ -546,20 +492,22 @@ export function ChatSidebar({
         >
           <div className="flex flex-col pt-20 pb-2 gap-4 items-center">
             {/* New Chat Button */}
-            <div className="flex items-center w-full px-3">
-              <button
-                className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
-                style={{ backgroundColor: accentColor }}
-                onClick={onNewConversation}
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-              <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
-                showText ? "opacity-100" : "opacity-0"
-              }`}>
-                {t("chatLeftSidebar.newConversation")}
-              </span>
-            </div>
+            {!isAdminView && (
+              <div className="flex items-center w-full px-3">
+                <button
+                  className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
+                  style={{ backgroundColor: accentColor }}
+                  onClick={onNewConversation}
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+                <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
+                  showText ? "opacity-100" : "opacity-0"
+                }`}>
+                  {t("chatLeftSidebar.newConversation")}
+                </span>
+              </div>
+            )}
 
             {/* Navigation Items */}
             <div className="flex flex-col gap-1 mt-2 w-full px-3">
@@ -602,63 +550,65 @@ export function ChatSidebar({
             {expanded && (
               <>
                 {/* Search and Filter Section - Compact Design */}
-                <div className="pt-4 pb-3 flex-shrink-0">
-                  {/* Search Input */}
-                  <div className="flex items-center rounded-xl border border-[#E8E2D6] bg-white px-3 h-9">
-                    <Search className="h-3.5 w-3.5 text-[#B3AEA5] flex-shrink-0" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="搜索对话..."
-                      className="border-0 bg-transparent text-xs focus-visible:ring-0 ml-2 h-7 px-0"
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm("")}
-                        className="text-[#B3AEA5] hover:text-[#6B6B6B] ml-1"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
+                {!isAdminView && (
+                  <div className="pt-4 pb-3 flex-shrink-0">
+                    {/* Search Input */}
+                    <div className="flex items-center rounded-xl border border-[#E8E2D6] bg-white px-3 h-9">
+                      <Search className="h-3.5 w-3.5 text-[#B3AEA5] flex-shrink-0" />
+                      <Input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="搜索对话..."
+                        className="border-0 bg-transparent text-xs focus-visible:ring-0 ml-2 h-7 px-0"
+                      />
+                      {searchTerm && (
+                        <button
+                          onClick={() => setSearchTerm("")}
+                          className="text-[#B3AEA5] hover:text-[#6B6B6B] ml-1"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
 
-                  {/* Filter Pills - inline style */}
-                  <div className="flex items-center gap-1.5 mt-2 flex-nowrap overflow-x-auto">
-                    <button
-                      onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                        statusFilter === 'active'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                      }`}
-                    >
-                      进行中
-                    </button>
+                    {/* Filter Pills - inline style */}
+                    <div className="flex items-center gap-1.5 mt-2 flex-nowrap overflow-x-auto">
+                      <button
+                        onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                          statusFilter === 'active'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                        }`}
+                      >
+                        进行中
+                      </button>
  
-                    <button
-                      onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                        statusFilter === 'pending_followup'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                      }`}
-                    >
-                      待跟进
-                    </button>
+                      <button
+                        onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                          statusFilter === 'pending_followup'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                        }`}
+                      >
+                        待跟进
+                      </button>
  
-                    <button
-                      onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                        statusFilter === 'difficult_case'
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                      }`}
-                    >
-                      疑难
-                    </button>
+                      <button
+                        onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                          statusFilter === 'difficult_case'
+                            ? 'bg-rose-100 text-rose-700'
+                            : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                        }`}
+                      >
+                        疑难
+                      </button>
  
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Scrollable Conversation List */}
                 <div className="flex-1 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
@@ -672,23 +622,22 @@ export function ChatSidebar({
                       {renderDialogList(older, t("chatLeftSidebar.older"))}
                     </>
                   ) : (
-                    <div className="text-center text-sm text-[#6B6B6B] mt-10">
-                      {t("chatLeftSidebar.noHistory")}
-                    </div>
+                    !isAdminView && (
+                      <div className="text-center text-sm text-[#6B6B6B] mt-10">
+                        {t("chatLeftSidebar.noHistory")}
+                      </div>
+                    )
                   )}
                 </div>
 
                 {/* Bottom User Section - Fixed */}
                 <div className="pb-6 pt-4 flex-shrink-0 border-t border-[#EFE8DE] mt-2">
                   {renderUserSection()}
-                  <div className="mt-3 flex items-center justify-between">
-                    {!isSpeedMode && userRole ? (
+                  {!isSpeedMode && userRole && (
+                    <div className="mt-3 flex items-center">
                       <Tag color={getRoleColor(userRole)}>{userRole}</Tag>
-                    ) : (
-                      <span />
-                    )}
-                    {renderSettingsButton(false)}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -697,7 +646,6 @@ export function ChatSidebar({
           {/* Bottom Section: Settings & User (collapsed state) */}
           {!expanded && (
             <div className="mt-auto flex flex-col items-center gap-4 pb-4">
-              {renderSettingsButton(true)}
               {!isSpeedMode && (
                 <div className="h-10 w-10 rounded-full overflow-hidden bg-[#F2F0EB] flex items-center justify-center">
                   {userAvatarUrl ? (

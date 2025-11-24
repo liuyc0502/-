@@ -1675,6 +1675,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
           userRole={user?.role}
           userName={displayName}
           portalConfig={portalConfig}
+          variant={variant}
           onNavItemClick={setActiveView}
           activeNavItem={activeView}
         />
