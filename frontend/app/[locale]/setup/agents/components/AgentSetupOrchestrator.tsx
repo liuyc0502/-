@@ -607,8 +607,8 @@ export default function AgentSetupOrchestrator({
       setMainAgentModel(agentDetail.model);
       setMainAgentModelId(agentDetail.model_id);
       setMainAgentMaxStep(agentDetail.max_step);
-      // Load VLM model if available
-      setVlmModel?.(agentDetail.vlm_model_id ? String(agentDetail.vlm_model_id) : null);
+      // Load VLM model ID - displayName will be resolved in AgentConfigModal
+      setVlmModel?.(null); // Will be resolved from vlmModelId in AgentConfigModal
       setVlmModelId?.(agentDetail.vlm_model_id || null);
       setBusinessLogic(agentDetail.business_description || "");
       setBusinessLogicModel(agentDetail.business_logic_model_name || null);

@@ -174,6 +174,16 @@ export default function AgentConfigModal({
     loadModels();
   }, []);
 
+  // Resolve VLM model displayName from vlmModelId when editing an agent
+  useEffect(() => {
+    if (!vlmModelId || vlmModels.length === 0) return;
+    // Find the model with matching ID
+    const matchedModel = vlmModels.find((m) => m.id === vlmModelId);
+    if (matchedModel && matchedModel.displayName) {
+      setLocalVlmModel(matchedModel.displayName);
+    }
+  }, [vlmModelId, vlmModels]);
+
   // Default to globally configured model when creating a new agent
   // IMPORTANT: Only read from localStorage when creating a NEW agent, not when editing existing agent
   useEffect(() => {
