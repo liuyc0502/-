@@ -442,6 +442,9 @@ class PatientMedicalImage(TableBase):
     image_url = Column(String(500), doc="Image storage path (MinIO)")
     thumbnail_url = Column(String(500), doc="Thumbnail URL")
     display_order = Column(Integer, doc="Display order")
+    annotations_data = Column(JSON, doc="Annotation data (JSON array of annotation objects with coordinates, colors, labels)")
+    ocr_text = Column(Text, doc="OCR extracted text from the image")
+    ocr_metadata = Column(JSON, doc="OCR metadata including blocks, tables, confidence scores")
     tenant_id = Column(String(100), doc="Tenant ID")
 
 class PatientMetrics(TableBase):
@@ -593,6 +596,9 @@ class MedicalCaseImage(TableBase):
     image_url = Column(String(500), doc="Image storage path (MinIO)")
     thumbnail_url = Column(String(500), doc="Thumbnail URL")
     display_order = Column(Integer, doc="Display order")
+    annotations_data = Column(JSON, doc="Annotation data (JSON array of annotation objects with coordinates, colors, labels)")
+    ocr_text = Column(Text, doc="OCR extracted text from the image")
+    ocr_metadata = Column(JSON, doc="OCR metadata including blocks, tables, confidence scores")
     tenant_id = Column(String(100), doc="Tenant ID")
 
 class MedicalCaseFavorite(TableBase):

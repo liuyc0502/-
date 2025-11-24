@@ -10,6 +10,9 @@ export interface Annotation {
   color: string;
   strokeWidth: number;
   label?: string;
+  remark?: string;
+  createdAt?: string;
+  regionNumber?: number; // Auto-assigned region number for reference in chat
 }
 interface ImageAnnotatorProps {
   imageUrl: string;
@@ -19,10 +22,13 @@ interface ImageAnnotatorProps {
     type: string;
     coordinates: any;
     imageUrl: string;
+    annotation?: Annotation;
   }) => void;
   onPointClick?: (point: { x: number; y: number; imageUrl: string }) => void;
   readOnly?: boolean;
   className?: string;
+  highlightRegion?: string; // Region ID to highlight (for chat interaction)
+  currentLabel?: string; // Current label for new annotations
 }
 export function ImageAnnotator({
   imageUrl,
@@ -32,6 +38,8 @@ export function ImageAnnotator({
   onPointClick,
   readOnly = false,
   className = "",
+  highlightRegion,
+  currentLabel = "",
 }: ImageAnnotatorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,6 +57,21 @@ export function ImageAnnotator({
   );
   const [localAnnotations, setLocalAnnotations] =
     useState<Annotation[]>(annotations);
+  const [activeLabel, setActiveLabel] = useState(currentLabel);
+
+  // Update active label when prop changes
+  useEffect(() => {
+    setActiveLabel(currentLabel);
+  }, [currentLabel]);
+
+  // Get next region number
+  const getNextRegionNumber = useCallback(() => {
+    const maxRegion = localAnnotations.reduce(
+      (max, ann) => Math.max(max, ann.regionNumber || 0),
+      0
+    );
+    return maxRegion + 1;
+  }, [localAnnotations]);
   // Load image
   useEffect(() => {
     if (!imageUrl) return;
@@ -91,9 +114,24 @@ export function ImageAnnotator({
     // Draw annotations
     [...localAnnotations, currentAnnotation].forEach((annotation) => {
       if (!annotation) return;
+      const isHighlighted = highlightRegion === annotation.id;
+
+      // Set styles with highlight effect
       ctx.strokeStyle = annotation.color;
-      ctx.lineWidth = annotation.strokeWidth / scale;
-      ctx.fillStyle = annotation.color + "33"; // Add transparency
+      ctx.lineWidth = (isHighlighted ? annotation.strokeWidth * 2 : annotation.strokeWidth) / scale;
+      ctx.fillStyle = annotation.color + (isHighlighted ? "66" : "33"); // More opacity when highlighted
+
+      // Draw highlight glow effect
+      if (isHighlighted) {
+        ctx.shadowColor = annotation.color;
+        ctx.shadowBlur = 10 / scale;
+      } else {
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+      }
+
+      let labelPosition = { x: 0, y: 0 };
+
       switch (annotation.type) {
         case "rectangle":
           if (annotation.points.length >= 2) {
@@ -102,6 +140,7 @@ export function ImageAnnotator({
             const height = end.y - start.y;
             ctx.strokeRect(start.x, start.y, width, height);
             ctx.fillRect(start.x, start.y, width, height);
+            labelPosition = { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) - 5 / scale };
           }
           break;
         case "circle":
@@ -114,6 +153,7 @@ export function ImageAnnotator({
             ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
             ctx.stroke();
             ctx.fill();
+            labelPosition = { x: center.x - radius, y: center.y - radius - 5 / scale };
           }
           break;
         case "freehand":
@@ -124,6 +164,9 @@ export function ImageAnnotator({
               ctx.lineTo(point.x, point.y);
             });
             ctx.stroke();
+            const minX = Math.min(...annotation.points.map(p => p.x));
+            const minY = Math.min(...annotation.points.map(p => p.y));
+            labelPosition = { x: minX, y: minY - 5 / scale };
           }
           break;
         case "point":
@@ -140,6 +183,7 @@ export function ImageAnnotator({
             ctx.moveTo(point.x, point.y - 12 / scale);
             ctx.lineTo(point.x, point.y + 12 / scale);
             ctx.stroke();
+            labelPosition = { x: point.x + 15 / scale, y: point.y - 5 / scale };
           }
           break;
         case "arrow":
@@ -164,12 +208,47 @@ export function ImageAnnotator({
               end.y - headLength * Math.sin(angle + Math.PI / 6)
             );
             ctx.stroke();
+            labelPosition = { x: start.x, y: start.y - 5 / scale };
           }
           break;
       }
+
+      // Draw region number and label badge
+      if (annotation.regionNumber && annotation.points.length > 0) {
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+
+        const badgeText = `${annotation.regionNumber}${annotation.label ? `: ${annotation.label}` : ""}`;
+        const fontSize = 12 / scale;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        const textMetrics = ctx.measureText(badgeText);
+        const padding = 4 / scale;
+        const badgeWidth = textMetrics.width + padding * 2;
+        const badgeHeight = fontSize + padding * 2;
+
+        // Draw badge background
+        ctx.fillStyle = annotation.color;
+        ctx.beginPath();
+        ctx.roundRect(
+          labelPosition.x,
+          labelPosition.y - badgeHeight,
+          badgeWidth,
+          badgeHeight,
+          3 / scale
+        );
+        ctx.fill();
+
+        // Draw badge text
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(
+          badgeText,
+          labelPosition.x + padding,
+          labelPosition.y - padding - 2 / scale
+        );
+      }
     });
     ctx.restore();
-  }, [image, scale, offset, localAnnotations, currentAnnotation]);
+  }, [image, scale, offset, localAnnotations, currentAnnotation, highlightRegion]);
   // Redraw on changes
   useEffect(() => {
     draw();
@@ -212,15 +291,20 @@ export function ImageAnnotator({
       return;
     }
     if (currentTool === "point") {
+      const regionNum = getNextRegionNumber();
       const newAnnotation: Annotation = {
         id: `ann-${Date.now()}`,
         type: "point",
         points: [coords],
         color: currentColor,
         strokeWidth,
+        label: activeLabel,
+        regionNumber: regionNum,
+        createdAt: new Date().toISOString(),
       };
-      setLocalAnnotations([...localAnnotations, newAnnotation]);
-      onAnnotationsChange?.([...localAnnotations, newAnnotation]);
+      const newAnnotations = [...localAnnotations, newAnnotation];
+      setLocalAnnotations(newAnnotations);
+      onAnnotationsChange?.(newAnnotations);
       onPointClick?.({ ...coords, imageUrl });
       return;
     }
@@ -232,6 +316,9 @@ export function ImageAnnotator({
       points: [coords],
       color: currentColor,
       strokeWidth,
+      label: activeLabel,
+      regionNumber: getNextRegionNumber(),
+      createdAt: new Date().toISOString(),
     };
     setCurrentAnnotation(newAnnotation);
   };
@@ -260,15 +347,16 @@ export function ImageAnnotator({
   const handleMouseUp = () => {
     setIsDragging(false);
     if (isDrawing && currentAnnotation) {
-      const newAnnotations = [...localAnnotations, currentAnnotation];
+      const finalAnnotation = { ...currentAnnotation };
+      const newAnnotations = [...localAnnotations, finalAnnotation];
       setLocalAnnotations(newAnnotations);
       onAnnotationsChange?.(newAnnotations);
-      // Notify region selection
+      // Notify region selection with annotation data
       if (
-        currentAnnotation.type === "rectangle" &&
-        currentAnnotation.points.length >= 2
+        finalAnnotation.type === "rectangle" &&
+        finalAnnotation.points.length >= 2
       ) {
-        const [start, end] = currentAnnotation.points;
+        const [start, end] = finalAnnotation.points;
         onRegionSelect?.({
           type: "rectangle",
           coordinates: {
@@ -278,12 +366,13 @@ export function ImageAnnotator({
             y2: Math.max(start.y, end.y),
           },
           imageUrl,
+          annotation: finalAnnotation,
         });
       } else if (
-        currentAnnotation.type === "circle" &&
-        currentAnnotation.points.length >= 2
+        finalAnnotation.type === "circle" &&
+        finalAnnotation.points.length >= 2
       ) {
-        const [center, edge] = currentAnnotation.points;
+        const [center, edge] = finalAnnotation.points;
         const radius = Math.sqrt(
           Math.pow(edge.x - center.x, 2) + Math.pow(edge.y - center.y, 2)
         );
@@ -291,6 +380,15 @@ export function ImageAnnotator({
           type: "circle",
           coordinates: { cx: center.x, cy: center.y, radius },
           imageUrl,
+          annotation: finalAnnotation,
+        });
+      } else if (finalAnnotation.points.length > 0) {
+        // For freehand and arrow, also trigger region select
+        onRegionSelect?.({
+          type: finalAnnotation.type,
+          coordinates: finalAnnotation.points,
+          imageUrl,
+          annotation: finalAnnotation,
         });
       }
       setCurrentAnnotation(null);
@@ -347,6 +445,8 @@ export function ImageAnnotator({
           onUndo={handleUndo}
           onClear={handleClear}
           canUndo={localAnnotations.length > 0}
+          currentLabel={activeLabel}
+          onLabelChange={setActiveLabel}
         />
       )}
       {/* Canvas container */}

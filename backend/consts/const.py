@@ -162,6 +162,8 @@ DEFAULT_LLM_MAX_TOKENS = 4096
 # MCP Server
 LOCAL_MCP_SERVER = os.getenv("NEXENT_MCP_SERVER")
 
+# OCR MCP Server (PaddleOCR MCP service)
+OCR_MCP_SERVER_URL = os.getenv("OCR_MCP_SERVER_URL", "http://127.0.0.1:5020")
 
 # Invite code
 INVITE_CODE = os.getenv("INVITE_CODE")

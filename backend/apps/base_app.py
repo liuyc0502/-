@@ -28,6 +28,7 @@ from apps.tenant_config_app import router as tenant_config_router
 from apps.tool_config_app import router as tool_config_router
 from apps.user_management_app import router as user_management_router
 from apps.voice_app import router as voice_router
+from apps.ocr_app import router as ocr_router
 from consts.const import IS_SPEED_MODE
 
 # Import monitoring utilities
@@ -77,6 +78,7 @@ app.include_router(summary_router)
 app.include_router(prompt_router)
 app.include_router(tenant_config_router)
 app.include_router(remote_mcp_router)
+app.include_router(ocr_router)
 
 # Initialize monitoring for the application
 monitoring_manager.setup_fastapi_app(app)
