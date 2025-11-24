@@ -657,17 +657,6 @@ export function ChatSidebar({
                       疑难
                     </button>
  
-                    {(statusFilter || tagFilter) && (
-                      <button
-                        onClick={() => {
-                          setStatusFilter(null);
-                          setTagFilter(null);
-                        }}
-                        className="text-[11px] font-medium px-1.5 py-1 text-[#B3AEA5] hover:text-[#6B6B6B] whitespace-nowrap flex-shrink-0"
-                      >
-                        重置
-                      </button>
-                    )}
                   </div>
                 </div>
 

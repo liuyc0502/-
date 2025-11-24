@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { App, Button } from "antd";
+import { App, Button,Segmented } from "antd";
 import { UploadOutlined, LinkOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 
 import { ScrollArea } from "@/components/ui/scrollArea";
@@ -21,6 +21,8 @@ export default function SubAgentPool({
   onImportAgent,
   onExitEditMode,
   subAgentList = [],
+  agentRoleFilter = "tool",
+  onAgentRoleFilterChange,
   loadingAgents = false,
   isImporting = false,
   isGeneratingAgent = false,
@@ -169,8 +171,25 @@ export default function SubAgentPool({
 
             {/* Agent list block */}
             <div>
-              <div className="text-sm font-medium text-gray-600 mb-2 px-1">
-                {t("subAgentPool.section.agentList")} ({subAgentList.length})
+            <div className="flex items-center justify-between mb-2 px-1 gap-2">
+                <div className="text-sm font-medium text-gray-600">
+                  {t("subAgentPool.section.agentList")} ({subAgentList.length})
+                </div>
+                <Segmented
+                  size="small"
+                  value={agentRoleFilter}
+                  onChange={(value) =>
+                    onAgentRoleFilterChange?.(value as string)
+                  }
+                  options={[
+                    { label: t("subAgentPool.filter.tools"), value: "tool" },
+                    {
+                      label: t("subAgentPool.filter.portalMain"),
+                      value: "portal_main",
+                    },
+                    { label: t("subAgentPool.filter.all"), value: "all" },
+                  ]}
+                />
               </div>
               <div className="space-y-0">
                 {subAgentList.map((agent) => {

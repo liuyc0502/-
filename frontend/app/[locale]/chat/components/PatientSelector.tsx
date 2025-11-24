@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Select } from "antd";
+import { useState, useEffect, useMemo,useRef } from "react";
+import { Select,Tooltip } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import patientService from "@/services/patientService";
 import { conversationService } from "@/services/conversationService";
@@ -13,6 +13,11 @@ interface PatientSelectorProps {
   currentPatientName?: string | null;
   onPatientChange?: (patientId: number | null, patientName: string | null) => void;
   disabled?: boolean;
+}
+
+interface PendingSelection {
+  patientId: number | null;
+  patientName: string | null;
 }
 
 // Helper function to extract text from option label for filtering
@@ -43,6 +48,10 @@ export function PatientSelector({
     currentPatientId || null
   );
 
+ // Track pending selection when no conversationId
+ const pendingSelectionRef = useRef<PendingSelection | null>(null);
+ const prevConversationIdRef = useRef<number | null>(null);
+
   // Load patient list on mount
   useEffect(() => {
     const loadPatients = async () => {
@@ -65,32 +74,70 @@ export function PatientSelector({
     setSelectedPatientId(currentPatientId || null);
   }, [currentPatientId]);
 
+  useEffect(() => {
+    const savePendingSelection = async () => {
+      // Only save if conversationId just became available and we have a pending selection
+      if (
+        conversationId &&
+        !prevConversationIdRef.current &&
+        pendingSelectionRef.current
+      ) {
+        const { patientId, patientName } = pendingSelectionRef.current;
+        try {
+          await conversationService.linkPatient({
+            conversation_id: conversationId,
+            patient_id: patientId,
+            patient_name: patientName,
+          });
+ 
+          // Notify parent component
+          if (onPatientChange) {
+            onPatientChange(patientId, patientName);
+          }
+        } catch (error) {
+          console.error("Failed to save pending patient selection:", error);
+        }
+        pendingSelectionRef.current = null;
+      }
+      prevConversationIdRef.current = conversationId;
+    };
+ 
+    savePendingSelection();
+  }, [conversationId, onPatientChange]);
+
   // Handle patient selection change
   const handleChange = async (value: number | string) => {
-    if (!conversationId) {
-      return;
-    }
-
     // Convert empty string to null
     const patientId = value === "" ? null : (value as number);
-    
+    const selectedPatient = patientId
+      ? patients.find((p) => p.patient_id === patientId)
+      : null;
+    const patientName = selectedPatient?.name || null;
+ 
+    // Update local state immediately
+    setSelectedPatientId(patientId);
+ 
+    // If no conversationId, store as pending selection
+    if (!conversationId) {
+      pendingSelectionRef.current = { patientId, patientName };
+      // Still notify parent for UI update
+      if (onPatientChange) {
+        onPatientChange(patientId, patientName);
+      }
+      return;
+    }
+ 
+    // If we have conversationId, save immediately
     try {
-      const selectedPatient = patientId
-        ? patients.find((p) => p.patient_id === patientId)
-        : null;
-
-      // Call API to link/unlink patient
       await conversationService.linkPatient({
         conversation_id: conversationId,
         patient_id: patientId,
-        patient_name: selectedPatient?.name || null,
+        patient_name: patientName,
       });
-
-      setSelectedPatientId(patientId);
-
+ 
       // Notify parent component
       if (onPatientChange) {
-        onPatientChange(patientId, selectedPatient?.name || null);
+        onPatientChange(patientId, patientName);
       }
     } catch (error) {
       console.error("Failed to link patient:", error);
@@ -100,27 +147,47 @@ export function PatientSelector({
   // Memoize options to avoid recalculating on every render
   // Use empty string for "no patient" option instead of null
   const options = useMemo(
-    () => [
-      {
-        value: "",
-        label: (
-          <span style={{ color: "#999" }}>
-            <UserOutlined style={{ marginRight: 8 }} />
-            No patient linked
-          </span>
-        ),
-      },
-      ...patients.map((patient) => ({
-        value: patient.patient_id,
-        label: (
-          <span>
-            <UserOutlined style={{ marginRight: 8 }} />
-            {patient.name} ({patient.patient_id})
-          </span>
-        ),
-      })),
-    ],
-    [patients]
+    () => {
+      const baseOptions = [
+        {
+          value: "",
+          label: (
+            <span style={{ color: "#999" }}>
+              <UserOutlined style={{ marginRight: 8 }} />
+              No patient linked
+            </span>
+          ),
+        },
+        ...patients.map((patient) => ({
+          value: patient.patient_id,
+          label: (
+            <span>
+              <UserOutlined style={{ marginRight: 8 }} />
+              {patient.name} ({patient.medical_record_no || patient.patient_id})
+            </span>
+          ),
+        })),
+      ];
+
+      // If current patient is not in the fetched list (e.g., pagination), add a fallback option
+      if (
+        currentPatientId &&
+        !baseOptions.some((opt) => opt.value === currentPatientId)
+      ) {
+        baseOptions.push({
+          value: currentPatientId,
+          label: (
+            <span>
+              <UserOutlined style={{ marginRight: 8 }} />
+              {currentPatientName || `Patient ${currentPatientId}`}
+            </span>
+          ),
+        });
+      }
+
+      return baseOptions;
+    },
+    [patients, currentPatientId, currentPatientName]
   );
 
   // Filter option handler
@@ -130,18 +197,27 @@ export function PatientSelector({
     return text.toLowerCase().includes(input.toLowerCase());
   };
  
+  const showPendingHint = !conversationId && selectedPatientId !== null;
+
+ 
+
   return (
-    <Select
-      value={selectedPatientId === null ? "" : selectedPatientId}
-      onChange={handleChange}
-      options={options}
-      placeholder="Select patient"
-      style={{ minWidth: 200 }}
-      disabled={disabled || !conversationId}
-      loading={loading}
-      showSearch
-      filterOption={filterOption}
-      allowClear
-    />
+    <Tooltip
+      title={showPendingHint ? "Will be saved when conversation starts" : ""}
+      open={showPendingHint ? undefined : false}
+    >
+      <Select
+        value={selectedPatientId === null ? "" : selectedPatientId}
+        onChange={handleChange}
+        options={options}
+        placeholder="Select patient"
+        style={{ minWidth: 200 }}
+        disabled={disabled}
+        loading={loading}
+        showSearch
+        filterOption={filterOption}
+        allowClear
+      />
+    </Tooltip>
   );
 }

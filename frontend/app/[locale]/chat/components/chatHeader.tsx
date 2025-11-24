@@ -212,7 +212,7 @@ export function ChatHeader({
                     currentPatientId={patientId}
                     currentPatientName={patientName}
                     onPatientChange={onPatientChange}
-                    disabled={!conversationId}
+                    
                   />
                 </div>
  
@@ -222,7 +222,7 @@ export function ChatHeader({
                     conversationId={conversationId || null}
                     currentStatus={conversationStatus}
                     onStatusChange={onStatusChange}
-                    disabled={!conversationId}
+                    
                   />
                 </div>
  
@@ -232,7 +232,7 @@ export function ChatHeader({
                     conversationId={conversationId || null}
                     currentTags={conversationTags}
                     onTagsChange={onTagsChange}
-                    disabled={!conversationId}
+                    
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export function ChatHeader({
                     conversationId={conversationId || null}
                     currentSummary={conversationSummary}
                     onSummaryChange={onSummaryChange}
-                    disabled={!conversationId}
+                    
                     placeholder="点击添加对话摘要..."
                   />
                 </div>

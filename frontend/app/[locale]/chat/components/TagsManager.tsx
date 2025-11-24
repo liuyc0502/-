@@ -61,20 +61,59 @@ export function TagsManager({
     }
   }, [editInputIndex]);
  
+  // Track pending tags when no conversationId
+  const pendingTagsRef = useRef<string[] | null>(null);
+  const prevConversationIdRef = useRef<number | null>(null);
+ 
+  // Auto-save pending tags when conversationId becomes available
+  useEffect(() => {
+    const savePendingTags = async () => {
+      if (
+        conversationId &&
+        !prevConversationIdRef.current &&
+        pendingTagsRef.current
+      ) {
+        try {
+          await conversationService.updateTags({
+            conversation_id: conversationId,
+            tags: pendingTagsRef.current,
+          });
+ 
+          if (onTagsChange) {
+            onTagsChange(pendingTagsRef.current);
+          }
+        } catch (error) {
+          console.error("Failed to save pending tags:", error);
+        }
+        pendingTagsRef.current = null;
+      }
+      prevConversationIdRef.current = conversationId;
+    };
+ 
+    savePendingTags();
+  }, [conversationId, onTagsChange]);
+ 
   // Save tags to backend
   const saveTags = async (newTags: string[]) => {
+    // Update local state immediately
+    setTags(newTags);
+    isInternalUpdateRef.current = true;
+ 
+    // If no conversationId, store as pending
     if (!conversationId) {
+      pendingTagsRef.current = newTags;
+      if (onTagsChange) {
+        onTagsChange(newTags);
+      }
       return;
     }
-
+ 
     try {
-      isInternalUpdateRef.current = true;
       await conversationService.updateTags({
         conversation_id: conversationId,
         tags: newTags,
       });
-
-      setTags(newTags);
+ 
       // Notify parent component
       if (onTagsChange) {
         onTagsChange(newTags);

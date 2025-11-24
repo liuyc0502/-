@@ -100,9 +100,26 @@ export const fetchTools = async () => {
  * get agent list from backend (basic info only)
  * @returns list of agents with basic info (id, name, description, is_available)
  */
-export const fetchAgentList = async () => {
+export interface FetchAgentListOptions {
+  agentRoleCategory?: string; // 'portal_main', 'tool', or 'all'
+  includePortalMain?: boolean;
+}
+
+export const fetchAgentList = async (options?: FetchAgentListOptions) => {
   try {
-    const response = await fetch(API_ENDPOINTS.agent.list, {
+    const params = new URLSearchParams();
+    if (options?.agentRoleCategory && options.agentRoleCategory !== "all") {
+      params.set("agent_role_category", options.agentRoleCategory);
+    }
+    if (options?.includePortalMain) {
+      params.set("include_portal_main", "true");
+    }
+
+    const requestUrl = params.toString()
+      ? `${API_ENDPOINTS.agent.list}?${params.toString()}`
+      : API_ENDPOINTS.agent.list;
+
+    const response = await fetch(requestUrl, {
       headers: getAuthHeaders(),
     });
     if (!response.ok) {
@@ -117,6 +134,9 @@ export const fetchAgentList = async () => {
       display_name: agent.display_name || agent.name,
       description: agent.description,
       is_available: agent.is_available,
+      category: agent.category || null,
+      agent_role_category: agent.agent_role_category || "tool",
+      portal_type: agent.portal_type || null,
     }));
 
     return {

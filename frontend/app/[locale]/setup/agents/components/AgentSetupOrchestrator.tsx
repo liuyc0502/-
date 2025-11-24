@@ -48,6 +48,9 @@ export default function AgentSetupOrchestrator({
   setBusinessLogicModelId,
   tools,
   subAgentList = [],
+  agentListRoleCategory = "tool",
+  onAgentRoleFilterChange,
+  onFetchAgents,
   loadingAgents = false,
   mainAgentId,
   setMainAgentId,
@@ -117,15 +120,23 @@ export default function AgentSetupOrchestrator({
     setEnabledToolIds([]);
 
     try {
-      const result = await fetchAgentList();
-      if (result.success) {
-        // Update agent list with basic info only
-        setSubAgentList(result.data);
-        // Removed success message to avoid duplicate notifications
+      if (onFetchAgents) {
+        await onFetchAgents(agentListRoleCategory);
       } else {
-        message.error(
-          result.message || t("businessLogic.config.error.agentListFailed")
-        );
+        const result = await fetchAgentList({
+          agentRoleCategory:
+            agentListRoleCategory === "all" ? undefined : agentListRoleCategory,
+          includePortalMain: agentListRoleCategory !== "tool",
+        });
+        if (result.success) {
+          // Update agent list with basic info only
+          setSubAgentList(result.data);
+          // Removed success message to avoid duplicate notifications
+        } else {
+          message.error(
+            result.message || t("businessLogic.config.error.agentListFailed")
+          );
+        }
       }
     } catch (error) {
       log.error(t("agentConfig.agents.listFetchFailedDebug"), error);
@@ -323,7 +334,7 @@ export default function AgentSetupOrchestrator({
     return () => {
       window.removeEventListener("refreshAgentList", handleRefreshAgentList);
     };
-  }, [t]);
+  }, [t, agentListRoleCategory, onFetchAgents]);
 
   // Handle the creation of a new Agent
   const handleCreateNewAgent = async () => {
@@ -908,6 +919,8 @@ export default function AgentSetupOrchestrator({
               onExitEditMode={handleExitEditMode}
               onImportAgent={() => handleImportAgent(t)}
               subAgentList={subAgentList}
+              agentRoleFilter={agentListRoleCategory}
+              onAgentRoleFilterChange={onAgentRoleFilterChange}
               loadingAgents={loadingAgents}
               isImporting={isImporting}
               isGeneratingAgent={isGeneratingAgent}
@@ -939,7 +952,9 @@ export default function AgentSetupOrchestrator({
                   <CollaborativeAgentDisplay
                     className="h-[128px] lg:h-[128px]"
                     style={{ flexShrink: 0 }}
-                    availableAgents={subAgentList}
+                    availableAgents={subAgentList.filter(
+                      (agent) => agent.agent_role_category !== "portal_main"
+                    )}
                     selectedAgentIds={enabledAgentIds}
                     parentAgentId={
                       isEditingAgent && editingAgent

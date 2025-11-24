@@ -71,6 +71,7 @@ export default function AgentConfig() {
   const [agentDescription, setAgentDescription] = useState("");
   const [agentDisplayName, setAgentDisplayName] = useState("");
   const [agentCategory, setAgentCategory] = useState("");
+  const [agentListRoleCategory, setAgentListRoleCategory] = useState("tool");
 
   // Add state for business logic and action buttons
   const [isGeneratingAgent, setIsGeneratingAgent] = useState(false);
@@ -282,10 +283,15 @@ export default function AgentConfig() {
   }, [t]);
 
   // Get agent list
-  const fetchAgents = async () => {
+  const fetchAgents = async (roleCategory = agentListRoleCategory) => {
     setLoadingAgents(true);
     try {
-      const result = await fetchAgentList();
+      const includePortalMain =
+        roleCategory === "portal_main" || roleCategory === "all";
+      const result = await fetchAgentList({
+        agentRoleCategory: roleCategory === "all" ? undefined : roleCategory,
+        includePortalMain,
+      });
       if (result.success) {
         // fetchAgentList now returns AgentBasicInfo[], so we just set the subAgentList
         setSubAgentList(result.data);
@@ -314,6 +320,11 @@ export default function AgentConfig() {
     } finally {
       setLoadingAgents(false);
     }
+  };
+
+  const handleAgentRoleFilterChange = async (roleCategory: string) => {
+    setAgentListRoleCategory(roleCategory);
+    await fetchAgents(roleCategory);
   };
 
   // Get agent list when component is loaded
@@ -439,6 +450,9 @@ export default function AgentConfig() {
               setBusinessLogicModelId={setBusinessLogicModelId}
               tools={tools}
               subAgentList={subAgentList}
+              agentListRoleCategory={agentListRoleCategory}
+              onAgentRoleFilterChange={handleAgentRoleFilterChange}
+              onFetchAgents={fetchAgents}
               loadingAgents={loadingAgents}
               mainAgentId={mainAgentId}
               setMainAgentId={setMainAgentId}

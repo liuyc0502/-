@@ -11,6 +11,7 @@ export interface Agent {
   display_name?: string;
   description: string;
   model: string;
+  category?: string;
   model_id?: number;
   max_step: number;
   provide_run_summary: boolean;
@@ -106,6 +107,9 @@ export interface AgentSetupOrchestratorProps {
   setBusinessLogicModelId: (value: number | null) => void;
   tools: Tool[];
   subAgentList?: Agent[];
+  agentListRoleCategory?: string;
+  onAgentRoleFilterChange?: (role: string) => void;
+  onFetchAgents?: (role?: string) => Promise<void>;
   loadingAgents?: boolean;
   mainAgentId: string | null;
   setMainAgentId: (value: string | null) => void;
@@ -146,6 +150,8 @@ export interface SubAgentPoolProps {
   onImportAgent: () => void;
   onExitEditMode?: () => void;
   subAgentList?: Agent[];
+  agentRoleFilter?: string;
+  onAgentRoleFilterChange?: (role: string) => void;
   loadingAgents?: boolean;
   isImporting?: boolean;
   isGeneratingAgent?: boolean;

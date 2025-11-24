@@ -2,7 +2,7 @@ import logging
 from http import HTTPStatus
 from typing import Optional
 
-from fastapi import APIRouter, Body, Header, HTTPException, Request
+from fastapi import APIRouter, Body, Header, HTTPException,Query,Request
 from fastapi.responses import JSONResponse
 
 from consts.model import AgentRequest, AgentInfoRequest, AgentIDRequest, ConversationResponse, AgentImportRequest
@@ -145,13 +145,20 @@ async def import_agent_api(request: AgentImportRequest, authorization: Optional[
 
 
 @router.get("/list")
-async def list_all_agent_info_api(authorization: Optional[str] = Header(None), request: Request = None):
+async def list_all_agent_info_api(authorization: Optional[str] = Header(None),
+ request: Request = None,
+ include_portal_main: bool = Query(False),
+ agent_role_category: Optional[str] = Query(None)
+ ):
     """
     list all agent info
     """
     try:
         _, tenant_id, _ = get_current_user_info(authorization, request)
-        return await list_all_agent_info_impl(tenant_id=tenant_id)
+        return await list_all_agent_info_impl(
+            tenant_id=tenant_id,
+            exclude_portal_main=not include_portal_main if agent_role_category is None else False,
+            agent_role_category=agent_role_category)
     except Exception as e:
         logger.error(f"Agent list error: {str(e)}")
         raise HTTPException(
