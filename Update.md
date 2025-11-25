@@ -1,4 +1,29 @@
 # 更新日志
+## 2025-11-25
+
+### 创建新分支并清理未使用的图像注释组件
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/update-20251125-cleanup`
+- 📦 **提交更改**: 删除 2 个未使用的文件，396 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**修改文件**:
+- `frontend/components/image-annotation/ImageAnnotator.tsx` (删除)
+- `frontend/components/image-annotation/sedX0l25i` (删除)
+
+**功能说明**:
+- 🧹 **代码清理**: 删除未使用的图像注释组件相关文件
+- 📝 **代码维护**: 保持代码库整洁，移除冗余文件
+
+**分支信息**:
+- 分支名称: `feature/update-20251125-cleanup`
+- 远程仓库: `origin/feature/update-20251125-cleanup`
+- 提交 ID: `c9cf1e64`
+- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/update-20251125-cleanup
+
+---
+
 ## 2025-11-23
 
 ### 优化病例趋势分析功能，添加时间范围筛选
