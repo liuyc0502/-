@@ -42,6 +42,8 @@ import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseVi
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
 
+// Image annotation components
+import { ImageAnnotationModal } from "@/components/image-annotation/ImageAnnotationModal";
 
 import {
   preprocessAttachments,
@@ -185,6 +187,11 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   // Add agent selection state
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
   const [portalMainAgentId, setPortalMainAgentId] = useState<number | null>(null);
+
+  // Add image annotation state
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [annotatingImageUrl, setAnnotatingImageUrl] = useState<string | null>(null);
+  const [annotatingImageName, setAnnotatingImageName] = useState<string>("image.png");
 
   // Auto-load portal main agent for doctor/patient portals
   useEffect(() => {
@@ -1424,6 +1431,25 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     setViewingImage(imageUrl);
   };
 
+  // Handle image annotation
+  const handleAnnotateImage = (imageUrl: string, imageName?: string) => {
+    setAnnotatingImageUrl(imageUrl);
+    setAnnotatingImageName(imageName || "image.png");
+    setShowAnnotationModal(true);
+  };
+
+  // Handle annotation save
+  const handleAnnotationSave = async (data: {
+    imageUrl: string;
+    annotations: any[];
+    ocrText?: string;
+    savedTo?: "case" | "patient";
+  }) => {
+    log.info("Annotation saved:", data);
+    // Optionally update message with annotation data
+    // or trigger a notification
+  };
+
   // Add conversation stop handling function
   const handleStop = async () => {
     // Stop agent_run of current conversation
@@ -1729,6 +1755,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   onSelectMessage={handleMessageSelect}
                   selectedMessageId={selectedMessageId}
                   onImageClick={handleImageClick}
+                  onAnnotateImage={handleAnnotateImage}
                   attachments={attachments}
                   onAttachmentsChange={handleAttachmentsChange}
                   onFileUpload={handleFileUpload}
@@ -1857,6 +1884,19 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Image Annotation Modal */}
+      {showAnnotationModal && annotatingImageUrl && (
+        <ImageAnnotationModal
+          imageUrl={annotatingImageUrl}
+          imageName={annotatingImageName}
+          onClose={() => {
+            setShowAnnotationModal(false);
+            setAnnotatingImageUrl(null);
+          }}
+          onSave={handleAnnotationSave}
+        />
       )}
     </>
   );
