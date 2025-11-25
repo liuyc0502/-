@@ -191,6 +191,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   // Add image annotation state
   const [showAnnotationModal, setShowAnnotationModal] = useState(false);
   const [annotatingImageUrl, setAnnotatingImageUrl] = useState<string | null>(null);
+  const [annotatingImageFile, setAnnotatingImageFile] = useState<File | null>(null);
   const [annotatingImageName, setAnnotatingImageName] = useState<string>("image.png");
 
   // Auto-load portal main agent for doctor/patient portals
@@ -1431,10 +1432,19 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     setViewingImage(imageUrl);
   };
 
-  // Handle image annotation
-  const handleAnnotateImage = (imageUrl: string, imageName?: string) => {
-    setAnnotatingImageUrl(imageUrl);
-    setAnnotatingImageName(imageName || "image.png");
+  // Handle image annotation (supports both File object and URL)
+  const handleAnnotateImage = (imageSource: File | string, imageName?: string) => {
+    if (imageSource instanceof File) {
+      // Local file
+      setAnnotatingImageFile(imageSource);
+      setAnnotatingImageUrl(null);
+      setAnnotatingImageName(imageSource.name);
+    } else {
+      // URL
+      setAnnotatingImageUrl(imageSource);
+      setAnnotatingImageFile(null);
+      setAnnotatingImageName(imageName || "image.png");
+    }
     setShowAnnotationModal(true);
   };
 
@@ -1887,13 +1897,15 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       )}
 
       {/* Image Annotation Modal */}
-      {showAnnotationModal && annotatingImageUrl && (
+      {showAnnotationModal && (annotatingImageUrl || annotatingImageFile) && (
         <ImageAnnotationModal
-          imageUrl={annotatingImageUrl}
+          imageUrl={annotatingImageUrl || undefined}
+          imageFile={annotatingImageFile || undefined}
           imageName={annotatingImageName}
           onClose={() => {
             setShowAnnotationModal(false);
             setAnnotatingImageUrl(null);
+            setAnnotatingImageFile(null);
           }}
           onSave={handleAnnotationSave}
         />

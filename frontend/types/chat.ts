@@ -163,7 +163,7 @@ export interface ChatStreamMainProps {
   onSelectMessage?: (messageId: string) => void;
   selectedMessageId?: string;
   onImageClick?: (image: string) => void;
-  onAnnotateImage?: (imageUrl: string, imageName?: string) => void;
+  onAnnotateImage?: (imageSource: File | string, imageName?: string) => void;
   attachments?: FilePreview[];
   onAttachmentsChange?: (attachments: FilePreview[]) => void;
   onFileUpload?: (file: File) => void;

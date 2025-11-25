@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnnotationProvider } from "./AnnotationContext";
@@ -8,7 +8,8 @@ import { AnnotationPanel } from "./AnnotationPanel";
 import { OcrResultFormModal } from "@/components/doctor/ocr/OcrResultFormModal";
 
 interface ImageAnnotationModalProps {
-  imageUrl: string;
+  imageUrl?: string;
+  imageFile?: File;
   imageName?: string;
   onClose: () => void;
   onSave?: (data: {
@@ -22,14 +23,34 @@ interface ImageAnnotationModalProps {
 /**
  * Image Annotation Modal Component
  * Integrates annotation, OCR, and save workflow in a full-screen modal
+ * Supports both URL-based images and local File objects
  */
 export function ImageAnnotationModal({
   imageUrl,
+  imageFile,
   imageName = "image.png",
   onClose,
   onSave,
 }: ImageAnnotationModalProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [localImageUrl, setLocalImageUrl] = useState<string | null>(null);
+
+  // Create local URL from File object if provided
+  useEffect(() => {
+    if (imageFile) {
+      const url = URL.createObjectURL(imageFile);
+      setLocalImageUrl(url);
+
+      // Cleanup URL when component unmounts
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    }
+  }, [imageFile]);
+
+  // Use provided imageUrl or generated localImageUrl
+  const displayImageUrl = imageUrl || localImageUrl;
+  const displayImageName = imageName || imageFile?.name || "image.png";
 
   const handleSave = async (data: any) => {
     setIsSaving(true);
@@ -45,6 +66,11 @@ export function ImageAnnotationModal({
     }
   };
 
+  // Don't render if no image source is available
+  if (!displayImageUrl) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="relative w-full h-full max-w-[95vw] max-h-[95vh] bg-white rounded-lg shadow-2xl flex flex-col">
@@ -54,7 +80,12 @@ export function ImageAnnotationModal({
             <h2 className="text-xl font-semibold text-gray-900">
               医学影像标注与识别
             </h2>
-            <span className="text-sm text-gray-500">{imageName}</span>
+            <span className="text-sm text-gray-500">{displayImageName}</span>
+            {imageFile && (
+              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                本地文件
+              </span>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -68,7 +99,7 @@ export function ImageAnnotationModal({
 
         {/* Modal Content - Annotation Panel */}
         <div className="flex-1 overflow-hidden">
-          <AnnotationProvider initialImageUrl={imageUrl}>
+          <AnnotationProvider initialImageUrl={displayImageUrl}>
             <AnnotationPanel
               onClose={onClose}
               showCloseButton={false}

@@ -28,6 +28,7 @@ export function ChatStreamMain({
   onSelectMessage,
   selectedMessageId,
   onImageClick,
+  onAnnotateImage,
   attachments,
   onAttachmentsChange,
   onFileUpload,
@@ -517,6 +518,7 @@ export function ChatStreamMain({
                         onSend={onSend}
                         onStop={onStop}
                         onKeyDown={onKeyDown}
+                        onAnnotateImage={onAnnotateImage}
                         attachments={attachments}
                         onAttachmentsChange={onAttachmentsChange}
                         onFileUpload={onFileUpload}
@@ -611,6 +613,7 @@ export function ChatStreamMain({
               onSend={onSend}
               onStop={onStop}
               onKeyDown={onKeyDown}
+              onAnnotateImage={onAnnotateImage}
               attachments={attachments}
               onAttachmentsChange={onAttachmentsChange}
               onFileUpload={onFileUpload}

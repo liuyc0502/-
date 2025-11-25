@@ -8,6 +8,7 @@ import {
   Square,
   X,
   AlertCircle,
+  Pen,
 } from "lucide-react";
 import {
   AiFillFileImage,
@@ -326,6 +327,7 @@ interface ChatInputProps {
   ) => void;
   onFileUpload?: (file: File) => void;
   onImageUpload?: (file: File) => void;
+  onAnnotateImage?: (file: File, fileName: string) => void;
   attachments?: FilePreview[];
   onAttachmentsChange?: (attachments: FilePreview[]) => void;
   selectedAgentId?: number | null;
@@ -347,6 +349,7 @@ export function ChatInput({
   onRecordingStatusChange,
   onFileUpload,
   onImageUpload,
+  onAnnotateImage,
   attachments = [],
   onAttachmentsChange,
   selectedAgentId = null,
@@ -978,6 +981,19 @@ export function ChatInput({
                         </span>
                       </div>
                     </div>
+                  )}
+                  {/* Annotate button (only for images) */}
+                  {attachment.type === chatConfig.filePreviewTypes.image && onAnnotateImage && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAnnotateImage(attachment.file, attachment.file.name);
+                      }}
+                      className="absolute top-1 right-7 p-0.5 bg-blue-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600 transform hover:scale-110 transition-transform z-10"
+                      title="标注图片"
+                    >
+                      <Pen className="h-2.5 w-2.5" />
+                    </button>
                   )}
                   <button
                     onClick={() => handleRemoveAttachment(attachment.id)}
