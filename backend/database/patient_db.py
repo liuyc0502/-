@@ -191,17 +191,17 @@ def create_timeline_stage(timeline_data: dict, tenant_id: str, user_id: str) -> 
         return {"timeline_id": timeline_id}
  
  
-def get_patient_timeline(medical_record_no: str, tenant_id: str) -> List[dict]:
+def get_patient_timeline(patient_id: int, tenant_id: str) -> List[dict]:
     """
-    Get all timeline stages for a patient by medical record number
+    Get all timeline stages for a patient by patient ID
     """
     with get_db_session() as session:
         timelines = session.query(PatientTimeline).filter(
-            PatientTimeline.medical_record_no == medical_record_no,
+            PatientTimeline.patient_id == patient_id,
             PatientTimeline.tenant_id == tenant_id,
             PatientTimeline.delete_flag != 'Y'
         ).order_by(PatientTimeline.display_order.asc(), PatientTimeline.stage_date.asc()).all()
- 
+
         return [as_dict(t) for t in timelines]
  
  
@@ -404,19 +404,19 @@ def create_patient_todo(todo_data: dict, tenant_id: str, user_id: str) -> dict:
         return {"todo_id": todo_id}
  
  
-def get_patient_todos(medical_record_no: str, tenant_id: str, status: Optional[str] = None) -> List[dict]:
+def get_patient_todos(patient_id: int, tenant_id: str, status: Optional[str] = None) -> List[dict]:
     """
-    Get patient todos with optional status filter by medical record number
+    Get patient todos with optional status filter by patient ID
     """
     with get_db_session() as session:
         query = session.query(PatientTodo).filter(
-            PatientTodo.medical_record_no == medical_record_no,
+            PatientTodo.patient_id == patient_id,
             PatientTodo.tenant_id == tenant_id,
             PatientTodo.delete_flag != 'Y'
         )
         if status:
             query = query.filter(PatientTodo.status == status)
- 
+
         todos = query.order_by(PatientTodo.due_date.asc()).all()
         return [as_dict(t) for t in todos]
  
