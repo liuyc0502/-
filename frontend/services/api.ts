@@ -270,6 +270,16 @@ export const API_ENDPOINTS = {
     delete: (recordId: number) => `${API_BASE_URL}/learning_record/${recordId}`,
     clearAll: `${API_BASE_URL}/learning_record/clear_all`,
   },
+
+  ocr: {
+    status: `${API_BASE_URL}/ocr/status`,
+    image: `${API_BASE_URL}/ocr/image`,
+    pdf: `${API_BASE_URL}/ocr/pdf`,
+    layout: `${API_BASE_URL}/ocr/layout`,
+    detectType: `${API_BASE_URL}/ocr/detect_type`,
+    extractFields: `${API_BASE_URL}/ocr/extract_fields`,
+    templates: `${API_BASE_URL}/ocr/templates`,
+  },
 };
 
 // Common error handling

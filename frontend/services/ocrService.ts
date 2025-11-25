@@ -1,7 +1,8 @@
 /**
  * OCR Service - Frontend API client for OCR operations
  */
-import api from "./api";
+import { API_ENDPOINTS, ApiError } from "./api";
+import { getAuthHeaders, fetchWithAuth } from "@/lib/auth";
 import {
   DocumentType,
   TemplateType,
@@ -10,6 +11,9 @@ import {
   ExtractionResult,
 } from "@/types/ocrTemplates";
 import { Annotation } from "@/components/image-annotation/ImageAnnotator";
+
+// @ts-ignore
+const fetch = fetchWithAuth;
 
 // API response types
 interface OcrImageResponse {
@@ -93,9 +97,19 @@ class OcrService {
    */
   async checkServiceStatus(): Promise<OcrServiceStatus> {
     try {
-      const response = await api.get("/ocr/status");
-      return response.data;
+      const response = await fetch(`${API_ENDPOINTS.ocr}/status`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to check OCR service status");
+      }
+
+      const data = await response.json();
+      return data.code === 0 ? data.data : data;
     } catch (error) {
+      console.error("Error checking OCR status:", error);
       return {
         available: false,
         url: "",
@@ -112,11 +126,24 @@ class OcrService {
     imageUrl: string,
     pipeline: "OCR" | "PP-StructureV3" = "OCR"
   ): Promise<OcrImageResponse> {
-    const response = await api.post("/ocr/image", {
-      image_url: imageUrl,
-      pipeline,
+    const response = await fetch(`${API_ENDPOINTS.ocr}/image`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        image_url: imageUrl,
+        pipeline,
+      }),
     });
-    return response.data;
+
+    if (!response.ok) {
+      throw new ApiError(response.status, "Failed to perform OCR on image");
+    }
+
+    const data = await response.json();
+    if (data.code === 0) {
+      return data.data;
+    }
+    throw new ApiError(data.code, data.message || "OCR failed");
   }
 
   /**
@@ -127,22 +154,48 @@ class OcrService {
     pages?: number[],
     pipeline: string = "PP-StructureV3"
   ): Promise<any> {
-    const response = await api.post("/ocr/pdf", {
-      pdf_url: pdfUrl,
-      pages,
-      pipeline,
+    const response = await fetch(`${API_ENDPOINTS.ocr}/pdf`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        pdf_url: pdfUrl,
+        pages,
+        pipeline,
+      }),
     });
-    return response.data;
+
+    if (!response.ok) {
+      throw new ApiError(response.status, "Failed to perform OCR on PDF");
+    }
+
+    const data = await response.json();
+    if (data.code === 0) {
+      return data.data;
+    }
+    throw new ApiError(data.code, data.message || "PDF OCR failed");
   }
 
   /**
    * Detect document type from OCR text
    */
   async detectDocumentType(ocrText: string): Promise<DocumentTypeDetection> {
-    const response = await api.post("/ocr/detect_type", {
-      ocr_text: ocrText,
+    const response = await fetch(`${API_ENDPOINTS.ocr}/detect_type`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        ocr_text: ocrText,
+      }),
     });
-    return response.data;
+
+    if (!response.ok) {
+      throw new ApiError(response.status, "Failed to detect document type");
+    }
+
+    const data = await response.json();
+    if (data.code === 0) {
+      return data.data;
+    }
+    throw new ApiError(data.code, data.message || "Type detection failed");
   }
 
   /**
@@ -153,16 +206,33 @@ class OcrService {
     templateType: TemplateType,
     annotations?: Annotation[]
   ): Promise<ExtractionResult> {
-    const response = await api.post("/ocr/extract_fields", {
-      ocr_text: ocrText,
-      template_type: templateType,
-      image_annotations: annotations,
+    const response = await fetch(`${API_ENDPOINTS.ocr}/extract_fields`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        ocr_text: ocrText,
+        template_type: templateType,
+        image_annotations: annotations,
+      }),
     });
-    return response.data;
+
+    if (!response.ok) {
+      throw new ApiError(response.status, "Failed to extract fields");
+    }
+
+    const data = await response.json();
+    if (data.code === 0) {
+      return data.data;
+    }
+    throw new ApiError(data.code, data.message || "Field extraction failed");
   }
 
   /**
    * Save OCR result to case library
+   * NOTE: This is a simplified version. Full implementation should:
+   * 1. Create case via POST /medical_case/create
+   * 2. Create case detail via POST /medical_case/detail/create
+   * 3. Add images via POST /medical_case/{case_id}/images
    */
   async saveToCaseLibrary(data: {
     fields: ExtractedFields;
@@ -174,40 +244,91 @@ class OcrService {
   }): Promise<{ case_id: number; case_no: string }> {
     const { fields, templateType, imageUrl, thumbnailUrl, annotations, ocrText } = data;
 
-    // Map extracted fields to case creation request
-    const request: SaveToCaseLibraryRequest = {
+    // Step 1: Create basic case
+    const caseRequest = {
+      case_no: `#${Date.now()}`, // Generate temporary case number
       case_title: (fields.case_title as string) || "OCR 导入病例",
-      diagnosis: (fields.diagnosis as string) || "",
-      disease_type: fields.disease_type as string,
+      diagnosis: (fields.diagnosis as string) || "待补充",
+      disease_type: (fields.disease_type as string) || "其他",
+      age: (fields.age as number) || 0,
+      gender: (fields.gender as string) || "未知",
       chief_complaint: fields.chief_complaint as string,
-      age: fields.age as number,
-      gender: fields.gender as string,
       category: templateType,
-      images: [
-        {
-          image_url: imageUrl,
-          thumbnail_url: thumbnailUrl,
-          image_type: getImageTypeFromTemplate(templateType),
-          image_description: (fields.imaging_findings as string) || (fields.pathology_findings as string),
-          annotations_data: annotations,
-          ocr_text: ocrText,
-        },
-      ],
-      detail: {
-        present_illness_history: fields.present_illness as string,
-        past_medical_history: fields.past_history as string,
-        diagnosis_basis: fields.pathology_findings as string || fields.imaging_findings as string,
-        treatment_plan: fields.treatment_plan as string,
-        clinical_notes: fields.clinical_notes as string,
-      },
+      tags: [],
     };
 
-    const response = await api.post("/medical_case/create", request);
-    return response.data;
+    const caseResponse = await fetch(`${API_ENDPOINTS.medicalCase.create}`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(caseRequest),
+    });
+
+    if (!caseResponse.ok) {
+      throw new ApiError(caseResponse.status, "Failed to create case");
+    }
+
+    const caseData = await caseResponse.json();
+    if (caseData.code !== 0) {
+      throw new ApiError(caseData.code, caseData.message || "Failed to create case");
+    }
+
+    const caseId = caseData.data.case_id;
+    const caseNo = caseData.data.case_no;
+
+    // Step 2: Create case detail
+    try {
+      const detailRequest = {
+        case_id: caseId,
+        present_illness_history: fields.present_illness as string,
+        past_medical_history: fields.past_history as string,
+        diagnosis_basis: (fields.pathology_findings as string) || (fields.imaging_findings as string),
+        treatment_plan: fields.treatment_plan as string,
+        clinical_notes: fields.clinical_notes as string,
+      };
+
+      await fetch(`${API_ENDPOINTS.medicalCase.detailCreate}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(detailRequest),
+      });
+    } catch (error) {
+      console.error("Failed to create case detail:", error);
+    }
+
+    // Step 3: Add images
+    try {
+      const imageRequest = {
+        case_id: caseId,
+        images: [
+          {
+            image_url: imageUrl,
+            thumbnail_url: thumbnailUrl,
+            image_type: getImageTypeFromTemplate(templateType),
+            image_description: (fields.imaging_findings as string) || (fields.pathology_findings as string),
+            display_order: 0,
+          },
+        ],
+      };
+
+      await fetch(API_ENDPOINTS.medicalCase.images.add(caseId), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(imageRequest),
+      });
+    } catch (error) {
+      console.error("Failed to add case images:", error);
+    }
+
+    return { case_id: caseId, case_no: caseNo };
   }
 
   /**
    * Save OCR result to patient archive
+   * NOTE: This is a simplified version. Full implementation should:
+   * 1. Create or update patient via POST /patient/create
+   * 2. Create timeline via POST /patient/timeline/create
+   * 3. Create timeline detail via POST /patient/timeline/detail/save
+   * 4. Add images via POST /patient/timeline/image/create
    */
   async saveToPatientArchive(data: {
     fields: ExtractedFields;
@@ -228,37 +349,107 @@ class OcrService {
       examination_report: "检查",
     };
 
-    const request: SaveToPatientArchiveRequest = {
-      patient_id: patientId,
-      patient_name: fields.patient_name as string,
-      gender: fields.gender as string,
-      age: fields.age as number,
+    let actualPatientId = patientId;
+
+    // Step 1: Create patient if not exists
+    if (!actualPatientId) {
+      const patientRequest = {
+        name: (fields.patient_name as string) || "OCR 导入患者",
+        gender: (fields.gender as string) || "未知",
+        age: (fields.age as number) || 0,
+        medical_record_no: `MR${Date.now()}`, // Generate temporary medical record number
+        email: `temp_${Date.now()}@example.com`, // Temporary email
+        allergies: [],
+        past_medical_history: fields.past_history ? [fields.past_history as string] : [],
+      };
+
+      const patientResponse = await fetch(`${API_ENDPOINTS.patient.create}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(patientRequest),
+      });
+
+      if (!patientResponse.ok) {
+        throw new ApiError(patientResponse.status, "Failed to create patient");
+      }
+
+      const patientData = await patientResponse.json();
+      if (patientData.code !== 0) {
+        throw new ApiError(patientData.code, patientData.message || "Failed to create patient");
+      }
+
+      actualPatientId = patientData.data.patient_id;
+    }
+
+    // Step 2: Create timeline
+    const timelineRequest = {
+      patient_id: actualPatientId,
+      stage_type: stageMap[templateType] || "检查",
+      stage_date: (fields.record_date as string) || (fields.admission_date as string) || new Date().toISOString().split("T")[0],
+      stage_title: (fields.stage_title as string) || TEMPLATE_FIELDS_NAMES[templateType],
       diagnosis: (fields.preliminary_diagnosis as string) || (fields.discharge_diagnosis as string),
-      timeline: {
-        stage: stageMap[templateType] || "检查",
-        stage_title: (fields.stage_title as string) || TEMPLATE_FIELDS_NAMES[templateType],
-        stage_date: fields.record_date as string || fields.admission_date as string || new Date().toISOString().split("T")[0],
-        diagnosis: (fields.preliminary_diagnosis as string) || (fields.discharge_diagnosis as string),
-        detail: {
-          doctor_notes: fields.doctor_notes as string,
-          pathology_findings: fields.findings as string,
-          patient_summary: fields.patient_condition as string,
-        },
-        images: [
-          {
-            image_url: imageUrl,
-            thumbnail_url: thumbnailUrl,
-            image_type: getImageTypeFromTemplate(templateType),
-            image_label: (fields.stage_title as string) || templateType,
-            annotations_data: annotations,
-            ocr_text: ocrText,
-          },
-        ],
-      },
+      status: "completed",
+      display_order: 0,
     };
 
-    const response = await api.post("/patient/create_or_update_with_timeline", request);
-    return response.data;
+    const timelineResponse = await fetch(`${API_ENDPOINTS.patient.timeline.create}`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(timelineRequest),
+    });
+
+    if (!timelineResponse.ok) {
+      throw new ApiError(timelineResponse.status, "Failed to create timeline");
+    }
+
+    const timelineData = await timelineResponse.json();
+    if (timelineData.code !== 0) {
+      throw new ApiError(timelineData.code, timelineData.message || "Failed to create timeline");
+    }
+
+    const timelineId = timelineData.data.timeline_id;
+
+    // Step 3: Create timeline detail
+    try {
+      const detailRequest = {
+        timeline_id: timelineId,
+        doctor_notes: fields.doctor_notes as string,
+        pathology_findings: fields.findings as string,
+        patient_summary: fields.patient_condition as string,
+        medications: [],
+        patient_suggestions: [],
+      };
+
+      await fetch(`${API_ENDPOINTS.patient.timeline.createDetail}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(detailRequest),
+      });
+    } catch (error) {
+      console.error("Failed to create timeline detail:", error);
+    }
+
+    // Step 4: Add images
+    try {
+      const imageRequest = {
+        timeline_id: timelineId,
+        image_type: getImageTypeFromTemplate(templateType),
+        image_label: (fields.stage_title as string) || templateType,
+        image_url: imageUrl,
+        thumbnail_url: thumbnailUrl,
+        display_order: 0,
+      };
+
+      await fetch(`${API_ENDPOINTS.patient.image.create}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(imageRequest),
+      });
+    } catch (error) {
+      console.error("Failed to add patient images:", error);
+    }
+
+    return { patient_id: actualPatientId, timeline_id: timelineId };
   }
 }
 
