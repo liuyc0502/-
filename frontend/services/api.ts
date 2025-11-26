@@ -270,6 +270,15 @@ export const API_ENDPOINTS = {
     delete: (recordId: number) => `${API_BASE_URL}/learning_record/${recordId}`,
     clearAll: `${API_BASE_URL}/learning_record/clear_all`,
   },
+  annotation: {
+    create: `${API_BASE_URL}/patient/annotation/create`,
+    list: (imageId: number) => `${API_BASE_URL}/patient/annotation/list/${imageId}`,
+    update: (annotationId: number) => `${API_BASE_URL}/patient/annotation/update/${annotationId}`,
+    delete: (annotationId: number) => `${API_BASE_URL}/patient/annotation/delete/${annotationId}`,
+    analyzeRegion: `${API_BASE_URL}/patient/analysis/region`,
+    parsePatient: `${API_BASE_URL}/patient/ocr/parse_patient`,
+    parseCase: `${API_BASE_URL}/patient/ocr/parse_case`,
+  },
 };
 
 // Common error handling

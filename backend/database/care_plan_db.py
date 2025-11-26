@@ -1,6 +1,6 @@
 import logging
 
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 from datetime import datetime
 from sqlalchemy import and_, or_
 
@@ -63,31 +63,19 @@ def get_care_plan_by_id(plan_id: int, tenant_id: str) -> Optional[dict]:
         return None
 
 
-def list_care_plans_by_patient(medical_record_no: str, tenant_id: str,
+def list_care_plans_by_patient(patient_id: int, tenant_id: str,
                                 status: Optional[str] = None) -> List[dict]:
     """
-    List all care plans for a specific patient by medical record number
+    List all care plans for a specific patient by patient ID
     
     Args:
-        medical_record_no: Patient's medical record number (病历号)
+        patient_id: Patient ID (integer)
         tenant_id: Tenant ID for data isolation
         status: Optional status filter (active/completed/paused)
     
     Returns:
         List of care plans for the patient
     """
-    # First, get patient_id from medical_record_no
-    patient = get_patient_by_medical_record_no(medical_record_no, tenant_id)
-    if not patient:
-        logger.warning(f"Patient not found with medical_record_no: {medical_record_no}")
-        return []
-    
-    patient_id = patient.get('patient_id')
-    if not patient_id:
-        logger.warning(f"Patient ID not found for medical_record_no: {medical_record_no}")
-        return []
-    
-    # Then query care plans by patient_id
     with get_db_session() as session:
         query = session.query(CarePlan).filter(
             CarePlan.patient_id == patient_id,
@@ -133,6 +121,66 @@ def update_care_plan(plan_id: int, plan_data: dict, tenant_id: str, user_id: str
 
         logger.info(f"Updated care plan: {plan_id}")
         return True
+
+
+def update_care_plan_for_patient(
+    medical_record_no: str,
+    plan_id: int,
+    tenant_id: str,
+    user_id: str,
+    plan_name: Optional[str] = None,
+    plan_description: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    status: Optional[str] = None
+) -> dict:
+    """
+    Update a care plan after validating patient ownership and fields
+    """
+    patient = get_patient_by_medical_record_no(medical_record_no, tenant_id)
+    if not patient:
+        return {"success": False, "error": "Patient not found", "medical_record_no": medical_record_no}
+
+    plan = get_care_plan_by_id(plan_id, tenant_id)
+    if not plan:
+        return {"success": False, "error": "Care plan not found", "plan_id": plan_id}
+
+    if plan.get("patient_id") != patient.get("patient_id"):
+        return {
+            "success": False,
+            "error": "Care plan does not belong to this patient",
+            "plan_id": plan_id,
+            "medical_record_no": medical_record_no
+        }
+
+    update_data: Dict[str, str] = {}
+    if plan_name is not None:
+        update_data["plan_name"] = plan_name
+    if plan_description is not None:
+        update_data["plan_description"] = plan_description
+    if start_date is not None:
+        update_data["start_date"] = start_date
+    if end_date is not None:
+        update_data["end_date"] = end_date
+    if status is not None:
+        update_data["status"] = status
+
+    if not update_data:
+        return {"success": False, "error": "No fields to update"}
+
+    success = update_care_plan(plan_id, update_data, tenant_id, user_id)
+    if not success:
+        return {"success": False, "error": "Failed to update care plan", "plan_id": plan_id}
+
+    updated_plan = get_care_plan_by_id(plan_id, tenant_id)
+    return {
+        "success": True,
+        "plan_id": plan_id,
+        "patient_id": patient.get("patient_id"),
+        "medical_record_no": medical_record_no,
+        "updated_fields": list(update_data.keys()),
+        "plan": updated_plan
+    }
 
 
 def delete_care_plan(plan_id: int, tenant_id: str, user_id: str) -> bool:
@@ -201,6 +249,22 @@ def list_medications_by_plan(plan_id: int, tenant_id: str) -> List[dict]:
         return [as_dict(med) for med in medications]
 
 
+def get_medication_by_id(medication_id: int, tenant_id: str) -> Optional[dict]:
+    """
+    Get medication by ID
+    """
+    with get_db_session() as session:
+        medication = session.query(CarePlanMedication).filter(
+            CarePlanMedication.medication_id == medication_id,
+            CarePlanMedication.tenant_id == tenant_id,
+            CarePlanMedication.delete_flag != 'Y'
+        ).first()
+
+        if medication:
+            return as_dict(medication)
+        return None
+
+
 def update_medication(medication_id: int, medication_data: dict,
                      tenant_id: str, user_id: str) -> bool:
     """
@@ -226,6 +290,66 @@ def update_medication(medication_id: int, medication_data: dict,
 
         logger.info(f"Updated medication: {medication_id}")
         return True
+
+
+def update_medication_for_patient(
+    medical_record_no: str,
+    medication_id: int,
+    tenant_id: str,
+    user_id: str,
+    medication_name: Optional[str] = None,
+    dosage: Optional[str] = None,
+    frequency: Optional[str] = None,
+    time_slots: Optional[List[str]] = None,
+    notes: Optional[str] = None
+) -> dict:
+    """
+    Update medication after validating patient ownership and fields
+    """
+    patient = get_patient_by_medical_record_no(medical_record_no, tenant_id)
+    if not patient:
+        return {"success": False, "error": "Patient not found", "medical_record_no": medical_record_no}
+
+    medication = get_medication_by_id(medication_id, tenant_id)
+    if not medication:
+        return {"success": False, "error": "Medication not found", "medication_id": medication_id}
+
+    plan = get_care_plan_by_id(medication.get("plan_id"), tenant_id)
+    if not plan or plan.get("patient_id") != patient.get("patient_id"):
+        return {
+            "success": False,
+            "error": "Medication does not belong to this patient",
+            "medication_id": medication_id,
+            "medical_record_no": medical_record_no
+        }
+
+    update_data: Dict[str, Any] = {}
+    if medication_name is not None:
+        update_data["medication_name"] = medication_name
+    if dosage is not None:
+        update_data["dosage"] = dosage
+    if frequency is not None:
+        update_data["frequency"] = frequency
+    if time_slots is not None:
+        update_data["time_slots"] = time_slots
+    if notes is not None:
+        update_data["notes"] = notes
+
+    if not update_data:
+        return {"success": False, "error": "No fields to update"}
+
+    success = update_medication(medication_id, update_data, tenant_id, user_id)
+    if not success:
+        return {"success": False, "error": "Failed to update medication", "medication_id": medication_id}
+
+    return {
+        "success": True,
+        "medication_id": medication_id,
+        "plan_id": medication.get("plan_id"),
+        "patient_id": patient.get("patient_id"),
+        "medical_record_no": medical_record_no,
+        "updated_fields": list(update_data.keys())
+    }
 
 
 def delete_medication(medication_id: int, tenant_id: str, user_id: str) -> bool:
@@ -294,6 +418,22 @@ def list_tasks_by_plan(plan_id: int, tenant_id: str) -> List[dict]:
         return [as_dict(task) for task in tasks]
 
 
+def get_task_by_id(task_id: int, tenant_id: str) -> Optional[dict]:
+    """
+    Get task by ID
+    """
+    with get_db_session() as session:
+        task = session.query(CarePlanTask).filter(
+            CarePlanTask.task_id == task_id,
+            CarePlanTask.tenant_id == tenant_id,
+            CarePlanTask.delete_flag != 'Y'
+        ).first()
+
+        if task:
+            return as_dict(task)
+        return None
+
+
 def update_task(task_id: int, task_data: dict, tenant_id: str, user_id: str) -> bool:
     """
     Update task
@@ -318,6 +458,66 @@ def update_task(task_id: int, task_data: dict, tenant_id: str, user_id: str) -> 
 
         logger.info(f"Updated task: {task_id}")
         return True
+
+
+def update_task_for_patient(
+    medical_record_no: str,
+    task_id: int,
+    tenant_id: str,
+    user_id: str,
+    task_title: Optional[str] = None,
+    task_description: Optional[str] = None,
+    task_category: Optional[str] = None,
+    frequency: Optional[str] = None,
+    duration: Optional[str] = None
+) -> dict:
+    """
+    Update task after validating patient ownership and fields
+    """
+    patient = get_patient_by_medical_record_no(medical_record_no, tenant_id)
+    if not patient:
+        return {"success": False, "error": "Patient not found", "medical_record_no": medical_record_no}
+
+    task = get_task_by_id(task_id, tenant_id)
+    if not task:
+        return {"success": False, "error": "Task not found", "task_id": task_id}
+
+    plan = get_care_plan_by_id(task.get("plan_id"), tenant_id)
+    if not plan or plan.get("patient_id") != patient.get("patient_id"):
+        return {
+            "success": False,
+            "error": "Task does not belong to this patient",
+            "task_id": task_id,
+            "medical_record_no": medical_record_no
+        }
+
+    update_data: Dict[str, Any] = {}
+    if task_title is not None:
+        update_data["task_title"] = task_title
+    if task_description is not None:
+        update_data["task_description"] = task_description
+    if task_category is not None:
+        update_data["task_category"] = task_category
+    if frequency is not None:
+        update_data["frequency"] = frequency
+    if duration is not None:
+        update_data["duration"] = duration
+
+    if not update_data:
+        return {"success": False, "error": "No fields to update"}
+
+    success = update_task(task_id, update_data, tenant_id, user_id)
+    if not success:
+        return {"success": False, "error": "Failed to update task", "task_id": task_id}
+
+    return {
+        "success": True,
+        "task_id": task_id,
+        "plan_id": task.get("plan_id"),
+        "patient_id": patient.get("patient_id"),
+        "medical_record_no": medical_record_no,
+        "updated_fields": list(update_data.keys())
+    }
 
 
 def delete_task(task_id: int, tenant_id: str, user_id: str) -> bool:
@@ -381,6 +581,99 @@ def list_precautions_by_plan(plan_id: int, tenant_id: str) -> List[dict]:
         ).all()
 
         return [as_dict(precaution) for precaution in precautions]
+
+
+def get_precaution_by_id(precaution_id: int, tenant_id: str) -> Optional[dict]:
+    """
+    Get precaution by ID
+    """
+    with get_db_session() as session:
+        precaution = session.query(CarePlanPrecaution).filter(
+            CarePlanPrecaution.precaution_id == precaution_id,
+            CarePlanPrecaution.tenant_id == tenant_id,
+            CarePlanPrecaution.delete_flag != 'Y'
+        ).first()
+
+        if precaution:
+            return as_dict(precaution)
+        return None
+
+
+def update_precaution(precaution_id: int, precaution_data: dict,
+                      tenant_id: str, user_id: str) -> bool:
+    """
+    Update precaution
+    """
+    with get_db_session() as session:
+        precaution = session.query(CarePlanPrecaution).filter(
+            CarePlanPrecaution.precaution_id == precaution_id,
+            CarePlanPrecaution.tenant_id == tenant_id,
+            CarePlanPrecaution.delete_flag != 'Y'
+        ).first()
+
+        if not precaution:
+            return False
+
+        for key in ['precaution_content', 'priority']:
+            if key in precaution_data:
+                setattr(precaution, key, precaution_data[key])
+
+        precaution.updated_by = user_id
+        session.commit()
+
+        logger.info(f"Updated precaution: {precaution_id}")
+        return True
+
+
+def update_precaution_for_patient(
+    medical_record_no: str,
+    precaution_id: int,
+    tenant_id: str,
+    user_id: str,
+    precaution_content: Optional[str] = None,
+    priority: Optional[str] = None
+) -> dict:
+    """
+    Update precaution after validating patient ownership and fields
+    """
+    patient = get_patient_by_medical_record_no(medical_record_no, tenant_id)
+    if not patient:
+        return {"success": False, "error": "Patient not found", "medical_record_no": medical_record_no}
+
+    precaution = get_precaution_by_id(precaution_id, tenant_id)
+    if not precaution:
+        return {"success": False, "error": "Precaution not found", "precaution_id": precaution_id}
+
+    plan = get_care_plan_by_id(precaution.get("plan_id"), tenant_id)
+    if not plan or plan.get("patient_id") != patient.get("patient_id"):
+        return {
+            "success": False,
+            "error": "Precaution does not belong to this patient",
+            "precaution_id": precaution_id,
+            "medical_record_no": medical_record_no
+        }
+
+    update_data: Dict[str, Any] = {}
+    if precaution_content is not None:
+        update_data["precaution_content"] = precaution_content
+    if priority is not None:
+        update_data["priority"] = priority
+
+    if not update_data:
+        return {"success": False, "error": "No fields to update"}
+
+    success = update_precaution(precaution_id, update_data, tenant_id, user_id)
+    if not success:
+        return {"success": False, "error": "Failed to update precaution", "precaution_id": precaution_id}
+
+    return {
+        "success": True,
+        "precaution_id": precaution_id,
+        "plan_id": precaution.get("plan_id"),
+        "patient_id": patient.get("patient_id"),
+        "medical_record_no": medical_record_no,
+        "updated_fields": list(update_data.keys())
+    }
 
 
 def delete_precaution(precaution_id: int, tenant_id: str, user_id: str) -> bool:

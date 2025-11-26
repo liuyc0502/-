@@ -160,7 +160,7 @@ async def get_storage_files(
         )
 
 
-@router.get("/storage/{path}/{object_name}")
+@router.get("/storage/{object_name:path}")
 async def get_storage_file(
     object_name: str = PathParam(..., description="File object name"),
     download: str = Query("ignore", description="How to get the file"),
@@ -169,7 +169,7 @@ async def get_storage_file(
     """
     Get information, download link, or file stream for a single file
 
-    - **object_name**: File object name
+    - **object_name**: File object name (can include path segments, e.g., "attachments/file.jpg")
     - **download**: Download mode: ignore (default, return file info), stream (return file stream), redirect (redirect to download URL)
     - **expires**: URL validity period in seconds (default 3600)
 
@@ -187,7 +187,7 @@ async def get_storage_file(
                 file_stream,
                 media_type=content_type,
                 headers={
-                    "Content-Disposition": f'inline; filename="{object_name}"'
+                    "Content-Disposition": f'inline; filename="{object_name.split("/")[-1]}"'
                 }
             )
         else:

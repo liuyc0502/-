@@ -5,7 +5,8 @@ from sqlalchemy import and_, or_
 from database.client import get_db_session, as_dict
 from database.db_models import (
     PatientInfo, PatientTimeline, PatientTimelineDetail,
-    PatientMedicalImage, PatientMetrics, PatientAttachment, PatientTodo
+    PatientMedicalImage, PatientMetrics, PatientAttachment, PatientTodo,
+    PatientImageAnnotation, PatientImageAnalysis
 )
  
 logger = logging.getLogger(__name__)
@@ -201,7 +202,7 @@ def get_patient_timeline(patient_id: int, tenant_id: str) -> List[dict]:
             PatientTimeline.tenant_id == tenant_id,
             PatientTimeline.delete_flag != 'Y'
         ).order_by(PatientTimeline.display_order.asc(), PatientTimeline.stage_date.asc()).all()
-
+ 
         return [as_dict(t) for t in timelines]
  
  
@@ -416,7 +417,7 @@ def get_patient_todos(patient_id: int, tenant_id: str, status: Optional[str] = N
         )
         if status:
             query = query.filter(PatientTodo.status == status)
-
+ 
         todos = query.order_by(PatientTodo.due_date.asc()).all()
         return [as_dict(t) for t in todos]
  
@@ -557,7 +558,214 @@ def delete_timeline_attachments(timeline_id: int, tenant_id: str, user_id: str) 
             PatientAttachment.timeline_id == timeline_id,
             PatientAttachment.tenant_id == tenant_id
         ).delete()
- 
+
         session.commit()
         logger.info(f"Hard deleted {deleted_count} attachments for timeline: {timeline_id}")
         return True
+
+
+# ============================================================================
+# Image Annotation Operations
+# ============================================================================
+
+def create_image_annotation(annotation_data: dict, tenant_id: str, user_id: str) -> dict:
+    """
+    Create a new image annotation record
+    """
+    with get_db_session() as session:
+        new_annotation = PatientImageAnnotation(
+            image_id=annotation_data.get('image_id'),
+            annotation_type=annotation_data.get('annotation_type'),
+            annotation_shape=annotation_data.get('annotation_shape'),
+            coordinates=annotation_data.get('coordinates'),
+            annotation_color=annotation_data.get('annotation_color', '#FF0000'),
+            annotation_label=annotation_data.get('annotation_label'),
+            annotation_order=annotation_data.get('annotation_order'),
+            cropped_image_url=annotation_data.get('cropped_image_url'),
+            tenant_id=tenant_id,
+            created_by=user_id,
+            updated_by=user_id,
+            delete_flag='N'
+        )
+        session.add(new_annotation)
+        session.flush()
+
+        annotation_id = new_annotation.annotation_id
+        session.commit()
+
+        logger.info(f"Created annotation: {annotation_id} for image: {annotation_data.get('image_id')}")
+        return {"annotation_id": annotation_id}
+
+
+def get_image_annotations(image_id: int, tenant_id: str) -> List[dict]:
+    """
+    Get all annotations for an image
+    """
+    with get_db_session() as session:
+        annotations = session.query(PatientImageAnnotation).filter(
+            PatientImageAnnotation.image_id == image_id,
+            PatientImageAnnotation.tenant_id == tenant_id,
+            PatientImageAnnotation.delete_flag != 'Y'
+        ).order_by(PatientImageAnnotation.annotation_order).all()
+
+        return [as_dict(ann) for ann in annotations]
+
+
+def get_annotation_by_id(annotation_id: int, tenant_id: str) -> Optional[dict]:
+    """
+    Get a specific annotation by ID
+    """
+    with get_db_session() as session:
+        annotation = session.query(PatientImageAnnotation).filter(
+            PatientImageAnnotation.annotation_id == annotation_id,
+            PatientImageAnnotation.tenant_id == tenant_id,
+            PatientImageAnnotation.delete_flag != 'Y'
+        ).first()
+
+        if annotation:
+            return as_dict(annotation)
+        return None
+
+
+def update_annotation(annotation_id: int, update_data: dict, tenant_id: str, user_id: str) -> bool:
+    """
+    Update an existing annotation
+    """
+    with get_db_session() as session:
+        annotation = session.query(PatientImageAnnotation).filter(
+            PatientImageAnnotation.annotation_id == annotation_id,
+            PatientImageAnnotation.tenant_id == tenant_id,
+            PatientImageAnnotation.delete_flag != 'Y'
+        ).first()
+
+        if not annotation:
+            logger.warning(f"Annotation not found: {annotation_id}")
+            return False
+
+        # Update fields
+        if 'annotation_label' in update_data:
+            annotation.annotation_label = update_data['annotation_label']
+        if 'annotation_color' in update_data:
+            annotation.annotation_color = update_data['annotation_color']
+        if 'coordinates' in update_data:
+            annotation.coordinates = update_data['coordinates']
+        if 'cropped_image_url' in update_data:
+            annotation.cropped_image_url = update_data['cropped_image_url']
+
+        annotation.updated_by = user_id
+        session.commit()
+
+        logger.info(f"Updated annotation: {annotation_id}")
+        return True
+
+
+def delete_annotation(annotation_id: int, tenant_id: str, user_id: str) -> bool:
+    """
+    Soft delete an annotation
+    """
+    with get_db_session() as session:
+        annotation = session.query(PatientImageAnnotation).filter(
+            PatientImageAnnotation.annotation_id == annotation_id,
+            PatientImageAnnotation.tenant_id == tenant_id
+        ).first()
+
+        if not annotation:
+            logger.warning(f"Annotation not found: {annotation_id}")
+            return False
+
+        annotation.delete_flag = 'Y'
+        annotation.updated_by = user_id
+        session.commit()
+
+        logger.info(f"Soft deleted annotation: {annotation_id}")
+        return True
+
+
+def get_next_annotation_order(image_id: int, tenant_id: str) -> int:
+    """
+    Get the next annotation order number for an image
+    """
+    with get_db_session() as session:
+        max_order = session.query(PatientImageAnnotation.annotation_order).filter(
+            PatientImageAnnotation.image_id == image_id,
+            PatientImageAnnotation.tenant_id == tenant_id,
+            PatientImageAnnotation.delete_flag != 'Y'
+        ).order_by(PatientImageAnnotation.annotation_order.desc()).first()
+
+        if max_order and max_order[0] is not None:
+            return max_order[0] + 1
+        return 1
+
+
+# ============================================================================
+# Image Analysis Operations
+# ============================================================================
+
+def create_image_analysis(analysis_data: dict, tenant_id: str, user_id: str) -> dict:
+    """
+    Create a new image analysis record
+    """
+    with get_db_session() as session:
+        new_analysis = PatientImageAnalysis(
+            image_id=analysis_data.get('image_id'),
+            annotation_id=analysis_data.get('annotation_id'),
+            analysis_type=analysis_data.get('analysis_type'),
+            analysis_prompt=analysis_data.get('analysis_prompt'),
+            analysis_result=analysis_data.get('analysis_result'),
+            model_name=analysis_data.get('model_name'),
+            confidence_score=analysis_data.get('confidence_score'),
+            conversation_id=analysis_data.get('conversation_id'),
+            tenant_id=tenant_id,
+            created_by=user_id,
+            delete_flag='N'
+        )
+        session.add(new_analysis)
+        session.flush()
+
+        analysis_id = new_analysis.analysis_id
+        session.commit()
+
+        logger.info(f"Created analysis: {analysis_id} for image: {analysis_data.get('image_id')}")
+        return {"analysis_id": analysis_id}
+
+
+def get_image_analyses(image_id: int, tenant_id: str, limit: int = 50) -> List[dict]:
+    """
+    Get all analyses for an image
+    """
+    with get_db_session() as session:
+        analyses = session.query(PatientImageAnalysis).filter(
+            PatientImageAnalysis.image_id == image_id,
+            PatientImageAnalysis.tenant_id == tenant_id,
+            PatientImageAnalysis.delete_flag != 'Y'
+        ).order_by(PatientImageAnalysis.create_time.desc()).limit(limit).all()
+
+        return [as_dict(analysis) for analysis in analyses]
+
+
+def get_annotation_analyses(annotation_id: int, tenant_id: str, limit: int = 20) -> List[dict]:
+    """
+    Get all analyses for a specific annotation
+    """
+    with get_db_session() as session:
+        analyses = session.query(PatientImageAnalysis).filter(
+            PatientImageAnalysis.annotation_id == annotation_id,
+            PatientImageAnalysis.tenant_id == tenant_id,
+            PatientImageAnalysis.delete_flag != 'Y'
+        ).order_by(PatientImageAnalysis.create_time.desc()).limit(limit).all()
+
+        return [as_dict(analysis) for analysis in analyses]
+
+
+def get_conversation_analyses(conversation_id: int, tenant_id: str) -> List[dict]:
+    """
+    Get all analyses linked to a conversation
+    """
+    with get_db_session() as session:
+        analyses = session.query(PatientImageAnalysis).filter(
+            PatientImageAnalysis.conversation_id == conversation_id,
+            PatientImageAnalysis.tenant_id == tenant_id,
+            PatientImageAnalysis.delete_flag != 'Y'
+        ).order_by(PatientImageAnalysis.create_time.desc()).all()
+
+        return [as_dict(analysis) for analysis in analyses]

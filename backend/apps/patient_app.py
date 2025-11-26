@@ -28,6 +28,26 @@ class CreatePatientRequest(BaseModel):
     past_medical_history: Optional[List[str]] = Field(default_factory=list, description="Past medical history")
 
 
+class CreateAnnotationRequest(BaseModel):
+    image_id: int = Field(..., description="Image ID")
+    annotation_type: str = Field(..., description="Annotation type: lesion/control/shadow/hemorrhage/artifact/other")
+    annotation_shape: str = Field(..., description="Shape: circle/rectangle/polygon")
+    coordinates: dict = Field(..., description="Shape coordinates as dict")
+    annotation_label: Optional[str] = Field("", description="User description/notes")
+    annotation_color: Optional[str] = Field("#FF0000", description="Color code")
+
+
+class UpdateAnnotationRequest(BaseModel):
+    annotation_label: Optional[str] = Field(None, description="Updated label")
+    annotation_color: Optional[str] = Field(None, description="Updated color")
+
+
+class AnalyzeRegionRequest(BaseModel):
+    annotation_id: int = Field(..., description="Annotation ID to analyze")
+    question: str = Field(..., description="Doctor's question about the region")
+    conversation_id: Optional[int] = Field(None, description="Optional conversation ID")
+
+
 class CreateTimelineRequest(BaseModel):
     patient_id: int = Field(..., description="Patient ID")
     stage_type: str = Field(..., description="Stage type: 初诊/检查/确诊/治疗/随访")
@@ -853,7 +873,7 @@ async def delete_timeline_attachments(
             tenant_id,
             user_id
         )
- 
+
         return JSONResponse(
             status_code=HTTPStatus.OK,
             content=result
@@ -863,4 +883,182 @@ async def delete_timeline_attachments(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete attachments: {str(e)}"
+        )
+
+
+# ============================================================================
+# Image Annotation Endpoints
+# ============================================================================
+
+@router.post("/patient/annotation/create")
+async def create_annotation(
+    request: CreateAnnotationRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Create a new annotation on a medical image
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.create_annotation_service(
+            request.dict(),
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Create annotation failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create annotation: {str(e)}"
+        )
+
+
+@router.get("/patient/annotation/list/{image_id}")
+async def get_annotations(
+    image_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Get all annotations for an image
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        annotations = await patient_service.get_annotations_service(image_id, tenant_id)
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content={"annotations": annotations}
+        )
+    except Exception as e:
+        logger.error(f"Get annotations failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get annotations: {str(e)}"
+        )
+
+
+@router.put("/patient/annotation/update/{annotation_id}")
+async def update_annotation(
+    annotation_id: int,
+    request: UpdateAnnotationRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Update an annotation
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.update_annotation_service(
+            annotation_id,
+            request.dict(exclude_none=True),
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Update annotation failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update annotation: {str(e)}"
+        )
+
+
+@router.delete("/patient/annotation/delete/{annotation_id}")
+async def delete_annotation(
+    annotation_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Delete an annotation
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.delete_annotation_service(
+            annotation_id,
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Delete annotation failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete annotation: {str(e)}"
+        )
+
+
+# ============================================================================
+# Image Analysis Endpoints
+# ============================================================================
+
+@router.post("/patient/analysis/region")
+async def analyze_region(
+    request: AnalyzeRegionRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Analyze an annotated region using AI
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.analyze_region_service(
+            request.annotation_id,
+            request.question,
+            request.conversation_id,
+            tenant_id,
+            user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Analyze region failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to analyze region: {str(e)}"
         )

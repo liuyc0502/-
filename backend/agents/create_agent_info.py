@@ -289,17 +289,39 @@ async def prepare_prompt_templates(is_manager: bool, system_prompt: str, languag
 
 
 async def join_minio_file_description_to_query(minio_files, query):
+    """
+    Join minio file information to query for agent processing.
+    Includes file URL for image files so OCR tool can be called with the URL.
+    """
     final_query = query
     if minio_files and isinstance(minio_files, list):
-        file_descriptions = []
+        file_info_list = []
         for file in minio_files:
-            if isinstance(file, dict) and "description" in file and file["description"]:
-                file_descriptions.append(file["description"])
+            if isinstance(file, dict):
+                file_info = ""
+                file_name = file.get("name", "unknown")
+                file_type = file.get("type", "unknown")
+                file_url = file.get("url", "")
+                description = file.get("description", "")
+                
+                # Build file information string
+                if file_type == "image" and file_url:
+                    # For images, include URL so OCR tool can process them
+                    file_info = f"[Image File: {file_name}]\n"
+                    file_info += f"  - URL: {file_url}\n"
+                    if description:
+                        file_info += f"  - Description: {description}\n"
+                    file_info += "  - Note: Use OCR tool with this URL to extract text from the image if needed.\n"
+                elif description:
+                    file_info = f"[File: {file_name}]\n  - {description}\n"
+                
+                if file_info:
+                    file_info_list.append(file_info)
 
-        if file_descriptions:
-            final_query = "User provided some reference files:\n"
-            final_query += "\n".join(file_descriptions) + "\n\n"
-            final_query += f"User wants to answer questions based on the above information: {query}"
+        if file_info_list:
+            final_query = "User provided the following files:\n"
+            final_query += "\n".join(file_info_list) + "\n"
+            final_query += f"User query: {query}"
     return final_query
 
 

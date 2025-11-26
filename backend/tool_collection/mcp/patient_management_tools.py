@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from fastmcp import FastMCP
 from consts.const import DEFAULT_TENANT_ID
 from database.patient_db import (
-    get_patient_by_id,
+    get_patient_by_medical_record_no,
     get_patient_timeline,
     get_timeline_detail,
     get_patient_todos,
@@ -21,23 +21,23 @@ patient_tools = FastMCP("patient_management")
     description="Get patient demographics and diagnosis summary. Use when doctor asks about patient's basic information, age, gender, diagnosis, medical record number, allergies, or family history."
 )
 async def get_patient_basic_info(
-    patient_id: int,
+    medical_record_no: str,
     include_summary: bool = True
 ) -> Dict[str, Any]:
     """
     Get patient basic information including demographics and diagnosis.
     Args:
-        patient_id: The unique patient identifier
+        medical_record_no: The unique patient medical record number
         include_summary: Whether to include diagnosis summary
     Returns:
         Patient information dictionary
     """
     try:
-        patient = get_patient_by_id(patient_id, DEFAULT_TENANT_ID)
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
         if not patient:
-            return {"error": "Patient not found", "patient_id": patient_id}
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
         result = {
-            "patient_id": patient.get("patient_id"),
+            "medical_record_no": patient.get("medical_record_no"),
             "name": patient.get("name"),
             "gender": patient.get("gender"),
             "age": patient.get("age"),
@@ -52,7 +52,7 @@ async def get_patient_basic_info(
         }
         if include_summary:
             result["diagnosis"] = patient.get("diagnosis")
-        logger.info(f"Retrieved patient info: {patient_id}")
+        logger.info(f"Retrieved patient info: {medical_record_no}")
         return result
     except Exception as e:
         logger.error(f"Error getting patient info: {str(e)}")
@@ -64,26 +64,34 @@ async def get_patient_basic_info(
     description="Get complete diagnostic timeline for a patient. Use when doctor asks about treatment history, diagnosis stages, or what happened during the patient's medical journey."
 )
 async def get_patient_timeline_tool(
-    patient_id: int,
+    medical_record_no: str,
     include_details: bool = False
 ) -> Dict[str, Any]:
     """
     Get patient's complete diagnostic and treatment timeline.
     Args:
-        patient_id: The unique patient identifier
+        medical_record_no: The unique patient medical record number
         include_details: Whether to include detailed information for each stage
     Returns:
         Timeline information with stages
     """
     try:
+        # Get patient_id from medical_record_no
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
+        if not patient:
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
+        patient_id = patient.get("patient_id")
+        
         timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         if not timeline:
             return {
+                "medical_record_no": medical_record_no,
                 "patient_id": patient_id,
                 "timeline": [],
                 "message": "No timeline records found"
             }
         result = {
+            "medical_record_no": medical_record_no,
             "patient_id": patient_id,
             "total_stages": len(timeline),
             "timeline": []
@@ -117,20 +125,26 @@ async def get_patient_timeline_tool(
     description="Get pathology slides, CT scans, X-rays and other medical images for a patient. Use when doctor needs to view or analyze patient's imaging results."
 )
 async def get_patient_medical_images(
-    patient_id: int,
+    medical_record_no: str,
     image_type: Optional[str] = None,
     limit: int = 20
 ) -> Dict[str, Any]:
     """
     Get patient's medical images including pathology slides, CT, X-ray, MRI, etc.
     Args:
-        patient_id: The unique patient identifier
+        medical_record_no: The unique patient medical record number
         image_type: Filter by image type (病理切片/X光/CT/MRI/临床照片/超声)
         limit: Maximum number of images to return
     Returns:
         List of medical images with URLs and descriptions
     """
     try:
+        # Get patient_id from medical_record_no
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
+        if not patient:
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
+        patient_id = patient.get("patient_id")
+        
         timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         all_images = []
         for stage in timeline:
@@ -151,6 +165,7 @@ async def get_patient_medical_images(
         # Sort by date and limit
         all_images = sorted(all_images, key=lambda x: x.get("stage_date", ""), reverse=True)[:limit]
         return {
+            "medical_record_no": medical_record_no,
             "patient_id": patient_id,
             "total_images": len(all_images),
             "images": all_images
@@ -166,18 +181,24 @@ async def get_patient_medical_images(
     description="Analyze lab results and metric trends for a patient. Use when doctor asks about blood test results, inflammation markers, or how metrics have changed over time."
 )
 async def analyze_patient_metrics(
-    patient_id: int,
+    medical_record_no: str,
     metric_names: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Analyze patient's lab results and metric trends.
     Args:
-        patient_id: The unique patient identifier
+        medical_record_no: The unique patient medical record number
         metric_names: Specific metrics to analyze (e.g., ["ESR", "CRP", "RF"])
     Returns:
         Metrics analysis with trends
     """
     try:
+        # Get patient_id from medical_record_no
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
+        if not patient:
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
+        patient_id = patient.get("patient_id")
+        
         timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         metrics_by_name = {}
         for stage in timeline:
@@ -224,6 +245,7 @@ async def analyze_patient_metrics(
                     data["trend_analysis"] = {"direction": "unknown"}
             analysis.append(data)
         return {
+            "medical_record_no": medical_record_no,
             "patient_id": patient_id,
             "metrics_count": len(analysis),
             "metrics": analysis
@@ -239,24 +261,31 @@ async def analyze_patient_metrics(
     description="Get pending tasks and examinations for a patient. Use when doctor asks about what needs to be done next, upcoming appointments, or pending tests."
 )
 async def get_patient_todos_tool(
-    patient_id: int,
+    medical_record_no: str,
     status: Optional[str] = None,
     priority: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Get patient's pending todos and tasks.
     Args:
-        patient_id: The unique patient identifier
+        medical_record_no: The unique patient medical record number
         status: Filter by status (pending/completed/overdue)
         priority: Filter by priority (high/medium/low)
     Returns:
         List of todos with details
     """
     try:
+        # Get patient_id from medical_record_no
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
+        if not patient:
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
+        patient_id = patient.get("patient_id")
+        
         todos = get_patient_todos(patient_id, DEFAULT_TENANT_ID, status)
         if priority:
             todos = [t for t in todos if t.get("priority") == priority]
         result = {
+            "medical_record_no": medical_record_no,
             "patient_id": patient_id,
             "total_todos": len(todos),
             "pending_count": len([t for t in todos if t.get("status") == "pending"]),
@@ -285,7 +314,7 @@ async def get_patient_todos_tool(
     description="Get examination reports with AI interpretations for a patient. Use when doctor asks about pathology reports, test results, or needs to see detailed examination findings."
 )
 async def get_patient_examination_reports(
-    patient_id: int,
+    medical_record_no: str,
     report_type: Optional[str] = None,
     status: Optional[str] = None,
     limit: int = 10
@@ -293,7 +322,7 @@ async def get_patient_examination_reports(
     """
     Get patient's examination reports.
     Args:
-        patient_id: The unique patient identifier
+        medical_record_no: The unique patient medical record number
         report_type: Filter by report type
         status: Filter by status (已解读/待解读)
         limit: Maximum number of reports
@@ -301,6 +330,12 @@ async def get_patient_examination_reports(
         List of examination reports
     """
     try:
+        # Get patient_id from medical_record_no
+        patient = get_patient_by_medical_record_no(medical_record_no, DEFAULT_TENANT_ID)
+        if not patient:
+            return {"error": "Patient not found", "medical_record_no": medical_record_no}
+        patient_id = patient.get("patient_id")
+        
         timeline = get_patient_timeline(patient_id, DEFAULT_TENANT_ID)
         reports = []
         for stage in timeline:
@@ -325,6 +360,7 @@ async def get_patient_examination_reports(
         # Sort by date and limit
         reports = sorted(reports, key=lambda x: x.get("stage_date", ""), reverse=True)[:limit]
         return {
+            "medical_record_no": medical_record_no,
             "patient_id": patient_id,
             "total_reports": len(reports),
             "reports": reports

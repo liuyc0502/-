@@ -42,6 +42,13 @@ import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseVi
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
 
+// Image annotation components
+import { ImageUploadPurposeModal } from "@/components/common/image-annotation/ImageUploadPurposeModal";
+import { ImageAnnotationView } from "@/components/common/image-annotation/ImageAnnotationView";
+import { OcrPatientFormModal } from "@/components/doctor/ocr/OcrPatientFormModal";
+import { OcrCaseFormModal } from "@/components/doctor/ocr/OcrCaseFormModal";
+import type { UploadPurpose } from "@/types/annotation";
+
 
 import {
   preprocessAttachments,
@@ -153,6 +160,22 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [attachments, setAttachments] = useState<FilePreview[]>([]);
   const [fileUrls, setFileUrls] = useState<{ [id: string]: string }>({});
 
+  // Image annotation mode state
+  const [annotationMode, setAnnotationMode] = useState(false);
+  const [currentAnnotationImage, setCurrentAnnotationImage] = useState<{
+    url: string;
+    imageId?: number;
+  } | null>(null);
+
+  // Image upload purpose selection state
+  const [showUploadPurposeModal, setShowUploadPurposeModal] = useState(false);
+  const [pendingImageUrl, setPendingImageUrl] = useState<string>("");
+
+  // OCR form modal state
+  const [showOcrPatientForm, setShowOcrPatientForm] = useState(false);
+  const [showOcrCaseForm, setShowOcrCaseForm] = useState(false);
+  const [ocrImageUrl, setOcrImageUrl] = useState<string>("");
+
   const [isStreaming, setIsStreaming] = useState(false); // Add streaming state
   const abortControllerRef = useRef<AbortController | null>(null); // Add AbortController reference
   const timeoutRef = useRef<NodeJS.Timeout | null>(null); // Add timeout reference
@@ -233,9 +256,44 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     return preProcessHandleFileUpload(file, setFileUrls, t);
   };
 
-  // Handle image upload
-  const handleImageUpload = (file: File) => {
-    preProcessHandleImageUpload(file, t);
+  // Handle image upload - now triggers purpose selection modal
+  const handleImageUpload = async (file: File) => {
+    try {
+      // Upload image to get URL
+      const result = await storageService.uploadFiles([file], 'images');
+
+      if (result.results && result.results.length > 0 && result.results[0].success) {
+        const uploadedUrl = result.results[0].url;
+        // Save pending image URL and show purpose selection modal
+        setPendingImageUrl(uploadedUrl);
+        setShowUploadPurposeModal(true);
+      }
+    } catch (error) {
+      log.error("Failed to upload image:", error);
+    }
+  };
+
+  // Handle image upload purpose selection
+  const handleImagePurposeSelect = (purpose: "analysis" | "patient_record" | "case_record", imageUrl: string) => {
+    if (purpose === "analysis") {
+      // Enter annotation mode
+      setCurrentAnnotationImage({ url: imageUrl });
+      setAnnotationMode(true);
+    } else if (purpose === "patient_record") {
+      // Show OCR patient form
+      setOcrImageUrl(imageUrl);
+      setShowOcrPatientForm(true);
+    } else if (purpose === "case_record") {
+      // Show OCR case form
+      setOcrImageUrl(imageUrl);
+      setShowOcrCaseForm(true);
+    }
+  };
+
+  // Exit annotation mode
+  const handleExitAnnotationMode = () => {
+    setAnnotationMode(false);
+    setCurrentAnnotationImage(null);
   };
 
   // Add attachment management function
@@ -1858,6 +1916,80 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
           </div>
         </div>
       )}
+
+      {/* Image Upload Purpose Selection Modal */}
+      <ImageUploadPurposeModal
+        visible={showUploadPurposeModal}
+        imageUrl={pendingImageUrl}
+        onClose={() => setShowUploadPurposeModal(false)}
+        onSelectPurpose={(purpose: UploadPurpose, imageUrl: string) => {
+          handleImagePurposeSelect(purpose, imageUrl);
+          setShowUploadPurposeModal(false);
+        }}
+      />
+
+      {/* Annotation Mode View */}
+      {annotationMode && currentAnnotationImage && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <ImageAnnotationView
+            imageId={currentAnnotationImage.imageId || 0}
+            imageUrl={currentAnnotationImage.url}
+            onClose={handleExitAnnotationMode}
+            chatComponent={
+              <div className="h-full flex flex-col">
+                <div className="p-4 border-b">
+                  <h3 className="text-lg font-medium">AI 分析助手</h3>
+                  <p className="text-sm text-gray-500">在左侧标注区域后，可以在这里提问</p>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {/* Placeholder for chat messages related to this image */}
+                  <p className="text-gray-400 text-center mt-8">
+                    标注区域后，在下方输入问题进行分析
+                  </p>
+                </div>
+                <div className="p-4 border-t">
+                  {/* Placeholder for chat input */}
+                  <input
+                    type="text"
+                    placeholder="例如：区域1是否异常？"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            }
+          />
+        </div>
+      )}
+
+      {/* OCR Patient Form Modal */}
+      <OcrPatientFormModal
+        visible={showOcrPatientForm}
+        imageUrl={ocrImageUrl}
+        onClose={() => {
+          setShowOcrPatientForm(false);
+          setOcrImageUrl("");
+        }}
+        onSuccess={() => {
+          setShowOcrPatientForm(false);
+          setOcrImageUrl("");
+          // Optionally refresh patient list or show success message
+        }}
+      />
+
+      {/* OCR Case Form Modal */}
+      <OcrCaseFormModal
+        visible={showOcrCaseForm}
+        imageUrl={ocrImageUrl}
+        onClose={() => {
+          setShowOcrCaseForm(false);
+          setOcrImageUrl("");
+        }}
+        onSuccess={() => {
+          setShowOcrCaseForm(false);
+          setOcrImageUrl("");
+          // Optionally refresh case library or show success message
+        }}
+      />
     </>
   );
 }

@@ -37,6 +37,18 @@ interface AttachmentFormData {
   file_size: number;
 }
 
+const ensureFileUrl = async (raw?: string) => {
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const objectName = raw.replace(/^\/+/, "");
+  try {
+    return await storageService.getFileUrl(objectName);
+  } catch (error) {
+    console.error("Failed to resolve file url:", error);
+    return raw;
+  }
+};
+
 function ImageUploader({
   value,
   onChange,
@@ -48,7 +60,15 @@ function ImageUploader({
   const [previewUrl, setPreviewUrl] = useState<string>(value || '');
 
   useEffect(() => {
-    setPreviewUrl(value || '');
+    let mounted = true;
+    const resolve = async () => {
+      const resolved = await ensureFileUrl(value);
+      if (mounted) setPreviewUrl(resolved || "");
+    };
+    resolve();
+    return () => {
+      mounted = false;
+    };
   }, [value]);
 
   const handleUpload = async (file: File) => {
@@ -57,7 +77,8 @@ function ImageUploader({
       const result = await storageService.uploadFiles([file], 'medical-images');
       if (result.results && result.results.length > 0 && result.results[0].success) {
         const url = result.results[0].url;
-        setPreviewUrl(url);
+        const resolved = await ensureFileUrl(url);
+        setPreviewUrl(resolved);
         onChange?.(url);
       }
     } catch (error) {
@@ -115,6 +136,19 @@ function FileUploader({
   onChange?: (data: AttachmentFormData) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState<string>("");
+
+  useEffect(() => {
+    let mounted = true;
+    const resolve = async () => {
+      const nextUrl = await ensureFileUrl(value?.file_url);
+      if (mounted) setResolvedUrl(nextUrl || "");
+    };
+    resolve();
+    return () => {
+      mounted = false;
+    };
+  }, [value?.file_url]);
 
   const handleUpload = async (file: File) => {
     try {
@@ -122,6 +156,8 @@ function FileUploader({
       const result = await storageService.uploadFiles([file], 'attachments');
       if (result.results && result.results.length > 0 && result.results[0].success) {
         const uploadedFile = result.results[0];
+        const resolved = await ensureFileUrl(uploadedFile.url);
+        setResolvedUrl(resolved);
         onChange?.({
           file_name: uploadedFile.file_name || file.name,
           file_type: file.name.split('.').pop() || 'unknown',
@@ -159,7 +195,7 @@ function FileUploader({
             </p>
           </div>
           <a
-            href={value.file_url}
+            href={resolvedUrl || value.file_url}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 text-sm hover:underline"

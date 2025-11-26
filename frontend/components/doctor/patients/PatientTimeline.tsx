@@ -18,6 +18,7 @@ import patientService from "@/services/patientService";
 import type { Patient, TimelineStage, TimelineWithDetail } from "@/types/patient";
 import { CreateTimelineModal } from "./CreateTimelineModal";
 import { EditTimelineDetailModal } from "./EditTimelineDetailModal";
+import { storageService } from "@/services/storageService";
 
 // ============================================================================
 // Constants
@@ -47,6 +48,18 @@ const getMetricStatusText = (status: string): string => {
     normal: "正常",
   };
   return statusMap[status] || "正常";
+};
+
+const ensureFileUrl = async (raw?: string) => {
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const objectName = raw.replace(/^\/+/, "");
+  try {
+    return await storageService.getFileUrl(objectName);
+  } catch (error) {
+    console.error("Failed to resolve file url:", error);
+    return raw;
+  }
 };
 
 // ============================================================================
@@ -103,7 +116,32 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     try {
       setDetailLoading(true);
       const detail = await patientService.getTimelineDetail(timelineId);
-      setSelectedTimeline(detail);
+
+      // Resolve media URLs so browser can load images/attachments
+      const resolvedImages = await Promise.all(
+        (detail.images || []).map(async (img) => {
+          const resolvedImageUrl = await ensureFileUrl(img.image_url);
+          const resolvedThumb = await ensureFileUrl(img.thumbnail_url || img.image_url);
+          return {
+            ...img,
+            image_url: resolvedImageUrl,
+            thumbnail_url: resolvedThumb,
+          };
+        })
+      );
+
+      const resolvedAttachments = await Promise.all(
+        (detail.attachments || []).map(async (att) => ({
+          ...att,
+          file_url: await ensureFileUrl(att.file_url),
+        }))
+      );
+
+      setSelectedTimeline({
+        ...detail,
+        images: resolvedImages,
+        attachments: resolvedAttachments,
+      });
     } catch (error) {
       message.error("加载时间线详情失败");
       console.error("Failed to load timeline detail:", error);
@@ -415,6 +453,11 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                         <button
                           key={file.attachment_id}
                           className="flex items-center gap-2 text-xs text-[#D94527] hover:underline"
+                          onClick={() => {
+                            if (file.file_url) {
+                              window.open(file.file_url, "_blank", "noopener,noreferrer");
+                            }
+                          }}
                         >
                           <FileText className="h-3 w-3" />
                           {file.file_name}

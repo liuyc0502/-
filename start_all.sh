@@ -6,10 +6,20 @@ cd /opt
 source backend/.venv/bin/activate
 source .env
 
-# 启动 PaddleOCR MCP（本地 OCR，HTTP 模式，端口 5020）
-# 临时禁用浏览器自动打开功能
-BROWSER=none PADDLEOCR_MCP_PIPELINE=OCR PADDLEOCR_MCP_PPOCR_SOURCE=local paddleocr_mcp --http --host 0.0.0.0 --port 5020 --verbose &
-sleep 2
+
+# 启动 PaddleOCR MCP (SSE 协议，端点 /sse)
+echo "Starting PaddleOCR MCP server (SSE mode)..."
+nohup /usr/local/bin/python3.10 backend/paddleocr_sse_server.py > /tmp/paddleocr_mcp.log 2>&1 &
+PADDLEOCR_PID=$!
+echo "PaddleOCR MCP started with PID: $PADDLEOCR_PID"
+sleep 5
+
+# 检查是否启动成功
+if kill -0 $PADDLEOCR_PID 2>/dev/null; then
+    echo "PaddleOCR MCP is running at http://localhost:5020/sse"
+else
+    echo "WARNING: PaddleOCR MCP failed to start, check /tmp/paddleocr_mcp.log"
+fi
 
 # 启动后端服务
 python backend/nexent_mcp_service.py &

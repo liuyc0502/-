@@ -1,26 +1,185 @@
 # 更新日志
 ## 2025-11-25
 
-### 创建新分支并清理未使用的图像注释组件
+### 实现医学图像标注与AI分析功能
 
-**操作内容**:
-- 🌿 **创建新分支**: `feature/update-20251125-cleanup`
-- 📦 **提交更改**: 删除 2 个未使用的文件，396 行删除
-- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+**新增文件**:
+- `backend/database/migrations/create_image_annotation_tables.sql` (数据库迁移 - 创建标注和分析表)
+- `backend/tool_collection/mcp/image_annotation_tools.py` (MCP工具 - 图像标注管理，5个工具)
+- `backend/tool_collection/mcp/medical_image_analysis_tools.py` (MCP工具 - 医学图像分析，3个工具)
+- `backend/tool_collection/mcp/document_parsing_tools.py` (MCP工具 - OCR文档解析，4个工具)
+- `frontend/types/annotation.ts` (TypeScript类型 - 标注相关类型定义)
+- `frontend/services/annotationService.ts` (API服务 - 标注和分析接口封装)
+- `frontend/components/common/image-annotation/ImageUploadPurposeModal.tsx` (组件 - 图片上传用途选择)
+- `frontend/components/common/image-annotation/AnnotationCanvas.tsx` (组件 - 基于Konva的标注画布)
+- `frontend/components/common/image-annotation/AnnotationToolbar.tsx` (组件 - 标注工具栏)
+- `frontend/components/common/image-annotation/AnnotationList.tsx` (组件 - 标注列表侧边栏)
+- `frontend/components/common/image-annotation/ImageAnnotationView.tsx` (组件 - 标注主视图)
+- `frontend/components/doctor/ocr/OcrPatientFormModal.tsx` (组件 - OCR患者档案表单)
+- `frontend/components/doctor/ocr/OcrCaseFormModal.tsx` (组件 - OCR病例库表单)
+- `快速集成指南.md` (文档 - 中文集成指南)
 
 **修改文件**:
-- `frontend/components/image-annotation/ImageAnnotator.tsx` (删除)
-- `frontend/components/image-annotation/sedX0l25i` (删除)
+- `backend/database/db_models.py` (新增 - PatientImageAnnotation、PatientImageAnalysis ORM模型)
+- `backend/database/patient_db.py` (新增 - 12个标注和分析相关数据库操作函数)
+- `backend/services/patient_service.py` (新增 - 6个标注和分析服务层函数)
+- `backend/apps/patient_app.py` (新增 - 5个标注和分析API端点)
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (集成 - 图片上传用途选择、标注模式切换、OCR表单)
 
 **功能说明**:
-- 🧹 **代码清理**: 删除未使用的图像注释组件相关文件
-- 📝 **代码维护**: 保持代码库整洁，移除冗余文件
 
-**分支信息**:
-- 分支名称: `feature/update-20251125-cleanup`
-- 远程仓库: `origin/feature/update-20251125-cleanup`
-- 提交 ID: `c9cf1e64`
-- Pull Request: https://github.com/liuyc0502/-/pull/new/feature/update-20251125-cleanup
+#### 1. 图像标注系统
+- ✨ **标注画布** (基于 react-konva):
+  - 支持圆形和矩形标注绘制
+  - 鼠标拖拽创建标注区域
+  - 自动编号为"区域1"、"区域2"等
+  - 标注高亮显示功能
+- 🎨 **预置标注类型** (6种):
+  - 病灶 (lesion) - 红色 #FF4D4F
+  - 对照 (control) - 绿色 #52C41A
+  - 阴影 (shadow) - 黄色 #FAAD14
+  - 出血 (hemorrhage) - 棕色 #A0522D
+  - 伪影 (artifact) - 灰色 #8C8C8C
+  - 其他 (other) - 蓝色 #1890FF
+- 📝 **标注管理**:
+  - 标注列表展示（区域编号、类型、颜色、描述）
+  - 编辑标注描述
+  - 删除标注
+  - 点击列表项高亮对应区域
+
+#### 2. AI图像分析
+- 🤖 **标注区域分析**:
+  - 对指定标注区域进行AI分析
+  - 自动裁剪标注区域图像
+  - 调用多模态视觉模型（GPT-4V/Claude 3.5 Sonnet）
+  - 支持自定义问题（如"区域1是否异常"）
+- 📊 **多区域对比分析**:
+  - 支持多个标注区域的对比分析
+  - 生成综合分析报告
+- 📈 **分析历史记录**:
+  - 保存所有分析结果
+  - 关联到会话和标注
+  - 支持历史查询
+
+#### 3. OCR文档解析与模板化入库
+- 📄 **PaddleOCR集成**:
+  - 集成已有的PaddleOCR MCP服务（端口5020）
+  - 支持simple和detailed两种OCR模式
+  - 准确识别中文医疗文档
+- 📋 **患者档案OCR入库**:
+  - 自动识别患者文档（姓名、年龄、性别、病历号等）
+  - 智能映射到患者信息表单
+  - 用户复核后一键入库
+- 🏥 **病例库OCR入库**:
+  - 自动识别病例文档（诊断、症状、检查结果等）
+  - 智能映射到病例表单
+  - 用户复核后一键入库
+- 🔍 **实验室结果提取**:
+  - 从检验报告中提取结构化数据
+  - 识别检验项目、数值、参考范围
+
+#### 4. 数据库设计
+- 🗄️ **patient_image_annotation_t** (图像标注表):
+  - 标注类型、形状、坐标（JSONB）
+  - 颜色、标签、编号
+  - 裁剪图像URL（用于AI分析）
+- 📊 **patient_image_analysis_t** (图像分析表):
+  - 分析类型、提示词、结果
+  - 关联标注ID、图像ID、会话ID
+  - 模型名称、置信度分数
+
+#### 5. MCP工具集
+- 🔧 **image_annotation_tools.py** (5个工具):
+  - `create_image_annotation` - 创建标注
+  - `get_image_annotations` - 获取图像所有标注
+  - `update_annotation_label` - 更新标注标签
+  - `delete_annotation` - 删除标注
+  - `get_annotation_details` - 获取标注详情
+- 🤖 **medical_image_analysis_tools.py** (3个工具):
+  - `analyze_annotated_region` - 分析标注区域（含图像裁剪）
+  - `compare_annotated_regions` - 对比多个标注区域
+  - `get_annotation_analysis_history` - 获取分析历史
+- 📝 **document_parsing_tools.py** (4个工具):
+  - `parse_patient_document` - 解析患者档案文档
+  - `parse_case_document` - 解析病例文档
+  - `extract_text_from_image` - 纯文本提取
+  - `extract_lab_results_from_image` - 实验室结果提取
+
+#### 6. 前端组件架构
+- 🎯 **基础组件** (纯UI):
+  - `AnnotationCanvas` - 标注画布（绘制、渲染、交互）
+  - `AnnotationToolbar` - 工具栏（工具选择、类型选择）
+  - `AnnotationList` - 标注列表（展示、编辑、删除）
+- 🏗️ **集成组件** (完整功能):
+  - `ImageAnnotationView` - 标注主视图（集成所有基础组件）
+  - `ImageUploadPurposeModal` - 上传用途选择（3种用途）
+- 📋 **业务组件** (OCR表单):
+  - `OcrPatientFormModal` - 患者档案OCR表单
+  - `OcrCaseFormModal` - 病例库OCR表单
+
+**技术实现**:
+
+**后端架构** (三层架构):
+- 数据库层：SQLAlchemy ORM模型 + PostgreSQL JSONB存储坐标
+- Service层：业务逻辑编排，调用数据库和MCP工具
+- API层：RESTful端点，Pydantic验证，HTTP异常处理
+
+**前端技术栈**:
+- react-konva + konva：高性能Canvas标注
+- Ant Design：UI组件库
+- TypeScript：类型安全
+- moment：日期处理
+
+**OCR集成**:
+- 通过MCP Client调用PaddleOCR服务（http://localhost:5020/mcp）
+- 支持图片URL和Base64两种输入
+- 返回结构化文本或详细坐标
+
+**AI分析流程**:
+1. 用户圈画标注区域
+2. 后端根据坐标裁剪图像
+3. 上传裁剪图像到MinIO
+4. 调用多模态模型分析（含裁剪图像URL）
+5. 保存分析结果到数据库
+6. 前端展示分析结果，支持点击"区域X"高亮
+
+**使用场景**:
+- 病理医生标注切片图像，AI辅助诊断
+- 上传患者档案扫描件，OCR自动录入
+- 上传病例文档，OCR自动填充病例表单
+- 对标注区域提问："区域1是否为恶性肿瘤？"
+- 多区域对比："区域1和区域2有什么区别？"
+
+**用户体验**:
+- ✅ 直观的左右分栏界面（图片+聊天）
+- ✅ 所见即所得的标注绘制
+- ✅ 智能化的OCR识别与表单映射
+- ✅ 语义化的区域引用（"区域1"、"区域2"）
+- ✅ 聊天中点击区域名称可高亮图片
+- ✅ 完整的标注CRUD操作
+- ✅ 分析历史记录可追溯
+
+**集成完成** (2025-11-26):
+1. ✅ 在ChatInterface中集成ImageUploadPurposeModal - 图片上传后自动弹出用途选择
+2. ✅ 在ChatInterface中添加标注模式切换 - 支持全屏标注模式和正常聊天模式切换
+3. ✅ 集成ImageAnnotationView组件 - 左右分栏（左侧标注画布，右侧AI聊天占位符）
+4. ✅ 集成OCR表单弹窗 - OcrPatientFormModal、OcrCaseFormModal
+
+**集成说明**:
+- 📤 **图片上传流程**: 用户上传图片 → 自动显示用途选择弹窗（3个选项）
+- 🎨 **病例图片分析**: 选择后进入全屏标注模式，左侧画布+右侧聊天
+- 📋 **患者档案录入**: 选择后打开OCR患者表单，自动识别并预填充字段
+- 📝 **病例库录入**: 选择后打开OCR病例表单，自动识别并预填充字段
+- 🔙 **退出标注模式**: 点击关闭按钮返回正常聊天界面
+- 💾 **状态管理**: 使用React状态管理标注模式、图片URL、表单显示状态
+
+**待完成工作**:
+1. 创建医学图像分析子智能体并分配到医生端Portal
+2. 配置多模态视觉模型（GPT-4V或Claude 3.5 Sonnet）
+3. 完善标注模式右侧聊天功能（当前为占位符UI）
+4. 在标注模式聊天中实现"区域X"语义引用和高亮交互
+5. 安装前端依赖：`npm install react-konva konva moment`
+6. 运行数据库迁移脚本
 
 ---
 
