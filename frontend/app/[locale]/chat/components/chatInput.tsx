@@ -936,20 +936,22 @@ export function ChatInput({
                         className="w-10 h-10 flex-shrink-0 overflow-hidden rounded-md cursor-pointer relative group/img"
                         onClick={() => handleViewImage(attachment)}
                       >
-                        {attachment.previewUrl && (
+                        {(attachment.uploadedUrl || attachment.previewUrl) && (
                           <img
-                            src={attachment.previewUrl}
+                            src={attachment.uploadedUrl || attachment.previewUrl}
                             alt={attachment.file.name}
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
                         )}
                         {/* Annotate button overlay */}
-                        {onImageAnnotate && attachment.previewUrl && (
+                        {onImageAnnotate && (attachment.uploadedUrl || attachment.previewUrl) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onImageAnnotate(attachment.previewUrl!);
+                              // Use persistent uploaded URL if available, fallback to preview URL
+                              const imageUrl = attachment.uploadedUrl || attachment.previewUrl!;
+                              onImageAnnotate(imageUrl);
                             }}
                             className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"
                             title="标注图片"

@@ -264,6 +264,17 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
 
       if (result.results && result.results.length > 0 && result.results[0].success) {
         const uploadedUrl = result.results[0].url;
+
+        // Delay the attachment update to ensure the attachment is added first
+        setTimeout(() => {
+          setAttachments(prev => prev.map(att => {
+            if (att.file === file) {
+              return { ...att, uploadedUrl };
+            }
+            return att;
+          }));
+        }, 100);
+
         // Save pending image URL and show purpose selection modal
         setPendingImageUrl(uploadedUrl);
         setShowUploadPurposeModal(true);
@@ -297,9 +308,45 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   };
 
   // Handle image annotation from attachment preview
-  const handleImageAnnotate = (imageUrl: string) => {
-    setCurrentAnnotationImage({ url: imageUrl });
-    setAnnotationMode(true);
+  const handleImageAnnotate = async (imageUrl: string) => {
+    // Find the attachment by matching either previewUrl or uploadedUrl
+    const attachment = attachments.find(att =>
+      att.previewUrl === imageUrl || att.uploadedUrl === imageUrl
+    );
+
+    if (!attachment) {
+      log.error("Attachment not found for imageUrl:", imageUrl);
+      return;
+    }
+
+    // If we already have the uploaded URL, use it
+    if (attachment.uploadedUrl) {
+      setCurrentAnnotationImage({ url: attachment.uploadedUrl });
+      setAnnotationMode(true);
+      return;
+    }
+
+    // Otherwise, upload the file first
+    try {
+      const result = await storageService.uploadFiles([attachment.file], 'images');
+      if (result.results && result.results.length > 0 && result.results[0].success) {
+        const uploadedUrl = result.results[0].url;
+
+        // Update attachment with uploaded URL
+        setAttachments(prev => prev.map(att =>
+          att.id === attachment.id ? { ...att, uploadedUrl } : att
+        ));
+
+        // Use the uploaded URL for annotation
+        setCurrentAnnotationImage({ url: uploadedUrl });
+        setAnnotationMode(true);
+      }
+    } catch (error) {
+      log.error("Failed to upload image for annotation:", error);
+      // Fallback to preview URL if upload fails
+      setCurrentAnnotationImage({ url: imageUrl });
+      setAnnotationMode(true);
+    }
   };
 
   // Add attachment management function

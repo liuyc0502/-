@@ -260,7 +260,8 @@ export interface FilePreview {
   type: "image" | "file";
   fileType?: string;
   extension?: string;
-  previewUrl?: string;
+  previewUrl?: string; // Blob URL for local preview (temporary)
+  uploadedUrl?: string; // Persistent URL from server (permanent)
 }
 
 // Settings menu item type for admin users

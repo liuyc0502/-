@@ -1,19 +1,42 @@
 # 更新日志
+## 2025-11-27
+
+### 创建新分支并推送代码更新
+
+**操作内容**:
+- 🌿 **创建新分支**: `feature/update-20250127-new`
+- 📦 **提交更改**: 13 个文件，293 行新增，188 行删除
+- 🚀 **推送到 GitHub**: 成功推送到远程仓库
+
+**主要更新文件**:
+- `Update.md` (更新)
+- `backend/agents/create_agent_info.py` (更新)
+- `backend/apps/file_management_app.py` (更新)
+- `backend/consts/const.py` (更新)
+- `backend/database/attachment_db.py` (更新)
+- `backend/tool_collection/mcp/document_parsing_tools.py` (更新)
+- `frontend/app/[locale]/chat/components/chatInput.tsx` (更新)
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
+- `frontend/app/[locale]/chat/streaming/chatStreamMain.tsx` (更新)
+- `frontend/components/common/image-annotation/ImageAnnotationView.tsx` (更新)
+- `frontend/components/doctor/patients/EditTimelineDetailModal.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
+- `frontend/types/chat.ts` (更新)
+
+**功能说明**:
+- 🔧 **代码更新**: 更新聊天流、患者时间线和图像注释相关功能
+- 📝 **提交信息**: feat: 更新聊天流、患者时间线和图像注释功能
+
+**分支信息**:
+- 分支名称: `feature/update-20250127-new`
+- 远程仓库: `origin/feature/update-20250127-new`
+- 提交 ID: `a936b4ac`
+
+---
+
 ## 2025-11-26
 
-### 优化图片上传流程：移除自动VLM预处理，改为用途选择驱动
-
-**问题背景**:
-- 原先所有图片上传后都会自动调用VLM（视觉语言模型）生成描述
-- VLM描述不够精确，无法提取完整文字
-- 用户上传患者档案/病例文档时，需要的是OCR文字识别，而非VLM描述
-
-**解决方案**:
-- 所有图片上传（包括粘贴、拖拽、文件选择）都先弹出用途选择弹窗
-- 根据用途执行不同的处理流程，跳过无意义的VLM预处理
-
 **修改文件**:
-
 
 
 1. `backend/tool_collection/mcp/document_parsing_tools.py`
@@ -1874,7 +1897,6 @@ cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrati
 
 **访问路径**: 
 - 医生端: `http://localhost:3000/doctor`
-- 学生端: `http://localhost:3000/student`
 - 患者端: `http://localhost:3000/patient`
 - 管理员端: `http://localhost:3000/admin`
 
