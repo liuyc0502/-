@@ -101,7 +101,10 @@ def upload_fileobj(
                 "content_type": get_content_type(file_name), "upload_time": datetime.now().isoformat()}
 
     if success:
-        response["url"] = result
+        # Return a frontend-accessible URL through backend API
+        # Use stream mode to avoid redirect to internal MinIO URL
+        # Format: /api/file/storage/{object_name}?download=stream - returns file directly
+        response["url"] = f"/api/file/storage/{object_name}?download=stream"
     else:
         response["error"] = result
 
@@ -136,27 +139,33 @@ def download_file(object_name: str, file_path: str, bucket: Optional[str] = None
 
 def get_file_url(object_name: str, bucket: Optional[str] = None, expires: int = 3600) -> Dict[str, Any]:
     """
-    Get presigned URL for file
+    Get browser-accessible URL for file
 
     Args:
         object_name: Object name
         bucket: Bucket name, if not specified will use default bucket
-        expires: URL expiration time in seconds
+        expires: URL expiration time in seconds (not used, kept for compatibility)
 
     Returns:
         Dict[str, Any]: Result containing success flag, URL and error message (if any)
     """
-    # Get presigned URL
-    success, result = minio_client.get_file_url(object_name, bucket, expires)
+    # Check if file exists by trying to get its metadata
+    try:
+        minio_client.get_file_size(object_name, bucket)
+        success = True
+    except Exception:
+        success = False
 
     # Build response
     response = {"success": success,
                 "object_name": object_name, "expires_in": expires}
 
     if success:
-        response["url"] = result
+        # Return browser-accessible URL through backend API (stream mode)
+        # This avoids returning MinIO internal URL (nexent-minio:9000) which browsers can't access
+        response["url"] = f"/api/file/storage/{object_name}?download=stream"
     else:
-        response["error"] = result
+        response["error"] = "File not found or cannot be accessed"
 
     return response
 

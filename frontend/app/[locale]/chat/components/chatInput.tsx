@@ -326,6 +326,7 @@ interface ChatInputProps {
   ) => void;
   onFileUpload?: (file: File) => void;
   onImageUpload?: (file: File) => void;
+  onImageAnnotate?: (imageUrl: string) => void; // Callback to enter annotation mode
   attachments?: FilePreview[];
   onAttachmentsChange?: (attachments: FilePreview[]) => void;
   selectedAgentId?: number | null;
@@ -347,6 +348,7 @@ export function ChatInput({
   onRecordingStatusChange,
   onFileUpload,
   onImageUpload,
+  onImageAnnotate,
   attachments = [],
   onAttachmentsChange,
   selectedAgentId = null,
@@ -931,7 +933,7 @@ export function ChatInput({
                   {attachment.type === chatConfig.filePreviewTypes.image ? (
                     <div className="flex items-center gap-3 w-full">
                       <div
-                        className="w-10 h-10 flex-shrink-0 overflow-hidden rounded-md cursor-pointer"
+                        className="w-10 h-10 flex-shrink-0 overflow-hidden rounded-md cursor-pointer relative group/img"
                         onClick={() => handleViewImage(attachment)}
                       >
                         {attachment.previewUrl && (
@@ -941,6 +943,19 @@ export function ChatInput({
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
+                        )}
+                        {/* Annotate button overlay */}
+                        {onImageAnnotate && attachment.previewUrl && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onImageAnnotate(attachment.previewUrl!);
+                            }}
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"
+                            title="标注图片"
+                          >
+                            <span className="text-white text-xs font-medium">标注</span>
+                          </button>
                         )}
                       </div>
                       <div className="flex-1 overflow-hidden">

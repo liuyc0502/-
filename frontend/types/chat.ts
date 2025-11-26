@@ -167,6 +167,7 @@ export interface ChatStreamMainProps {
   onAttachmentsChange?: (attachments: FilePreview[]) => void;
   onFileUpload?: (file: File) => void;
   onImageUpload?: (file: File) => void;
+  onImageAnnotate?: (imageUrl: string) => void;
   onOpinionChange?: (messageId: number, opinion: "Y" | "N" | null) => void;
   currentConversationId?: number;
   shouldScrollToBottom?: boolean;

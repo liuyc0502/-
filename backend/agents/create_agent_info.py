@@ -293,25 +293,37 @@ async def join_minio_file_description_to_query(minio_files, query):
     Join minio file information to query for agent processing.
     Includes file URL for image files so OCR tool can be called with the URL.
     """
+    from consts.const import MAIN_SERVICE_URL
+    
     final_query = query
     if minio_files and isinstance(minio_files, list):
         file_info_list = []
+        # Get backend API base URL for internal API calls
+        backend_api_base = MAIN_SERVICE_URL.rstrip("/")
+        
         for file in minio_files:
             if isinstance(file, dict):
                 file_info = ""
                 file_name = file.get("name", "unknown")
                 file_type = file.get("type", "unknown")
-                file_url = file.get("url", "")
+                object_name = file.get("object_name", "")
                 description = file.get("description", "")
                 
+                # Build full URL through backend API (accessible from OCR service)
+                full_url = ""
+                if object_name:
+                    # Use download endpoint (URL ends with file extension for OCR compatibility)
+                    # This avoids query params that confuse OCR tools checking file extensions
+                    full_url = f"{backend_api_base}/file/download/{object_name}"
+                
                 # Build file information string
-                if file_type == "image" and file_url:
+                if file_type == "image" and full_url:
                     # For images, include URL so OCR tool can process them
                     file_info = f"[Image File: {file_name}]\n"
-                    file_info += f"  - URL: {file_url}\n"
+                    file_info += f"  - Access URL: {full_url}\n"
                     if description:
                         file_info += f"  - Description: {description}\n"
-                    file_info += "  - Note: Use OCR tool with this URL to extract text from the image if needed.\n"
+                    file_info += "  - IMPORTANT: If you need to extract text from this image, call the OCR tool with the Access URL above.\n"
                 elif description:
                     file_info = f"[File: {file_name}]\n  - {description}\n"
                 

@@ -200,6 +200,30 @@ async def get_storage_file(
         )
 
 
+@router.get("/download/{object_name:path}")
+async def download_storage_file(
+    object_name: str = PathParam(..., description="File object name"),
+    expires: int = Query(3600, description="URL validity period (seconds)")
+):
+    """
+    Download file via redirect (URL ends with file extension for OCR compatibility)
+    
+    This endpoint is designed for OCR tools that check file extension from URL.
+    URL format: /file/download/attachments/image.png (no query params in path)
+    
+    - **object_name**: File object name (e.g., "attachments/image.png")
+    - **expires**: URL validity period in seconds (default 3600)
+    """
+    try:
+        result = await get_file_url_impl(object_name=object_name, expires=expires)
+        return RedirectResponse(url=result["url"])
+    except Exception as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get file: {str(e)}"
+        )
+
+
 @router.delete("/storage/{object_name:path}")
 async def remove_storage_file(
     object_name: str = PathParam(..., description="File object name to delete")

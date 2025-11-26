@@ -25,6 +25,8 @@ ELASTICSEARCH_SERVICE = os.getenv("ELASTICSEARCH_SERVICE")
 
 # Data Processing Service Configuration
 DATA_PROCESS_SERVICE = os.getenv("DATA_PROCESS_SERVICE")
+# Main backend service URL for internal API calls (used by OCR to access images)
+MAIN_SERVICE_URL = os.getenv("MAIN_SERVICE_URL", "http://localhost:5010")
 CLIP_MODEL_PATH = os.getenv("CLIP_MODEL_PATH")
 
 

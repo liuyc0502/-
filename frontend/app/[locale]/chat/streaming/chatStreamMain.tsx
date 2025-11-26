@@ -32,6 +32,7 @@ export function ChatStreamMain({
   onAttachmentsChange,
   onFileUpload,
   onImageUpload,
+  onImageAnnotate,
   onOpinionChange,
   currentConversationId,
   shouldScrollToBottom,
@@ -521,6 +522,7 @@ export function ChatStreamMain({
                         onAttachmentsChange={onAttachmentsChange}
                         onFileUpload={onFileUpload}
                         onImageUpload={onImageUpload}
+                        onImageAnnotate={onImageAnnotate}
                         selectedAgentId={selectedAgentId}
                         onAgentSelect={onAgentSelect}
                         portalConfig={portalConfig}
@@ -615,6 +617,7 @@ export function ChatStreamMain({
               onAttachmentsChange={onAttachmentsChange}
               onFileUpload={onFileUpload}
               onImageUpload={onImageUpload}
+              onImageAnnotate={onImageAnnotate}
               selectedAgentId={selectedAgentId}
               onAgentSelect={onAgentSelect}
               portalConfig={portalConfig}

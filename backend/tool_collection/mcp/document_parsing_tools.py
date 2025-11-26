@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 doc_parsing_tools = FastMCP("document_parsing")
 
 # PaddleOCR MCP server URL
-PADDLEOCR_MCP_URL = "http://localhost:5020/mcp"
+PADDLEOCR_MCP_URL = "http://localhost:5020/sse"
 
 
 async def call_paddleocr(image_url: str, output_mode: str = "simple") -> str:

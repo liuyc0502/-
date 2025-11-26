@@ -134,72 +134,48 @@ export function ImageAnnotationView({
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">
-            医学图像标注分析
-          </h2>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              ✕ 关闭
-            </button>
-          )}
-        </div>
+    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+      {/* Toolbar - Fixed at top */}
+      <div className="flex-shrink-0 p-3 bg-white border-b">
+        <AnnotationToolbar
+          drawingMode={drawingMode}
+          onDrawingModeChange={setDrawingMode}
+          selectedType={selectedType}
+          onTypeChange={setSelectedType}
+          currentColor={currentColor}
+          onClear={annotations.length > 0 ? handleClearAll : undefined}
+        />
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Image annotation */}
-        <div className="flex-1 flex flex-col p-6 overflow-auto">
-          <AnnotationToolbar
-            drawingMode={drawingMode}
-            onDrawingModeChange={setDrawingMode}
-            selectedType={selectedType}
-            onTypeChange={setSelectedType}
-            currentColor={currentColor}
-            onClear={annotations.length > 0 ? handleClearAll : undefined}
-          />
-
-          <div className="flex-1 flex gap-6">
-            {/* Canvas */}
-            <div className="flex-1">
-              <AnnotationCanvas
-                imageUrl={imageUrl}
-                width={800}
-                height={600}
-                annotations={annotations}
-                drawingMode={drawingMode}
-                currentColor={currentColor}
-                onAnnotationCreated={handleAnnotationCreated}
-                onAnnotationClick={handleAnnotationClick}
-                highlightedAnnotationId={highlightedAnnotationId}
-              />
-            </div>
-
-            {/* Annotation list */}
-            <div className="w-80">
-              <AnnotationList
-                annotations={annotations}
-                onAnnotationClick={handleAnnotationClick}
-                onAnnotationUpdate={handleAnnotationUpdate}
-                onAnnotationDelete={handleAnnotationDelete}
-                highlightedAnnotationId={highlightedAnnotationId}
-              />
-            </div>
+      {/* Main content area - No scrolling on container */}
+      <div className="flex-1 flex gap-2 p-2 overflow-hidden min-h-0">
+        {/* Canvas - Takes remaining space, centered */}
+        <div className="flex-1 flex items-center justify-center overflow-hidden bg-white rounded border">
+          <div className="max-w-full max-h-full">
+            <AnnotationCanvas
+              imageUrl={imageUrl}
+              width={600}
+              height={450}
+              annotations={annotations}
+              drawingMode={drawingMode}
+              currentColor={currentColor}
+              onAnnotationCreated={handleAnnotationCreated}
+              onAnnotationClick={handleAnnotationClick}
+              highlightedAnnotationId={highlightedAnnotationId}
+            />
           </div>
         </div>
 
-        {/* Right: Chat interface (optional) */}
-        {chatComponent && (
-          <div className="w-[500px] border-l bg-white">
-            {chatComponent}
-          </div>
-        )}
+        {/* Annotation list - Fixed width, scrollable */}
+        <div className="w-52 flex-shrink-0 overflow-y-auto bg-white rounded border">
+          <AnnotationList
+            annotations={annotations}
+            onAnnotationClick={handleAnnotationClick}
+            onAnnotationUpdate={handleAnnotationUpdate}
+            onAnnotationDelete={handleAnnotationDelete}
+            highlightedAnnotationId={highlightedAnnotationId}
+          />
+        </div>
       </div>
     </div>
   );

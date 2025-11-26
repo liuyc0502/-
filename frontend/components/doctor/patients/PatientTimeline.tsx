@@ -52,7 +52,10 @@ const getMetricStatusText = (status: string): string => {
 
 const ensureFileUrl = async (raw?: string) => {
   if (!raw) return "";
+  // Already a full URL
   if (/^https?:\/\//i.test(raw)) return raw;
+  // Already a backend API path (from new upload format)
+  if (raw.startsWith("/api/")) return raw;
   const objectName = raw.replace(/^\/+/, "");
   try {
     return await storageService.getFileUrl(objectName);

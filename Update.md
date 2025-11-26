@@ -1,4 +1,63 @@
 # 更新日志
+## 2025-11-26
+
+### 优化图片上传流程：移除自动VLM预处理，改为用途选择驱动
+
+**问题背景**:
+- 原先所有图片上传后都会自动调用VLM（视觉语言模型）生成描述
+- VLM描述不够精确，无法提取完整文字
+- 用户上传患者档案/病例文档时，需要的是OCR文字识别，而非VLM描述
+
+**解决方案**:
+- 所有图片上传（包括粘贴、拖拽、文件选择）都先弹出用途选择弹窗
+- 根据用途执行不同的处理流程，跳过无意义的VLM预处理
+
+**修改文件**:
+
+
+
+1. `backend/tool_collection/mcp/document_parsing_tools.py`
+   - 修正 PaddleOCR MCP URL 从 `/mcp` 改为 `/sse`
+
+2. `backend/consts/const.py`
+   - 新增 `MAIN_SERVICE_URL` 常量（默认值 `http://localhost:5010`）
+   - 用于OCR服务访问后端API获取图片
+
+3. `backend/agents/create_agent_info.py`
+   - 修正图片URL端口：从错误的8000改为正确的5010
+   - 按规范从 `consts.const` 导入配置
+   - 修改URL格式：从 `/file/storage/xxx.png?download=redirect` 改为 `/file/download/xxx.png`
+
+4. `backend/apps/file_management_app.py`
+   - 新增 `GET /file/download/{object_name}` 端点
+   - URL直接以文件扩展名结尾，兼容OCR工具的文件类型检测
+
+
+
+**修复OCR工具无法识别文件类型的问题**:
+- **问题**: PaddleOCR通过检查URL结尾判断文件类型，但原URL含查询参数`?download=redirect`，导致识别失败
+- **解决**: 新增 `/file/download/{object_name}` 端点，URL直接以 `.png/.jpg` 结尾
+- **旧URL**: `http://localhost:5010/file/storage/xxx.png?download=redirect` ❌
+- **新URL**: `http://localhost:5010/file/download/xxx.png` ✅
+
+**修复前端图片预览无法加载的问题**:
+- **问题1**: 上传后返回的URL是MinIO内部路径 `/nexent-bucket/xxx.png`，浏览器无法访问
+- **问题2**: 使用redirect模式重定向到 `http://nexent-minio:9000/...`，这是Docker内部地址，浏览器无法访问
+- **问题3**: `getFileUrl` API也返回MinIO内部URL，导致诊疗时间线等地方图片无法显示
+- **问题4**: `ensureFileUrl` 不识别 `/api/` 开头的URL，导致路径重复 `/api/file/storage/api/file/storage/...`
+- **解决**:
+  - 修改 `backend/database/attachment_db.py`: 
+    - `upload_fileobj()`: 返回 stream 模式URL
+    - `get_file_url()`: 返回 stream 模式URL (而非MinIO presigned URL)
+  - 修改前端 `ensureFileUrl` 函数 (两处):
+    - `frontend/components/doctor/patients/PatientTimeline.tsx`
+    - `frontend/components/doctor/patients/EditTimelineDetailModal.tsx`
+    - 增加 `/api/` 前缀检测，已经是API路径就直接返回
+- **旧URL**: `http://nexent-minio:9000/...` ❌ (Docker内部地址)
+- **新URL**: `/api/file/storage/xxx.png?download=stream` ✅ (直接返回图片数据)
+
+---
+
 ## 2025-11-25
 
 ### 实现医学图像标注与AI分析功能
@@ -167,11 +226,12 @@
 
 **集成说明**:
 - 📤 **图片上传流程**: 用户上传图片 → 自动显示用途选择弹窗（3个选项）
-- 🎨 **病例图片分析**: 选择后进入全屏标注模式，左侧画布+右侧聊天
+- 🎨 **病例图片分析**: 选择后聊天页面原地变成左右分栏（左侧标注画布，右侧保留原有聊天界面）
 - 📋 **患者档案录入**: 选择后打开OCR患者表单，自动识别并预填充字段
 - 📝 **病例库录入**: 选择后打开OCR病例表单，自动识别并预填充字段
-- 🔙 **退出标注模式**: 点击关闭按钮返回正常聊天界面
+- 🔙 **退出标注模式**: 点击"退出标注模式"按钮，聊天页面恢复全屏
 - 💾 **状态管理**: 使用React状态管理标注模式、图片URL、表单显示状态
+- 🎯 **布局适配**: 标注模式下左侧占50%宽度，聊天区域占50%宽度；非标注模式聊天区域占100%
 
 **待完成工作**:
 1. 创建医学图像分析子智能体并分配到医生端Portal
