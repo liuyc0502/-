@@ -28,13 +28,34 @@ async def call_paddleocr(image_url: str, output_mode: str = "simple") -> str:
         Extracted text or detailed JSON
     """
     try:
+        from consts.const import MAIN_SERVICE_URL
+        
+        # Ensure full URL for PaddleOCR to access
+        full_url = image_url
+        # Extract object_name from various URL formats
+        object_name = None
+        if "file/storage/" in image_url:
+            # Extract path after file/storage/
+            parts = image_url.split("file/storage/")
+            if len(parts) > 1:
+                object_name = parts[1].split("?")[0]  # Remove query params
+        
+        if object_name:
+            # Use /file/download/ endpoint which returns clean URL without query params
+            full_url = f"{MAIN_SERVICE_URL}/file/download/{object_name}"
+        elif image_url.startswith("/api/"):
+            full_url = f"{MAIN_SERVICE_URL}{image_url.replace('/api/', '/')}"
+        elif image_url.startswith("/"):
+            full_url = f"{MAIN_SERVICE_URL}{image_url}"
+        
+        logger.info(f"Calling PaddleOCR with URL: {full_url}")
         client = Client(PADDLEOCR_MCP_URL, timeout=60)
         async with client:
             # Call the 'ocr' tool from PaddleOCR MCP
             result = await client.call_tool(
                 "ocr",
                 arguments={
-                    "input_data": image_url,
+                    "input_data": full_url,
                     "output_mode": output_mode,
                     "file_type": "image"
                 }
@@ -56,15 +77,83 @@ async def parse_with_llm(ocr_text: str, target_schema: Dict[str, str]) -> Dict[s
     Returns:
         Dict with parsed structured data
     """
-    # TODO: Integrate with your LLM service (OpenAI/Claude)
-    # For now, return a placeholder
+    try:
+        from smolagents import OpenAIServerModel
+        from database.model_management_db import get_model_by_model_id
+        from utils.config_utils import get_model_name_from_config, tenant_config_manager
+        
+        # Get default tenant's LLM config
+        llm_model_config = tenant_config_manager.get_model_config("LLM_ID", tenant_id=DEFAULT_TENANT_ID)
+        if not llm_model_config:
+            logger.warning("No LLM model configured, returning empty parsed data")
+            return {field: "" for field in target_schema.keys()}
+        
+        # Build the extraction prompt
+        schema_description = "\n".join([f"- {field}: {desc}" for field, desc in target_schema.items()])
+        
+        system_prompt = """You are a medical document parser. Extract structured information from OCR text.
+Output ONLY valid JSON with the requested fields. If a field cannot be found, use empty string "".
+Do not include any explanation or markdown formatting, just the JSON object."""
 
-    parsed_data = {}
-    for field_name, field_desc in target_schema.items():
-        parsed_data[field_name] = f"[To be extracted from OCR text based on: {field_desc}]"
+        user_prompt = f"""Extract the following fields from this OCR text:
 
-    return parsed_data
+{schema_description}
 
+OCR Text:
+---
+{ocr_text}
+---
+
+Output the extracted data as a JSON object with the field names as keys."""
+
+        # Create LLM client
+        llm = OpenAIServerModel(
+            model_id=get_model_name_from_config(llm_model_config),
+            api_base=llm_model_config.get("base_url", ""),
+            api_key=llm_model_config.get("api_key", ""),
+            temperature=0.1,  # Low temperature for structured extraction
+        )
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        # Call LLM (non-streaming for simplicity)
+        completion_kwargs = llm._prepare_completion_kwargs(
+            messages=messages,
+            model=llm.model_id,
+            temperature=0.1,
+        )
+        response = llm.client.chat.completions.create(**completion_kwargs)
+        
+        # Parse response
+        content = response.choices[0].message.content.strip()
+        
+        # Clean up potential markdown formatting
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+        if content.endswith("```"):
+            content = content.rsplit("\n", 1)[0] if "\n" in content else content[:-3]
+        content = content.strip()
+        
+        # Parse JSON
+        parsed_data = json.loads(content)
+        
+        # Ensure all expected fields are present
+        for field in target_schema.keys():
+            if field not in parsed_data:
+                parsed_data[field] = ""
+        
+        logger.info(f"Successfully parsed OCR text with LLM, extracted {len(parsed_data)} fields")
+        return parsed_data
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse LLM response as JSON: {str(e)}")
+        return {field: "" for field in target_schema.keys()}
+    except Exception as e:
+        logger.error(f"LLM parsing failed: {str(e)}")
+        return {field: "" for field in target_schema.keys()}
 
 async def parse_patient_document_impl(image_url: str) -> Dict[str, Any]:
     """
