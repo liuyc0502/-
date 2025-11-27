@@ -1,6 +1,22 @@
 # 更新日志
 ## 2025-11-27
 
+### 修复 document_parsing_tools 中 llm_model_id 未定义错误
+
+**问题**: `parse_with_llm` 函数中使用了未定义的变量 `llm_model_id`，导致 `NameError: name 'llm_model_id' is not defined`
+
+**修复**: 
+- 移除了重复的 `get_model_by_model_id` 调用
+- `tenant_config_manager.get_model_config` 已返回完整模型配置，无需再次查询数据库
+- 修复了 `parse_with_llm` 函数中的逻辑错误
+
+**修改文件**: 
+- `backend/tool_collection/mcp/document_parsing_tools.py` (修复)
+
+**分支**: `feature/fix-document-parsing-llm-error-20251127`
+
+---
+
 ### 添加 OCR 文档解析 HTTP 端点
 
 **问题**: 前端 `api.ts` 中定义了 `parsePatient` 和 `parseCase` 端点，但后端没有对应的 HTTP 路由。
