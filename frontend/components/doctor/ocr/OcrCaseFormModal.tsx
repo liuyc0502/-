@@ -84,7 +84,7 @@ export function OcrCaseFormModal({
           : [],
       };
 
-      const result = await medicalCaseService.createCase(formattedValues);
+      const result = await medicalCaseService.create(formattedValues);
 
       if (result.success) {
         Modal.success({

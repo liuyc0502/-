@@ -112,6 +112,79 @@ class CreateAttachmentRequest(BaseModel):
     file_type: str = Field(..., description="File type: pdf/excel/dicom/zip")
     file_url: str = Field(..., description="File URL (MinIO path)")
     file_size: int = Field(..., description="File size in bytes")
+
+
+class OcrParseRequest(BaseModel):
+    image_url: str = Field(..., description="Image URL to parse with OCR")
+
+
+# ============================================================================
+# OCR Document Parsing Endpoints
+# ============================================================================
+@router.post("/patient/ocr/parse_patient")
+async def parse_patient_document(
+    request: OcrParseRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Parse patient document image using OCR and extract structured patient information.
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        
+        from tool_collection.mcp.document_parsing_tools import parse_patient_document_impl
+        result = await parse_patient_document_impl(request.image_url)
+        
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        logger.error(f"Parse patient document failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Parse patient document failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse patient document: {str(e)}"
+        )
+
+
+@router.post("/patient/ocr/parse_case")
+async def parse_case_document(
+    request: OcrParseRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Parse medical case document image using OCR and extract structured case information.
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        
+        from tool_collection.mcp.document_parsing_tools import parse_case_document_impl
+        result = await parse_case_document_impl(request.image_url)
+        
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        logger.error(f"Parse case document failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Parse case document failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse case document: {str(e)}"
+        )
+
+
 # ============================================================================
 # Patient Basic Info Endpoints
 # ============================================================================

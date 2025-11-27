@@ -1,6 +1,18 @@
 # 更新日志
 ## 2025-11-27
 
+### 添加 OCR 文档解析 HTTP 端点
+
+**问题**: 前端 `api.ts` 中定义了 `parsePatient` 和 `parseCase` 端点，但后端没有对应的 HTTP 路由。
+
+**修复**: 在 `backend/apps/patient_app.py` 中添加两个端点：
+- `POST /patient/ocr/parse_patient` - 解析患者档案文档
+- `POST /patient/ocr/parse_case` - 解析病例文档
+
+**实现方式**: 直接调用 MCP 工具 `parse_patient_document_tool` 和 `parse_case_document_tool`
+
+---
+
 ### 创建新分支并推送代码更新
 
 **操作内容**:

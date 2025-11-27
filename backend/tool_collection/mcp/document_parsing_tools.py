@@ -66,21 +66,10 @@ async def parse_with_llm(ocr_text: str, target_schema: Dict[str, str]) -> Dict[s
     return parsed_data
 
 
-@doc_parsing_tools.tool(
-    name="parse_patient_document",
-    description="Parse patient document image using OCR and extract structured patient information. Use when doctor uploads a patient medical record document and wants to automatically fill patient information form."
-)
-async def parse_patient_document_tool(
-    image_url: str
-) -> Dict[str, Any]:
+async def parse_patient_document_impl(image_url: str) -> Dict[str, Any]:
     """
-    Parse patient document and extract structured information.
-
-    Args:
-        image_url: URL or MinIO path to the patient document image
-
-    Returns:
-        Dict with extracted patient information ready for form filling
+    Core implementation for parsing patient document.
+    Called by both MCP tool and HTTP endpoint.
     """
     try:
         logger.info(f"Parsing patient document from: {image_url}")
@@ -125,20 +114,18 @@ async def parse_patient_document_tool(
 
 
 @doc_parsing_tools.tool(
-    name="parse_case_document",
-    description="Parse medical case document image using OCR and extract structured case information. Use when doctor uploads a case document and wants to automatically fill case library form."
+    name="parse_patient_document",
+    description="Parse patient document image using OCR and extract structured patient information. Use when doctor uploads a patient medical record document and wants to automatically fill patient information form."
 )
-async def parse_case_document_tool(
-    image_url: str
-) -> Dict[str, Any]:
+async def parse_patient_document_tool(image_url: str) -> Dict[str, Any]:
+    """MCP tool wrapper for parse_patient_document_impl"""
+    return await parse_patient_document_impl(image_url)
+
+
+async def parse_case_document_impl(image_url: str) -> Dict[str, Any]:
     """
-    Parse medical case document and extract structured information.
-
-    Args:
-        image_url: URL or MinIO path to the case document image
-
-    Returns:
-        Dict with extracted case information
+    Core implementation for parsing case document.
+    Called by both MCP tool and HTTP endpoint.
     """
     try:
         logger.info(f"Parsing case document from: {image_url}")
@@ -184,6 +171,15 @@ async def parse_case_document_tool(
     except Exception as e:
         logger.error(f"Error parsing case document: {str(e)}")
         return {"error": str(e)}
+
+
+@doc_parsing_tools.tool(
+    name="parse_case_document",
+    description="Parse medical case document image using OCR and extract structured case information. Use when doctor uploads a case document and wants to automatically fill case library form."
+)
+async def parse_case_document_tool(image_url: str) -> Dict[str, Any]:
+    """MCP tool wrapper for parse_case_document_impl"""
+    return await parse_case_document_impl(image_url)
 
 
 @doc_parsing_tools.tool(
