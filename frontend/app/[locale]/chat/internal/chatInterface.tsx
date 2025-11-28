@@ -42,12 +42,6 @@ import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseVi
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
 
-// Image annotation components
-import { ImageUploadPurposeModal } from "@/components/common/image-annotation/ImageUploadPurposeModal";
-import { ImageAnnotationView } from "@/components/common/image-annotation/ImageAnnotationView";
-import { OcrPatientFormModal } from "@/components/doctor/ocr/OcrPatientFormModal";
-import { OcrCaseFormModal } from "@/components/doctor/ocr/OcrCaseFormModal";
-import type { UploadPurpose } from "@/types/annotation";
 
 
 import {
@@ -160,12 +154,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [attachments, setAttachments] = useState<FilePreview[]>([]);
   const [fileUrls, setFileUrls] = useState<{ [id: string]: string }>({});
 
-  // Image annotation mode state
-  const [annotationMode, setAnnotationMode] = useState(false);
-  const [currentAnnotationImage, setCurrentAnnotationImage] = useState<{
-    url: string;
-    imageId?: number;
-  } | null>(null);
 
   // Image upload purpose selection state
   const [showUploadPurposeModal, setShowUploadPurposeModal] = useState(false);
@@ -285,12 +273,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   };
 
   // Handle image upload purpose selection
-  const handleImagePurposeSelect = (purpose: "analysis" | "patient_record" | "case_record", imageUrl: string) => {
-    if (purpose === "analysis") {
-      // Enter annotation mode
-      setCurrentAnnotationImage({ url: imageUrl });
-      setAnnotationMode(true);
-    } else if (purpose === "patient_record") {
+  const handleImagePurposeSelect = (purpose: "patient_record" | "case_record", imageUrl: string) => {
+    if (purpose === "patient_record") {
       // Show OCR patient form
       setOcrImageUrl(imageUrl);
       setShowOcrPatientForm(true);
@@ -298,54 +282,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       // Show OCR case form
       setOcrImageUrl(imageUrl);
       setShowOcrCaseForm(true);
-    }
-  };
-
-  // Exit annotation mode
-  const handleExitAnnotationMode = () => {
-    setAnnotationMode(false);
-    setCurrentAnnotationImage(null);
-  };
-
-  // Handle image annotation from attachment preview
-  const handleImageAnnotate = async (imageUrl: string) => {
-    // Find the attachment by matching either previewUrl or uploadedUrl
-    const attachment = attachments.find(att =>
-      att.previewUrl === imageUrl || att.uploadedUrl === imageUrl
-    );
-
-    if (!attachment) {
-      log.error("Attachment not found for imageUrl:", imageUrl);
-      return;
-    }
-
-    // If we already have the uploaded URL, use it
-    if (attachment.uploadedUrl) {
-      setCurrentAnnotationImage({ url: attachment.uploadedUrl });
-      setAnnotationMode(true);
-      return;
-    }
-
-    // Otherwise, upload the file first
-    try {
-      const result = await storageService.uploadFiles([attachment.file], 'images');
-      if (result.results && result.results.length > 0 && result.results[0].success) {
-        const uploadedUrl = result.results[0].url;
-
-        // Update attachment with uploaded URL
-        setAttachments(prev => prev.map(att =>
-          att.id === attachment.id ? { ...att, uploadedUrl } : att
-        ));
-
-        // Use the uploaded URL for annotation
-        setCurrentAnnotationImage({ url: uploadedUrl });
-        setAnnotationMode(true);
-      }
-    } catch (error) {
-      log.error("Failed to upload image for annotation:", error);
-      // Fallback to preview URL if upload fails
-      setCurrentAnnotationImage({ url: imageUrl });
-      setAnnotationMode(true);
     }
   };
 
@@ -1794,30 +1730,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
         {activeView === "chats" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex flex-1 overflow-hidden">
-              {/* Annotation Canvas - Left Side (when in annotation mode) */}
-              {annotationMode && currentAnnotationImage && (
-                <div className="w-1/2 border-r flex flex-col">
-                  <div className="p-3 border-b bg-gray-50 flex items-center justify-between">
-                    <h3 className="text-base font-medium">图像标注</h3>
-                    <button
-                      onClick={handleExitAnnotationMode}
-                      className="px-3 py-1 text-sm bg-white border rounded hover:bg-gray-100"
-                    >
-                      退出标注模式
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <ImageAnnotationView
-                      imageId={currentAnnotationImage.imageId || 0}
-                      imageUrl={currentAnnotationImage.url}
-                      onClose={handleExitAnnotationMode}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Chat Area - Right Side (or full width when not in annotation mode) */}
-              <div className={`${annotationMode ? 'w-1/2 min-w-0' : 'flex-1'} flex flex-col overflow-hidden`}>
+              {/* Chat Area - Full width */}
+              <div className="flex-1 flex flex-col overflow-hidden">
                 <ChatHeader
                   title={conversationManagement.conversationTitle}
                   onRename={handleTitleRename}
@@ -1867,7 +1781,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   onAttachmentsChange={handleAttachmentsChange}
                   onFileUpload={handleFileUpload}
                   onImageUpload={handleImageUpload}
-                  onImageAnnotate={handleImageAnnotate}
                   onOpinionChange={handleOpinionChange}
                   currentConversationId={conversationManagement.conversationId}
                   shouldScrollToBottom={shouldScrollToBottom}
@@ -1994,46 +1907,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
         </div>
       )}
 
-      {/* Image Upload Purpose Selection Modal */}
-      <ImageUploadPurposeModal
-        visible={showUploadPurposeModal}
-        imageUrl={pendingImageUrl}
-        onClose={() => setShowUploadPurposeModal(false)}
-        onSelectPurpose={(purpose: UploadPurpose, imageUrl: string) => {
-          handleImagePurposeSelect(purpose, imageUrl);
-          setShowUploadPurposeModal(false);
-        }}
-      />
 
-      {/* OCR Patient Form Modal */}
-      <OcrPatientFormModal
-        visible={showOcrPatientForm}
-        imageUrl={ocrImageUrl}
-        onClose={() => {
-          setShowOcrPatientForm(false);
-          setOcrImageUrl("");
-        }}
-        onSuccess={() => {
-          setShowOcrPatientForm(false);
-          setOcrImageUrl("");
-          // Optionally refresh patient list or show success message
-        }}
-      />
 
-      {/* OCR Case Form Modal */}
-      <OcrCaseFormModal
-        visible={showOcrCaseForm}
-        imageUrl={ocrImageUrl}
-        onClose={() => {
-          setShowOcrCaseForm(false);
-          setOcrImageUrl("");
-        }}
-        onSuccess={() => {
-          setShowOcrCaseForm(false);
-          setOcrImageUrl("");
-          // Optionally refresh case library or show success message
-        }}
-      />
     </>
   );
 }

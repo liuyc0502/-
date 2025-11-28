@@ -444,42 +444,6 @@ class PatientMedicalImage(TableBase):
     display_order = Column(Integer, doc="Display order")
     tenant_id = Column(String(100), doc="Tenant ID")
 
-class PatientImageAnnotation(TableBase):
-    """
-    Patient image annotation table - stores user-created annotations on medical images
-    """
-    __tablename__ = "patient_image_annotation_t"
-    __table_args__ = {"schema": SCHEMA}
-
-    annotation_id = Column(Integer, primary_key=True, nullable=False, doc="Annotation ID, primary key")
-    image_id = Column(Integer, nullable=False, doc="Image ID, references patient_medical_image_t")
-    annotation_type = Column(String(50), nullable=False, doc="Annotation type: lesion/control/shadow/hemorrhage/artifact/other")
-    annotation_shape = Column(String(20), nullable=False, doc="Shape: circle/rectangle/polygon")
-    coordinates = Column(JSON, nullable=False, doc="Shape coordinates as JSON")
-    annotation_color = Column(String(20), default='#FF0000', doc="Color code for visualization")
-    annotation_label = Column(String(200), doc="User-provided description/notes")
-    annotation_order = Column(Integer, doc="Sequential region number (Region 1, 2, 3...)")
-    cropped_image_url = Column(String(500), doc="URL of cropped region image for AI analysis")
-    tenant_id = Column(String(100), nullable=False, doc="Tenant ID")
-
-class PatientImageAnalysis(TableBase):
-    """
-    Patient image analysis table - stores AI-powered analysis results
-    """
-    __tablename__ = "patient_image_analysis_t"
-    __table_args__ = {"schema": SCHEMA}
-
-    analysis_id = Column(Integer, primary_key=True, nullable=False, doc="Analysis ID, primary key")
-    image_id = Column(Integer, nullable=False, doc="Image ID, references patient_medical_image_t")
-    annotation_id = Column(Integer, doc="Optional: annotation ID for region-specific analysis")
-    analysis_type = Column(String(50), nullable=False, doc="Type: region_analysis/full_image_analysis/comparison/abnormality_detection")
-    analysis_prompt = Column(Text, nullable=False, doc="User's question or analysis request")
-    analysis_result = Column(Text, nullable=False, doc="AI model's response/findings")
-    model_name = Column(String(100), doc="Model used (e.g., gpt-4-vision)")
-    confidence_score = Column(Numeric(5, 4), doc="Model confidence score (0.0-1.0)")
-    conversation_id = Column(Integer, doc="Optional: link to conversation for context")
-    tenant_id = Column(String(100), nullable=False, doc="Tenant ID")
-
 class PatientMetrics(TableBase):
     """
     Patient examination metrics table
