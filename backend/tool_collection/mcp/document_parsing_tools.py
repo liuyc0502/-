@@ -704,14 +704,31 @@ async def parse_patient_archive(image_url: str) -> Dict[str, Any]:
         if "error" in result:
             return result
 
-        # Step 3: Override medical_record_no with auto-generated one
-        if "parsed_data" in result:
-            result["parsed_data"]["medical_record_no"] = next_medical_record_no
-            result["message"] = f"Patient information extracted. Auto-generated medical record number: {next_medical_record_no}. Please review and confirm before saving."
+        # Step 3: Extract parsed data and format return structure
+        parsed_data = result.get("parsed_data", {})
+        
+        # Override medical_record_no with auto-generated one
+        parsed_data["medical_record_no"] = next_medical_record_no
 
         logger.info(f"Successfully parsed patient archive with auto-generated medical record number: {next_medical_record_no}")
 
-        return result
+        # Return structured data similar to parse_lab_report format
+        return {
+            "success": True,
+            "ocr_text": result.get("ocr_text", ""),
+            "name": parsed_data.get("name", ""),
+            "age": parsed_data.get("age", ""),
+            "gender": parsed_data.get("gender", ""),
+            "date_of_birth": parsed_data.get("date_of_birth", ""),
+            "medical_record_no": parsed_data.get("medical_record_no", ""),
+            "phone": parsed_data.get("phone", ""),
+            "address": parsed_data.get("address", ""),
+            "diagnosis": parsed_data.get("diagnosis", ""),
+            "allergies": parsed_data.get("allergies", ""),
+            "family_history": parsed_data.get("family_history", ""),
+            "past_medical_history": parsed_data.get("past_medical_history", ""),
+            "message": f"Patient information extracted. Auto-generated medical record number: {next_medical_record_no}. Please review and confirm before saving."
+        }
 
     except Exception as e:
         logger.error(f"Error parsing patient archive: {str(e)}")
@@ -737,14 +754,14 @@ async def parse_case_document(image_url: str) -> Dict[str, Any]:
         logger.info(f"Parsing case document from: {image_url}")
 
         # Step 1: Get next available case id
-        from database.case_db import list_cases
+        from database.medical_case_db import list_medical_cases
 
-        all_cases = list_cases(tenant_id=DEFAULT_TENANT_ID, limit=1000)
+        all_cases = list_medical_cases(tenant_id=DEFAULT_TENANT_ID, limit=1000)
 
         # Find maximum case id
         max_number = 0
         for case in all_cases:
-            case_id = case.get("case_id", "")
+            case_id = case.get("case_no", "")
             if case_id and case_id.startswith("C"):
                 try:
                     number = int(case_id[1:])
@@ -752,7 +769,7 @@ async def parse_case_document(image_url: str) -> Dict[str, Any]:
                 except ValueError:
                     continue
 
-        next_case_id = f"C{max_number + 1:08d}"
+        next_case_no = f"C{max_number + 1:08d}"
 
         # Step 2: Call existing implementation for parsing
         result = await parse_case_document_impl(image_url)
@@ -760,14 +777,36 @@ async def parse_case_document(image_url: str) -> Dict[str, Any]:
         if "error" in result:
             return result
 
-        # Step 3: Override case_id with auto-generated one
-        if "parsed_data" in result:
-            result["parsed_data"]["case_id"] = next_case_id
-            result["message"] = f"Case information extracted. Auto-generated case id: {next_case_id}. Please review and confirm before saving."
+        # Step 3: Extract parsed data and format return structure
+        parsed_data = result.get("parsed_data", {})
+        
+        # Override case_no with auto-generated one
+        parsed_data["case_no"] = next_case_no
 
-        logger.info(f"Successfully parsed case document with auto-generated case id: {next_case_id}")
+        logger.info(f"Successfully parsed case document with auto-generated case id: {next_case_no}")
 
-        return result
+        # Return structured data similar to parse_lab_report format
+        return {
+            "success": True,
+            "ocr_text": result.get("ocr_text", ""),
+            "case_title": parsed_data.get("case_title", ""),
+            "diagnosis": parsed_data.get("diagnosis", ""),
+            "disease_type": parsed_data.get("disease_type", ""),
+            "age": parsed_data.get("age", ""),
+            "gender": parsed_data.get("gender", ""),
+            "chief_complaint": parsed_data.get("chief_complaint", ""),
+            "symptoms": parsed_data.get("symptoms", ""),
+            "physical_examination": parsed_data.get("physical_examination", ""),
+            "lab_results": parsed_data.get("lab_results", ""),
+            "imaging_findings": parsed_data.get("imaging_findings", ""),
+            "pathology_findings": parsed_data.get("pathology_findings", ""),
+            "diagnosis_result": parsed_data.get("diagnosis_result", ""),
+            "treatment_plan": parsed_data.get("treatment_plan", ""),
+            "clinical_outcome": parsed_data.get("clinical_outcome", ""),
+            "case_discussion": parsed_data.get("case_discussion", ""),
+            "case_no": parsed_data.get("case_no", ""),
+            "message": f"Case information extracted. Auto-generated case id: {next_case_no}. Please review and confirm before saving."
+        }
 
     except Exception as e:
         logger.error(f"Error parsing case document: {str(e)}")

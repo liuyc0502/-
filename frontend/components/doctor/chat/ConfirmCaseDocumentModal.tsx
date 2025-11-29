@@ -108,16 +108,13 @@ export function ConfirmCaseDocumentModal({
         case_discussion: values.case_discussion || undefined,
       };
 
-      // TODO: Replace with actual API call when caseService is implemented
-      // const response = await caseService.createCase(caseData);
-      console.log("Creating case with data:", caseData);
+      // Call API to create case from parsed data
+      const { medicalCaseService } = await import('@/services/medicalCaseService');
+      const response = await medicalCaseService.createFromParsed(caseData);
 
-      // Temporary mock response
-      const mockCaseId = Math.floor(Math.random() * 10000);
-
-      message.success("病例创建成功");
+      message.success(`病例创建成功：${response.case_no}`);
       handleClose();
-      onSuccess(mockCaseId);
+      onSuccess(response.case_id);
     } catch (error) {
       console.error("Failed to create case:", error);
       message.error("保存失败，请检查输入");

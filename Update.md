@@ -129,11 +129,87 @@ chatInterface监听助手消息，检测工具响应关键字
 - ✅ **正则提取健壮** - 使用灵活的正则模式提取JSON，容忍格式变化
 - ✅ **错误处理** - JSON解析失败时优雅降级，不影响其他功能
 
+**后端MCP工具返回格式优化** (`backend/tool_collection/mcp/document_parsing_tools.py`):
+- ✅ 优化 `parse_patient_archive` 工具返回格式
+  - 在 message 字段中添加 `[PARSED_DATA]...[/PARSED_DATA]` 标签包裹的 JSON 数据
+  - 使用 `json.dumps(ensure_ascii=False)` 确保中文字符正确编码
+  - 前端可通过正则提取标签内的 JSON（优先级高于旧的启发式提取）
+
+- ✅ 优化 `parse_case_document` 工具返回格式
+  - 同样添加 `[PARSED_DATA]` 标签包裹的 JSON 数据
+  - 确保前端能可靠地提取解析后的病例信息
+
+**前端JSON提取逻辑优化** (`frontend/app/[locale]/chat/internal/chatInterface.tsx`):
+- ✅ 更新 `parse_patient_archive` 响应处理
+  - 优先尝试提取 `[PARSED_DATA]...[/PARSED_DATA]` 标签内的 JSON（新格式）
+  - 降级到旧的正则模式作为后备方案（兼容性）
+  - 支持双向兼容：新旧格式都能正确解析
+
+- ✅ 更新 `parse_case_document` 响应处理
+  - 同样实现标签优先提取 + 正则降级策略
+  - 确保解析健壮性和向后兼容性
+
+**格式示例**:
+```
+新格式（推荐）:
+Patient information extracted. Auto-generated medical record number: P00000001.
+Please review and confirm before saving.
+
+[PARSED_DATA]
+{"name":"张三","age":"45","gender":"男",...}
+[/PARSED_DATA]
+
+旧格式（兼容）:
+... {"name":"张三","age":"45",...} ...
+```
+
+**病例管理后端API实现** (`backend/`):
+
+1. **数据库层扩展** ([medical_case_db.py](backend/database/medical_case_db.py)):
+   - ✅ 新增 `create_case_with_details()` 综合函数
+   - 一次性创建病例基本信息、详细信息、症状、实验室结果
+   - 支持事务性操作，确保数据一致性
+
+2. **Service层扩展** ([medical_case_service.py](backend/services/medical_case_service.py)):
+   - ✅ 新增 `create_case_from_parsed_document()` 服务函数
+   - 处理AI解析的病例文档数据（来自parse_case_document工具）
+   - 智能处理症状数组（支持逗号分隔字符串或数组格式）
+   - 将解析的字段映射到数据库结构
+
+3. **HTTP API层扩展** ([medical_case_app.py](backend/apps/medical_case_app.py)):
+   - ✅ 新增 `POST /medical_case/create_from_parsed` 端点
+   - 新增 `CreateCaseFromParsedDataRequest` 数据模型
+   - 接收AI解析的完整病例数据并创建记录
+   - 返回 case_id 和 case_no
+
+**前端病例服务实现** (`frontend/`):
+
+1. **API配置更新** ([services/api.ts](frontend/services/api.ts)):
+   - ✅ 新增 `medicalCase.createFromParsed` 端点配置
+
+2. **Service层扩展** ([services/medicalCaseService.ts](frontend/services/medicalCaseService.ts)):
+   - ✅ 新增 `createFromParsed()` 方法
+   - 支持完整的病例文档字段（症状、体格检查、实验室检查、影像发现、病理发现、治疗方案、临床转归、病例讨论等）
+   - TypeScript类型安全
+
+3. **确认弹窗集成** ([components/doctor/chat/ConfirmCaseDocumentModal.tsx](frontend/components/doctor/chat/ConfirmCaseDocumentModal.tsx)):
+   - ✅ 替换mock实现为真实API调用
+   - 调用 `medicalCaseService.createFromParsed()`
+   - 显示创建成功的case_no
+   - 成功后跳转到病例详情页
+
+**实现亮点**:
+- ✅ **完整数据流**: MCP工具解析 → 确认弹窗 → API创建 → 数据库存储
+- ✅ **事务性操作**: 病例基本信息+详情+症状一次性创建
+- ✅ **智能字段映射**: 自动处理症状数组、JSON字段
+- ✅ **类型安全**: 前后端完整的TypeScript/Pydantic类型定义
+- ✅ **错误处理**: 完善的异常捕获和用户提示
+
 **待办事项**:
-- [ ] 实现 `caseService.createCase()` API（前端service层）
-- [ ] 实现病例创建相关的后端API endpoints
+- [x] ~~实现 `caseService.createCase()` API（前端service层）~~ ✅ 已完成
+- [x] ~~实现病例创建相关的后端API endpoints~~ ✅ 已完成
 - [ ] 添加患者详情页和病例详情页的刷新逻辑
-- [ ] 后端优化MCP工具返回格式（确保JSON可被正确提取）
+- [x] ~~后端优化MCP工具返回格式（确保JSON可被正确提取）~~ ✅ 已完成
 - [ ] 完善患者时间线刷新逻辑（从确认弹窗成功回调）
 - [ ] 添加会话关联患者/时间线的UI功能
 - [ ] 端到端测试：上传图片 → AI解析 → 确认弹窗 → 保存 → 跳转详情页
@@ -385,7 +461,6 @@ Agent调用MCP工具解析（parse_lab_report 或 parse_imaging_report）
 
 **待完成**:
 - [ ] 数据库迁移执行（用户表示 "先不数据库迁移"）
-- [ ] 后端优化MCP工具返回格式（确保JSON可被正确提取）
 - [ ] 完善患者时间线刷新逻辑（从确认弹窗成功回调）
 - [ ] 添加会话关联患者/时间线的UI功能
 - [ ] 测试完整流程：上传图片 → 解析 → 确认 → 保存 → 刷新

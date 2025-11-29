@@ -419,5 +419,31 @@ export const medicalCaseService = {
 
     return await response.json();
   },
-};
 
+  /**
+   * Create a medical case from AI-parsed document data
+   */
+  async createFromParsed(caseData: Partial<MedicalCase> & {
+    symptoms?: string[] | string;
+    physical_examination?: string;
+    lab_results?: string;
+    imaging_findings?: string;
+    pathology_findings?: string;
+    diagnosis_result?: string;
+    treatment_plan?: string;
+    clinical_outcome?: string;
+    case_discussion?: string;
+  }): Promise<{ success: boolean; case_id: number; case_no: string; message: string }> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.createFromParsed, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(caseData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create medical case from parsed data');
+    }
+
+    return await response.json();
+  },
+};

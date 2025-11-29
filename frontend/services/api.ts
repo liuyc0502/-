@@ -211,6 +211,7 @@ export const API_ENDPOINTS = {
 
   medicalCase: {
     create: `${API_BASE_URL}/medical_case/create`,
+    createFromParsed: `${API_BASE_URL}/medical_case/create_from_parsed`,
     list: `${API_BASE_URL}/medical_case/list`,
     detail: (caseId: number) => `${API_BASE_URL}/medical_case/${caseId}`,
     byCaseNo: (caseNo: string) => `${API_BASE_URL}/medical_case/by_case_no/${caseNo}`,

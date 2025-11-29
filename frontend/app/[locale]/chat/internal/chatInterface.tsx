@@ -389,7 +389,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             setReportTimelineId(currentConversation.linked_timeline_id);
             setLabReportModalOpen(true);
           } catch (e) {
-            console.error('Failed to parse lab report data:', e);
+            log.error('Failed to parse lab report data:', e);
           }
         }
       }
@@ -405,14 +405,14 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             setReportTimelineId(currentConversation.linked_timeline_id);
             setImagingReportModalOpen(true);
           } catch (e) {
-            console.error('Failed to parse imaging report data:', e);
+            log.error('Failed to parse imaging report data:', e);
           }
         }
       }
 
       // Check for parse_patient_archive tool result
       if (content.includes('parse_patient_archive') || content.includes('患者档案')) {
-        // Extract JSON containing patient information (look for 'name' and 'medical_record_no' fields)
+        // Try to extract JSON data from the content
         const patientArchiveMatch = content.match(/\{[\s\S]*?"name"[\s\S]*?"medical_record_no"[\s\S]*?\}/);
         if (patientArchiveMatch) {
           try {
@@ -420,14 +420,13 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             setParsedPatientArchive(parsedData);
             setPatientArchiveModalOpen(true);
           } catch (e) {
-            console.error('Failed to parse patient archive data:', e);
+            log.error('Failed to parse patient archive data:', e);
           }
         }
       }
 
       // Check for parse_case_document tool result
       if (content.includes('parse_case_document') || content.includes('病例文档')) {
-        // Extract JSON containing case information (look for 'case_title' and 'diagnosis' fields)
         const caseDocumentMatch = content.match(/\{[\s\S]*?"case_title"[\s\S]*?"diagnosis"[\s\S]*?\}/);
         if (caseDocumentMatch) {
           try {
@@ -435,12 +434,12 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             setParsedCaseDocument(parsedData);
             setCaseDocumentModalOpen(true);
           } catch (e) {
-            console.error('Failed to parse case document data:', e);
+            log.error('Failed to parse case document data:', e);
           }
         }
       }
     } catch (error) {
-      console.error('Error processing tool results:', error);
+      log.error('Error processing tool results:', error);
     }
   }, [currentMessages, variant, currentConversation]);
 

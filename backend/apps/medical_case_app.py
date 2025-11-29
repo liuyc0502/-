@@ -806,3 +806,86 @@ async def delete_case_lab_results(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete case lab results: {str(e)}"
         )
+
+# ============================================================================
+# Parsed Document Import Endpoints
+# ============================================================================
+
+class CreateCaseFromParsedDataRequest(BaseModel):
+    """
+    Request model for creating a case from AI-parsed document data.
+    This matches the output format of the parse_case_document MCP tool.
+    """
+    case_no: Optional[str] = Field(None, description="Auto-generated case number (e.g., C00000001)")
+    case_title: str = Field(..., description="Case title or summary")
+    diagnosis: Optional[str] = Field(None, description="Primary diagnosis")
+    disease_type: Optional[str] = Field(None, description="Disease type/category")
+    age: Optional[int] = Field(None, description="Patient age")
+    gender: Optional[str] = Field(None, description="Patient gender")
+    chief_complaint: Optional[str] = Field(None, description="Chief complaint")
+    symptoms: Optional[List[str]] = Field(None, description="Clinical symptoms (array or comma-separated string)")
+    physical_examination: Optional[str] = Field(None, description="Physical examination findings")
+    lab_results: Optional[str] = Field(None, description="Laboratory test results")
+    imaging_findings: Optional[str] = Field(None, description="Imaging examination findings")
+    pathology_findings: Optional[str] = Field(None, description="Pathology findings")
+    diagnosis_result: Optional[str] = Field(None, description="Final diagnosis")
+    treatment_plan: Optional[str] = Field(None, description="Treatment plan")
+    clinical_outcome: Optional[str] = Field(None, description="Clinical outcome")
+    case_discussion: Optional[str] = Field(None, description="Case discussion points")
+    category: Optional[str] = Field("imported", description="Case category")
+    tags: Optional[List[str]] = Field(default_factory=list, description="Case tags")
+    is_classic: Optional[bool] = Field(False, description="Whether this is a classic case")
+
+
+@router.post("/medical_case/create_from_parsed")
+async def create_case_from_parsed_document(
+    request: CreateCaseFromParsedDataRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Create a medical case from AI-parsed document data.
+    
+    This endpoint is specifically designed to handle data from the parse_case_document MCP tool.
+    It creates a case with all related information (basic info, details, symptoms, etc.) in one transaction.
+    
+    Args:
+        request: Parsed case data from AI
+        authorization: Bearer token
+        
+    Returns:
+        JSON response with case_id and success message
+        
+    Raises:
+        HTTPException: If creation fails
+    """
+    try:
+        # Get user ID from token
+        user_id = get_current_user_id(authorization)
+        
+        # Convert request to dict
+        parsed_data = request.dict(exclude_none=False)
+        
+        # Call service layer
+        result = await medical_case_service.create_case_from_parsed_document(
+            parsed_data=parsed_data,
+            tenant_id=user_id,  # Using user_id as tenant_id for now
+            user_id=user_id
+        )
+        
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+        
+    except AgentRunException as exc:
+        logger.error(f"Failed to create case from parsed document: {str(exc)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(exc)
+        )
+    except Exception as exc:
+        logger.error(f"Unexpected error creating case from parsed document: {str(exc)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create case: {str(exc)}"
+        )

@@ -679,3 +679,127 @@ def get_user_view_history(user_id: str, tenant_id: str, limit: int = 50) -> List
             result.append(case_dict)
 
         return result
+
+
+# ============================================================================
+# Composite Operations
+# ============================================================================
+
+def create_case_with_details(
+    case_data: dict,
+    detail_data: Optional[dict],
+    symptoms_data: Optional[List[dict]],
+    lab_results_data: Optional[List[dict]],
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Create a medical case with all related data in one transaction.
+    This is used when importing a case from parsed document.
+
+    Args:
+        case_data: Basic case information (case_no, case_title, diagnosis, etc.)
+        detail_data: Detailed case information (physical_examination, treatment_plan, etc.)
+        symptoms_data: List of symptoms (each with symptom_name, symptom_description, etc.)
+        lab_results_data: List of lab results (each with test_name, test_value, etc.)
+        tenant_id: Tenant ID
+        user_id: User ID
+
+    Returns:
+        Dict with case_id and counts of created related records
+    """
+    with get_db_session() as session:
+        # Step 1: Create the main case
+        new_case = MedicalCase(
+            case_no=case_data.get('case_no'),
+            case_title=case_data.get('case_title'),
+            diagnosis=case_data.get('diagnosis'),
+            disease_type=case_data.get('disease_type'),
+            age=case_data.get('age'),
+            gender=case_data.get('gender'),
+            chief_complaint=case_data.get('chief_complaint'),
+            category=case_data.get('category'),
+            tags=case_data.get('tags', []),
+            is_classic=case_data.get('is_classic', False),
+            tenant_id=tenant_id,
+            created_by=user_id,
+            updated_by=user_id,
+            delete_flag='N'
+        )
+        session.add(new_case)
+        session.flush()  # Get the case_id
+
+        case_id = new_case.case_id
+
+        # Step 2: Create case detail if provided
+        detail_id = None
+        if detail_data:
+            new_detail = MedicalCaseDetail(
+                case_id=case_id,
+                present_illness_history=detail_data.get('present_illness_history'),
+                past_medical_history=detail_data.get('past_medical_history'),
+                family_history=detail_data.get('family_history'),
+                physical_examination=detail_data.get('physical_examination', {}),
+                imaging_results=detail_data.get('imaging_results', {}),
+                diagnosis_basis=detail_data.get('diagnosis_basis'),
+                treatment_plan=detail_data.get('treatment_plan'),
+                medications=detail_data.get('medications', []),
+                prognosis=detail_data.get('prognosis'),
+                clinical_notes=detail_data.get('clinical_notes'),
+                tenant_id=tenant_id,
+                created_by=user_id,
+                updated_by=user_id,
+                delete_flag='N'
+            )
+            session.add(new_detail)
+            session.flush()
+            detail_id = new_detail.detail_id
+
+        # Step 3: Create symptoms if provided
+        symptoms_count = 0
+        if symptoms_data:
+            for symptom_data in symptoms_data:
+                new_symptom = MedicalCaseSymptom(
+                    case_id=case_id,
+                    symptom_name=symptom_data.get('symptom_name'),
+                    symptom_description=symptom_data.get('symptom_description'),
+                    is_key_symptom=symptom_data.get('is_key_symptom', False),
+                    tenant_id=tenant_id,
+                    created_by=user_id,
+                    updated_by=user_id,
+                    delete_flag='N'
+                )
+                session.add(new_symptom)
+                symptoms_count += 1
+
+        # Step 4: Create lab results if provided
+        lab_results_count = 0
+        if lab_results_data:
+            for lab_data in lab_results_data:
+                new_lab = MedicalCaseLabResult(
+                    case_id=case_id,
+                    test_name=lab_data.get('test_name'),
+                    test_full_name=lab_data.get('test_full_name'),
+                    test_value=lab_data.get('test_value'),
+                    test_unit=lab_data.get('test_unit'),
+                    normal_range=lab_data.get('normal_range'),
+                    is_abnormal=lab_data.get('is_abnormal', False),
+                    abnormal_indicator=lab_data.get('abnormal_indicator'),
+                    tenant_id=tenant_id,
+                    created_by=user_id,
+                    updated_by=user_id,
+                    delete_flag='N'
+                )
+                session.add(new_lab)
+                lab_results_count += 1
+
+        session.commit()
+
+        logger.info(f"Created case {case_id} with {symptoms_count} symptoms and {lab_results_count} lab results")
+
+        return {
+            "case_id": case_id,
+            "detail_id": detail_id,
+            "symptoms_count": symptoms_count,
+            "lab_results_count": lab_results_count
+        }
