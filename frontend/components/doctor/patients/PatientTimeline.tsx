@@ -15,7 +15,7 @@ import {
   Download,
 } from "lucide-react";
 import patientService from "@/services/patientService";
-import type { Patient, TimelineStage, TimelineWithDetail } from "@/types/patient";
+import type { Patient, TimelineStage, TimelineWithDetail, LabReport, ImagingReport } from "@/types/patient";
 import { CreateTimelineModal } from "./CreateTimelineModal";
 import { EditTimelineDetailModal } from "./EditTimelineDetailModal";
 import { storageService } from "@/services/storageService";
@@ -82,6 +82,9 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [currentTimelineId, setCurrentTimelineId] = useState<number | null>(null);
+  const [labReports, setLabReports] = useState<LabReport[]>([]);
+  const [imagingReports, setImagingReports] = useState<ImagingReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
 
   // ============================================================================
   // Effects
@@ -145,11 +148,37 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
         images: resolvedImages,
         attachments: resolvedAttachments,
       });
+
+      // Load lab and imaging reports for this timeline
+      loadReportsForTimeline(timelineId);
     } catch (error) {
       message.error("加载时间线详情失败");
       console.error("Failed to load timeline detail:", error);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const loadReportsForTimeline = async (timelineId: number) => {
+    try {
+      setReportsLoading(true);
+      const [labData, imagingData] = await Promise.all([
+        patientService.getLabReportsByTimeline(timelineId),
+        patientService.getImagingReportsByTimeline(timelineId),
+      ]);
+      setLabReports(labData || []);
+      setImagingReports(imagingData || []);
+    } catch (error) {
+      console.error("Failed to load reports:", error);
+      // Only show error message for real errors (not 404 - no reports)
+      if (error instanceof Error && !error.message.includes('404')) {
+        message.error("加载报告失败");
+      }
+      // Set empty arrays on error to prevent UI issues
+      setLabReports([]);
+      setImagingReports([]);
+    } finally {
+      setReportsLoading(false);
     }
   };
 
@@ -194,6 +223,58 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
     if (timeline.status === "completed") return "completed";
     if (timeline.status === "current") return "current";
     return "pending";
+  };
+
+  const handleDeleteLabReport = async (reportId: number) => {
+    modal.confirm({
+      title: "确认删除",
+      content: "确定要删除此检验报告吗？",
+      okText: "确认",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await patientService.deleteLabReport(reportId);
+            message.success("删除成功");
+            if (selectedTimeline) {
+              await loadReportsForTimeline(selectedTimeline.timeline_id);
+            }
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete lab report:", error);
+            message.error("删除失败");
+            reject(error);
+          }
+        });
+      },
+    });
+  };
+
+  const handleDeleteImagingReport = async (reportId: number) => {
+    modal.confirm({
+      title: "确认删除",
+      content: "确定要删除此影像报告吗？",
+      okText: "确认",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: () => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            await patientService.deleteImagingReport(reportId);
+            message.success("删除成功");
+            if (selectedTimeline) {
+              await loadReportsForTimeline(selectedTimeline.timeline_id);
+            }
+            resolve();
+          } catch (error) {
+            console.error("Failed to delete imaging report:", error);
+            message.error("删除失败");
+            reject(error);
+          }
+        });
+      },
+    });
   };
 
   // ============================================================================
@@ -543,6 +624,215 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
                 </div>
               ))}
             </div>
+          </Card>
+        )}
+
+        {/* Lab Reports Section */}
+        {!reportsLoading && (
+          <Card
+            className="bg-white border-gray-200"
+            title={
+              <div className="text-sm font-bold flex items-center gap-2">
+                <TestTube className="h-4 w-4 text-[#D94527]" />
+                检验报告 ({labReports.length})
+              </div>
+            }
+          >
+            {labReports.length > 0 ? (
+              <div className="space-y-4">
+                {labReports.map((report) => (
+                  <div key={report.report_id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900">{report.report_type || "检验报告"}</h4>
+                          <span className="text-xs text-gray-500">
+                            {report.report_date ? formatDate(report.report_date) : ""}
+                          </span>
+                        </div>
+                        {report.report_institution && (
+                          <p className="text-xs text-gray-500 mt-1">检验机构: {report.report_institution}</p>
+                        )}
+                        {report.report_number && (
+                          <p className="text-xs text-gray-500">报告编号: {report.report_number}</p>
+                        )}
+                      </div>
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteLabReport(report.report_id)}
+                      >
+                        删除
+                      </Button>
+                    </div>
+
+                    {report.ai_summary && (
+                      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3">
+                        <p className="text-xs font-semibold text-blue-900 mb-1">AI 分析摘要</p>
+                        <p className="text-sm text-blue-800">{report.ai_summary}</p>
+                      </div>
+                    )}
+
+                    {report.items && report.items.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">检验项目</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">结果</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">参考范围</th>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">状态</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {report.items.map((item, idx) => (
+                              <tr key={item.item_id || idx} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 text-gray-900">{item.test_item_name}</td>
+                                <td className="px-3 py-2">
+                                  <span className="font-medium text-gray-900">
+                                    {item.test_result} {item.test_unit || ""}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-gray-600">{item.reference_range || "-"}</td>
+                                <td className="px-3 py-2">
+                                  {item.abnormal_flag === "↑" && (
+                                    <span className="text-red-600 font-semibold">↑ 偏高</span>
+                                  )}
+                                  {item.abnormal_flag === "↓" && (
+                                    <span className="text-blue-600 font-semibold">↓ 偏低</span>
+                                  )}
+                                  {(item.abnormal_flag === "正常" || !item.abnormal_flag) && (
+                                    <span className="text-green-600">正常</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {report.report_image_url && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <a
+                          href={report.report_image_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[#D94527] hover:underline flex items-center gap-1"
+                        >
+                          <ImageIcon className="h-3 w-3" />
+                          查看原始报告图片
+                        </a>
+                      </div>
+                    )}
+                  </div>
+              ))}
+            </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">暂无检验报告</p>
+                <p className="text-gray-400 text-xs mt-1">可通过聊天上传报告图片自动解析</p>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Imaging Reports Section */}
+        {!reportsLoading && (
+          <Card
+            className="bg-white border-gray-200"
+            title={
+              <div className="text-sm font-bold flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-[#D94527]" />
+                影像报告 ({imagingReports.length})
+              </div>
+            }
+          >
+            {imagingReports.length > 0 ? (
+              <div className="space-y-4">
+                {imagingReports.map((report) => (
+                  <div key={report.report_id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900">{report.imaging_type || "影像检查"}</h4>
+                          <span className="text-xs text-gray-500">
+                            {report.imaging_date ? formatDate(report.imaging_date) : ""}
+                          </span>
+                        </div>
+                        {report.imaging_institution && (
+                          <p className="text-xs text-gray-500 mt-1">检查机构: {report.imaging_institution}</p>
+                        )}
+                        {report.report_number && (
+                          <p className="text-xs text-gray-500">报告编号: {report.report_number}</p>
+                        )}
+                        {report.examination_site && (
+                          <p className="text-xs text-gray-600 mt-1">检查部位: {report.examination_site}</p>
+                        )}
+                      </div>
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteImagingReport(report.report_id)}
+                      >
+                        删除
+                      </Button>
+                    </div>
+
+                    {report.ai_summary && (
+                      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-3">
+                        <p className="text-xs font-semibold text-blue-900 mb-1">AI 分析摘要</p>
+                        <p className="text-sm text-blue-800">{report.ai_summary}</p>
+                      </div>
+                    )}
+
+                    {report.imaging_findings && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-700 mb-1">影像所见</p>
+                        <p className="text-sm text-gray-800 leading-relaxed">{report.imaging_findings}</p>
+                      </div>
+                    )}
+
+                    {report.diagnostic_impression && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-700 mb-1">诊断意见</p>
+                        <p className="text-sm text-gray-800 font-medium">{report.diagnostic_impression}</p>
+                      </div>
+                    )}
+
+                    {report.recommendations && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-700 mb-1">建议</p>
+                        <p className="text-sm text-gray-800">{report.recommendations}</p>
+                      </div>
+                    )}
+
+                    {report.report_image_url && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <a
+                          href={report.report_image_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[#D94527] hover:underline flex items-center gap-1"
+                        >
+                          <ImageIcon className="h-3 w-3" />
+                          查看原始报告图片
+                        </a>
+                      </div>
+                    )}
+                  </div>
+              ))}
+            </div>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">暂无影像报告</p>
+                <p className="text-gray-400 text-xs mt-1">可通过聊天上传报告图片自动解析</p>
+              </div>
+            )}
           </Card>
         )}
 

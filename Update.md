@@ -1,4 +1,417 @@
 # 更新日志
+## 2025-11-29
+
+### 新增患者档案和病例文档确认弹窗
+
+**功能概述**:
+实现患者档案和病例文档的AI智能解析确认弹窗，医生可审核和编辑AI解析的数据后保存到系统。
+
+**前端确认弹窗组件** (`frontend/components/doctor/chat/`):
+
+1. **`ConfirmPatientArchiveModal.tsx`** - 患者档案确认弹窗
+   - **用途**: 当AI解析患者档案图片后，弹出确认对话框供医生审核和编辑
+   - **布局**: 横版设计（1300px宽），多列表单布局避免滚动条
+     - 基础信息（4列）：姓名*、年龄、性别*、出生日期
+     - 联系信息（4列）：病历号、邮箱*、电话、住址
+     - 医疗信息（2列）：主要诊断、过敏史
+     - 病史信息（2列）：家族史、既往病史
+   - **字段处理**:
+     - 日期字段：支持Ant Design DatePicker（YYYY-MM-DD格式）
+     - JSON数组字段：过敏史、既往病史（逗号分隔 ↔ JSON数组自动转换）
+     - 表单验证：姓名、性别、邮箱为必填项
+   - **保存流程**:
+     - 调用 `patientService.createPatient()` API
+     - 保存成功后自动跳转到患者详情页（设置activeNavItem="patients"）
+     - 将新创建的patient_id传递给父组件
+
+2. **`ConfirmCaseDocumentModal.tsx`** - 病例文档确认弹窗
+   - **用途**: 当AI解析病例文档图片后，弹出确认对话框供医生审核和编辑
+   - **布局**: 横版设计（1300px宽），分区域多列布局避免滚动条
+     - 基础信息（4列）：病例标题*（占2列）、年龄、性别
+     - 诊断信息（2列）：主要诊断、疾病类型
+     - 临床表现（2列）：主诉、临床症状
+     - 检查发现（3列）：体格检查、实验室检查、影像学检查
+     - 病理与诊断（2列）：病理学发现、诊断结果
+     - 治疗与转归（2列）：治疗方案、临床转归
+     - 病例讨论（全宽）：病例讨论要点
+   - **字段处理**:
+     - 症状数组：临床症状（逗号分隔 ↔ JSON数组自动转换）
+     - 表单验证：病例标题为必填项
+     - 所有TextArea带字符计数（最大500-1000字）
+   - **保存流程**:
+     - TODO: 调用 `caseService.createCase()` API（当前使用mock）
+     - 保存成功后自动跳转到病例详情页（设置activeNavItem="cases"）
+     - 将新创建的case_id传递给父组件
+
+**聊天界面集成** (`frontend/app/[locale]/chat/internal/chatInterface.tsx`):
+
+1. **导入组件**:
+   ```typescript
+   import { ConfirmPatientArchiveModal } from "@/components/doctor/chat/ConfirmPatientArchiveModal";
+   import { ConfirmCaseDocumentModal } from "@/components/doctor/chat/ConfirmCaseDocumentModal";
+   ```
+
+2. **新增状态管理**（4个state变量）:
+   - `patientArchiveModalOpen` / `setPatientArchiveModalOpen` - 患者档案弹窗开关
+   - `caseDocumentModalOpen` / `setCaseDocumentModalOpen` - 病例文档弹窗开关
+   - `parsedPatientArchive` / `setParsedPatientArchive` - AI解析的患者档案数据
+   - `parsedCaseDocument` / `setParsedCaseDocument` - AI解析的病例文档数据
+
+3. **扩展useEffect消息监听** - 监听MCP工具响应并自动弹窗:
+
+   **检测 `parse_patient_archive` 工具响应**:
+   - 关键字匹配: `'parse_patient_archive'` 或 `'患者档案'`
+   - JSON提取正则: `/\{[\s\S]*?"name"[\s\S]*?"medical_record_no"[\s\S]*?\}/`
+   - 解析成功后设置 parsedPatientArchive 并打开弹窗
+
+   **检测 `parse_case_document` 工具响应**:
+   - 关键字匹配: `'parse_case_document'` 或 `'病例文档'`
+   - JSON提取正则: `/\{[\s\S]*?"case_title"[\s\S]*?"diagnosis"[\s\S]*?\}/`
+   - 解析成功后设置 parsedCaseDocument 并打开弹窗
+
+4. **模态框渲染** - 仅在医生门户（variant="doctor"）显示:
+   ```typescript
+   {variant === "doctor" && (
+     <>
+       <ConfirmPatientArchiveModal
+         open={patientArchiveModalOpen}
+         onClose={() => {...}}
+         parsedData={parsedPatientArchive}
+         onSuccess={(patientId) => {
+           setActiveNavItem("patients");
+           setSelectedPatientId(patientId.toString());
+         }}
+       />
+       <ConfirmCaseDocumentModal
+         open={caseDocumentModalOpen}
+         onClose={() => {...}}
+         parsedData={parsedCaseDocument}
+         onSuccess={(caseId) => {
+           setActiveNavItem("cases");
+           setSelectedCaseId(caseId.toString());
+         }}
+       />
+     </>
+   )}
+   ```
+
+**完整工作流程**:
+```
+医生在聊天页面上传患者档案/病例文档图片
+  ↓
+AI Agent调用MCP工具（parse_patient_archive 或 parse_case_document）
+  ↓
+MCP工具执行：OCR提取文本 → LLM解析字段 → 返回结构化JSON
+  ↓
+chatInterface监听助手消息，检测工具响应关键字
+  ↓
+正则提取JSON数据并解析
+  ↓
+自动打开对应确认弹窗，显示AI解析的数据
+  ↓
+医生审核数据、编辑字段、修正错误
+  ↓
+点击"确认保存"按钮
+  ↓
+调用后端API创建患者/病例记录
+  ↓
+保存成功后自动跳转到详情页
+```
+
+**设计亮点**:
+- ✅ **横版布局** - 1300px宽度，多列排布（2-4列），最小化垂直滚动
+- ✅ **智能字段解析** - 自动处理JSON数组字段（逗号分隔 ↔ JSON数组）
+- ✅ **日期兼容处理** - 支持Ant Design DatePicker的日期对象格式
+- ✅ **表单验证** - 必填字段校验（姓名、性别、邮箱、病例标题）
+- ✅ **字符计数** - TextArea字段显示字数统计和最大长度限制
+- ✅ **用户体验优化** - 保存成功后自动跳转到相关详情页
+- ✅ **门户隔离** - 仅在医生门户（doctor variant）中启用
+- ✅ **正则提取健壮** - 使用灵活的正则模式提取JSON，容忍格式变化
+- ✅ **错误处理** - JSON解析失败时优雅降级，不影响其他功能
+
+**待办事项**:
+- [ ] 实现 `caseService.createCase()` API（前端service层）
+- [ ] 实现病例创建相关的后端API endpoints
+- [ ] 添加患者详情页和病例详情页的刷新逻辑
+- [ ] 后端优化MCP工具返回格式（确保JSON可被正确提取）
+- [ ] 完善患者时间线刷新逻辑（从确认弹窗成功回调）
+- [ ] 添加会话关联患者/时间线的UI功能
+- [ ] 端到端测试：上传图片 → AI解析 → 确认弹窗 → 保存 → 跳转详情页
+
+**邮箱字段说明**:
+- 在 `ConfirmPatientArchiveModal` 中新增邮箱字段（email）
+- 邮箱为必填项，带email格式验证
+- 联系信息区域从3列调整为4列：病历号、邮箱*、电话、住址
+
+## 2025-11-28
+
+### 新增患者报告管理系统（检验报告 & 影像报告）
+
+**功能概述**:
+实现患者检验报告和影像报告的智能识别、结构化存储和展示功能，支持多报告管理和智能文档识别。
+
+**数据库变更**:
+1. **新增表 `patient_lab_report_t`** - 检验报告主表
+   - 存储报告元数据：报告类型、日期、机构、报告单号、AI摘要
+   - 关联时间线节点和患者
+
+2. **新增表 `patient_lab_report_item_t`** - 检验项目明细表（一对多）
+   - 存储每个检验项：项目名称、结果、单位、参考范围、检验方法
+   - 支持异常标志（↑/↓/正常）和结果提示（偏高/偏低/正常）
+
+3. **新增表 `patient_imaging_report_t`** - 影像报告表
+   - 存储影像类型（X光/CT/MRI/超声）、检查部位
+   - 存储影像所见、诊断意见、建议
+   - 关联时间线节点和患者
+
+**迁移文件**:
+- `backend/database/migrations/add_patient_report_tables.sql` (SQL迁移脚本)
+- `backend/database/migrations/run_patient_report_tables_migration.py` (Python执行脚本)
+
+**数据模型更新**:
+- `backend/database/db_models.py` - 新增 `PatientLabReport`, `PatientLabReportItem`, `PatientImagingReport` 三个模型类
+
+**数据库操作层**:
+- 新建 `backend/database/patient_report_db.py`
+  - 检验报告CRUD: `create_lab_report`, `get_lab_reports_by_timeline`, `delete_lab_report`
+  - 检验项CRUD: `create_lab_report_items`
+  - 影像报告CRUD: `create_imaging_report`, `get_imaging_reports_by_timeline`, `delete_imaging_report`
+
+**MCP工具增强** (`backend/tool_collection/mcp/document_parsing_tools.py`):
+1. **`detect_document_type`** - 智能识别文档类型
+   - 使用OCR + LLM分析，识别：患者档案、病例资料、检验报告、影像报告、医嘱单
+   - 返回文档类型和置信度
+
+2. **`parse_lab_report`** - 解析检验报告
+   - 提取报告元数据（报告类型、日期、机构）
+   - 提取所有检验项（项目名、结果、单位、参考范围、异常标志）
+   - 支持多项检验报告
+
+3. **`parse_imaging_report`** - 解析影像报告
+   - 提取影像类型、检查部位
+   - 提取影像所见、诊断意见、建议
+   - 注：解析的是报告文字，不是影像图片本身
+
+4. **`parse_medical_order`** - 解析医嘱单
+   - 提取用药方案（药名、剂量、频次、时间点）
+   - 提取康复任务（任务、分类、频率、时长）
+   - 提取注意事项（内容、优先级）
+
+5. **`match_patient_by_name`** - 患者智能匹配
+   - 根据姓名搜索患者
+   - 支持年龄和日期辅助判断（解决同名患者问题）
+   - 返回匹配评分和推荐建议
+
+6. **`parse_patient_archive`** - 解析患者档案（增强）
+   - 自动生成下一个可用病历号（格式：P00000001）
+   - 查询现有最大病历号并自增
+   - 调用现有的患者文档解析逻辑
+
+**设计亮点**:
+- **一对多关系**: 一份检验报告可包含多个检验项，避免字段膨胀
+- **同一天多报告**: 支持同一时间线节点下多份检验报告/影像报告
+- **智能患者匹配**: 解决同名患者问题，使用年龄和日期辅助判断
+- **病历号自增**: 自动生成病历号，格式统一（P + 8位数字）
+- **保留现有指标表**: `PatientMetrics` 表保持不变，用于手动录入指标
+
+**Service层实现** (`backend/services/patient_report_service.py`):
+- ✅ `create_lab_report_with_items` - 创建检验报告及所有检验项
+- ✅ `get_lab_reports_by_timeline_service` - 获取时间线的检验报告列表
+- ✅ `get_lab_reports_by_patient_service` - 获取患者的所有检验报告
+- ✅ `get_lab_report_detail` - 获取检验报告详情（含所有检验项）
+- ✅ `update_lab_report_service` - 更新检验报告
+- ✅ `delete_lab_report_service` - 删除检验报告（级联删除检验项）
+- ✅ `create_imaging_report_service` - 创建影像报告
+- ✅ `get_imaging_reports_by_timeline_service` - 获取时间线的影像报告列表
+- ✅ `get_imaging_reports_by_patient_service` - 获取患者的所有影像报告
+- ✅ `get_imaging_report_detail` - 获取影像报告详情
+- ✅ `update_imaging_report_service` - 更新影像报告
+- ✅ `delete_imaging_report_service` - 删除影像报告
+
+**HTTP API层实现** (`backend/apps/patient_report_app.py`):
+- ✅ `POST /patient/reports/lab` - 创建检验报告（含检验项数组）
+- ✅ `GET /patient/reports/lab/timeline/{timeline_id}` - 获取时间线的检验报告
+- ✅ `DELETE /patient/reports/lab/{report_id}` - 删除检验报告
+- ✅ `POST /patient/reports/imaging` - 创建影像报告
+- ✅ `GET /patient/reports/imaging/timeline/{timeline_id}` - 获取时间线的影像报告
+- ✅ `DELETE /patient/reports/imaging/{report_id}` - 删除影像报告
+
+**前端类型定义** (`frontend/types/patient.ts`):
+- ✅ `LabReportItem` - 检验项接口（test_item_name, test_result, reference_range, abnormal_flag等）
+- ✅ `LabReport` - 检验报告接口（report_id, timeline_id, items数组, ai_summary等）
+- ✅ `ImagingReport` - 影像报告接口（imaging_type, examination_site, imaging_findings, diagnostic_impression等）
+- ✅ `CreateLabReportRequest` - 创建检验报告请求类型
+- ✅ `CreateImagingReportRequest` - 创建影像报告请求类型
+
+**前端API服务层** (`frontend/services/patientService.ts`):
+- ✅ `createLabReport` - 创建检验报告
+- ✅ `getLabReportsByTimeline` - 获取时间线的检验报告列表
+- ✅ `deleteLabReport` - 删除检验报告
+- ✅ `createImagingReport` - 创建影像报告
+- ✅ `getImagingReportsByTimeline` - 获取时间线的影像报告列表
+- ✅ `deleteImagingReport` - 删除影像报告
+
+**前端展示组件** (`frontend/components/doctor/patients/PatientTimeline.tsx`):
+- ✅ 新增检验报告展示区域（卡片列表模式，避免使用标签页和滚动条）
+  - 显示报告类型、日期、检验机构、报告编号
+  - AI分析摘要高亮显示（蓝色背景）
+  - 检验项表格展示（项目名、结果、参考范围、状态）
+  - 异常标志可视化（↑偏高红色、↓偏低蓝色、正常绿色）
+  - 原始报告图片链接
+  - 删除按钮（带确认弹窗）
+
+- ✅ 新增影像报告展示区域（卡片列表模式）
+  - 显示影像类型、日期、检查机构、检查部位
+  - AI分析摘要高亮显示
+  - 影像所见、诊断意见、建议分段展示
+  - 原始报告图片链接
+  - 删除按钮（带确认弹窗）
+
+- ✅ 自动加载报告数据：切换时间线节点时自动加载对应报告
+- ✅ 删除操作：带确认弹窗，删除后自动刷新报告列表
+- ✅ **空状态优化**：即使没有报告也始终显示报告卡片区域
+  - 保持页面布局稳定，避免内容跳动
+  - 空状态显示：灰色虚线边框 + 图标 + 提示文字
+  - 引导用户："可通过聊天上传报告图片自动解析"
+  - 错误处理优化：404不显示错误消息（正常无数据状态）
+
+**UI设计亮点**:
+- 卡片列表布局，避免标签页和滚动条（符合用户要求）
+- 每个报告独立卡片，带悬停阴影效果
+- AI摘要用蓝色边框突出显示
+- 检验项用表格展示，清晰直观
+- 异常值用颜色标识（红色偏高、蓝色偏低、绿色正常）
+- 主题色 #D94527（医生门户主色）统一应用
+- 空状态友好提示，保持布局一致性
+
+**前端确认弹窗** (`frontend/components/doctor/chat/`):
+- ✅ **`ConfirmLabReportModal.tsx`** - 检验报告确认弹窗
+  - 显示AI解析的检验报告数据，供用户确认/编辑
+  - 横版布局，宽度1300px，避免滚动条
+  - 基本信息表单（4列）：报告类型、日期、机构、编号
+  - AI摘要区域（带蓝色提示条）
+  - 可编辑检验项表格：
+    - 点击编辑按钮进入编辑模式
+    - 字段：项目名称、结果、单位、参考范围、状态
+    - 颜色标识异常值（红色↑、蓝色↓、绿色正常）
+    - 支持删除检验项（至少保留1项）
+  - 确认保存按钮调用API创建报告
+
+- ✅ **`ConfirmImagingReportModal.tsx`** - 影像报告确认弹窗
+  - 显示AI解析的影像报告数据，供用户确认/编辑
+  - 横版布局，宽度1300px，两列表单
+  - 基本信息（4列）：影像类型、检查日期、检查机构、报告编号
+  - 检查部位和报告图片URL
+  - 详细字段（2列布局）：
+    - 左列：影像所见（最多1000字）
+    - 右列：诊断意见（最多500字）
+    - 左列：建议（最多500字）
+    - 右列：AI摘要（最多500字）
+  - 所有TextArea带字数统计
+  - 确认保存按钮调用API创建报告
+
+**使用场景**:
+```
+用户在聊天页面上传报告图片
+  ↓
+Agent调用MCP工具解析（parse_lab_report 或 parse_imaging_report）
+  ↓
+聊天组件接收解析结果，弹出确认弹窗
+  ↓
+用户查看/编辑AI解析的数据
+  ↓
+点击"确认保存"按钮
+  ↓
+调用API创建报告存入数据库
+  ↓
+刷新患者时间线，显示新报告
+```
+
+**聊天页面集成** (`frontend/app/[locale]/chat/internal/chatInterface.tsx`):
+- ✅ **导入确认弹窗组件**
+  - ConfirmLabReportModal - 检验报告确认弹窗
+  - ConfirmImagingReportModal - 影像报告确认弹窗
+
+- ✅ **添加弹窗状态管理**（6个state变量）
+  - labReportModalOpen, setLabReportModalOpen
+  - imagingReportModalOpen, setImagingReportModalOpen
+  - parsedLabReport, setParsedLabReport
+  - parsedImagingReport, setParsedImagingReport
+  - reportTimelineId, setReportTimelineId
+  - reportPatientId, setReportPatientId
+
+- ✅ **实现消息监听器**（useEffect）
+  - 监听最新的assistant消息内容
+  - 检测MCP工具调用结果（parse_lab_report, parse_imaging_report）
+  - 使用正则表达式提取JSON数据：
+    - 检验报告：`/\{[\s\S]*?"test_items"[\s\S]*?\}/`
+    - 影像报告：`/\{[\s\S]*?"imaging_findings"[\s\S]*?\}/`
+  - 从当前会话获取linked_patient_id和linked_timeline_id
+  - 解析成功后自动打开对应的确认弹窗
+
+- ✅ **在组件返回部分渲染弹窗**
+  - 仅在doctor variant下渲染
+  - 传递timelineId和patientId到弹窗
+  - onSuccess回调刷新患者时间线（TODO）
+
+**类型定义更新** (`frontend/types/chat.ts`):
+- ✅ ConversationListItem接口新增字段：
+  - `linked_patient_id?: number | null` - 关联的患者ID
+  - `linked_timeline_id?: number | null` - 关联的时间线节点ID
+  - 用于在聊天会话中关联患者和时间线，以便报告保存时使用
+
+**完整工作流程**:
+```
+1. 用户在医生聊天页面上传报告图片
+   ↓
+2. Agent调用MCP工具（parse_lab_report 或 parse_imaging_report）
+   ↓
+3. 工具返回解析的JSON数据（包含在assistant消息中）
+   ↓
+4. useEffect监听器检测到工具调用结果
+   ↓
+5. 正则表达式提取JSON数据
+   ↓
+6. 从当前会话获取linked_patient_id和linked_timeline_id
+   ↓
+7. 自动打开对应的确认弹窗显示解析数据
+   ↓
+8. 用户确认/编辑数据后点击"确认保存"
+   ↓
+9. 调用API创建报告存入数据库
+   ↓
+10. 刷新患者时间线，显示新报告
+```
+
+**待完成**:
+- [ ] 数据库迁移执行（用户表示 "先不数据库迁移"）
+- [ ] 后端优化MCP工具返回格式（确保JSON可被正确提取）
+- [ ] 完善患者时间线刷新逻辑（从确认弹窗成功回调）
+- [ ] 添加会话关联患者/时间线的UI功能
+- [ ] 测试完整流程：上传图片 → 解析 → 确认 → 保存 → 刷新
+
+**技术栈**:
+- 后端：SQLAlchemy ORM, FastAPI, PaddleOCR, LLM解析
+- 前端：React, TypeScript, Ant Design, Tailwind CSS, Lucide Icons
+- 数据库：PostgreSQL (Supabase)
+
+**相关文件**:
+- `backend/database/migrations/20250128_add_patient_report_tables.sql` (新增)
+- `backend/database/db_models.py` (更新)
+- `backend/database/patient_report_db.py` (新增)
+- `backend/tool_collection/mcp/document_parsing_tools.py` (增强)
+- `backend/services/patient_report_service.py` (新增)
+- `backend/apps/patient_report_app.py` (增强)
+- `frontend/types/patient.ts` (更新)
+- `frontend/types/chat.ts` (更新 - 新增linked字段)
+- `frontend/services/patientService.ts` (更新)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
+- `frontend/components/doctor/chat/ConfirmLabReportModal.tsx` (新增)
+- `frontend/components/doctor/chat/ConfirmImagingReportModal.tsx` (新增)
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新 - 集成弹窗)
+
+---
+
 ## 2025-11-27
 
 ### 修复 document_parsing_tools 中 llm_model_id 未定义错误

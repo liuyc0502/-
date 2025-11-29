@@ -258,3 +258,265 @@ def get_report_detail(timeline_id: int, user_id: str, tenant_id: str) -> Dict:
 
     logger.info(f"Retrieved report detail for timeline {timeline_id}")
     return report_detail
+
+
+# ============================================================================
+# Lab Report Services (New Report System)
+# ============================================================================
+
+async def create_lab_report_with_items(
+    report_data: dict,
+    test_items: List[Dict],
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Create a lab report with all its test items
+    """
+    try:
+        from consts.exceptions import AgentRunException
+        from database import patient_report_db
+
+        # Validate required fields for report
+        required_fields = ['timeline_id', 'patient_id']
+        for field in required_fields:
+            if not report_data.get(field):
+                raise ValueError(f"Missing required field: {field}")
+
+        # Create the report
+        result = patient_report_db.create_lab_report(report_data, tenant_id, user_id)
+        report_id = result['report_id']
+
+        # Create test items if provided
+        if test_items:
+            patient_report_db.create_lab_report_items(test_items, report_id, tenant_id, user_id)
+
+        return {
+            "success": True,
+            "report_id": report_id,
+            "items_count": len(test_items),
+            "message": "Lab report created successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to create lab report: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to create lab report: {str(e)}")
+
+
+async def get_lab_reports_by_timeline_service(timeline_id: int, tenant_id: str) -> List[dict]:
+    """
+    Get all lab reports for a timeline
+    """
+    try:
+        from database import patient_report_db
+        reports = patient_report_db.get_lab_reports_by_timeline(timeline_id, tenant_id)
+        return reports
+    except Exception as e:
+        logger.error(f"Failed to get lab reports: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to get lab reports: {str(e)}")
+
+
+async def get_lab_reports_by_patient_service(patient_id: int, tenant_id: str, limit: int = 50) -> List[dict]:
+    """
+    Get all lab reports for a patient
+    """
+    try:
+        from database import patient_report_db
+        reports = patient_report_db.get_lab_reports_by_patient(patient_id, tenant_id, limit)
+        return reports
+    except Exception as e:
+        logger.error(f"Failed to get lab reports for patient: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to get lab reports for patient: {str(e)}")
+
+
+async def get_lab_report_detail(report_id: int, tenant_id: str) -> Optional[Dict]:
+    """
+    Get lab report with all items
+    """
+    try:
+        from database import patient_report_db
+        report = patient_report_db.get_lab_report_by_id(report_id, tenant_id)
+        return report
+    except Exception as e:
+        logger.error(f"Failed to get lab report detail: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to get lab report detail: {str(e)}")
+
+
+async def update_lab_report_service(
+    report_id: int,
+    report_data: dict,
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Update lab report
+    """
+    try:
+        from database import patient_report_db
+        success = patient_report_db.update_lab_report(report_id, report_data, tenant_id, user_id)
+        if not success:
+            raise ValueError(f"Lab report not found: {report_id}")
+
+        return {
+            "success": True,
+            "report_id": report_id,
+            "message": "Lab report updated successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to update lab report: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to update lab report: {str(e)}")
+
+
+async def delete_lab_report_service(report_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete lab report and all its items
+    """
+    try:
+        from database import patient_report_db
+        success = patient_report_db.delete_lab_report(report_id, tenant_id, user_id)
+        if not success:
+            raise ValueError(f"Lab report not found: {report_id}")
+
+        return {
+            "success": True,
+            "report_id": report_id,
+            "message": "Lab report deleted successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to delete lab report: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to delete lab report: {str(e)}")
+
+
+# ============================================================================
+# Imaging Report Services (New Report System)
+# ============================================================================
+
+async def create_imaging_report_service(
+    report_data: dict,
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Create an imaging report
+    """
+    try:
+        from database import patient_report_db
+        from consts.exceptions import AgentRunException
+
+        # Validate required fields
+        required_fields = ['timeline_id', 'patient_id']
+        for field in required_fields:
+            if not report_data.get(field):
+                raise ValueError(f"Missing required field: {field}")
+
+        result = patient_report_db.create_imaging_report(report_data, tenant_id, user_id)
+
+        return {
+            "success": True,
+            "report_id": result['report_id'],
+            "message": "Imaging report created successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to create imaging report: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to create imaging report: {str(e)}")
+
+
+async def get_imaging_reports_by_timeline_service(timeline_id: int, tenant_id: str) -> List[dict]:
+    """
+    Get all imaging reports for a timeline
+    """
+    try:
+        from database import patient_report_db
+        reports = patient_report_db.get_imaging_reports_by_timeline(timeline_id, tenant_id)
+        return reports
+    except Exception as e:
+        logger.error(f"Failed to get imaging reports: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to get imaging reports: {str(e)}")
+
+
+async def get_imaging_reports_by_patient_service(patient_id: int, tenant_id: str, limit: int = 50) -> List[dict]:
+    """
+    Get all imaging reports for a patient
+    """
+    try:
+        from database import patient_report_db
+        reports = patient_report_db.get_imaging_reports_by_patient(patient_id, tenant_id, limit)
+        return reports
+    except Exception as e:
+        logger.error(f"Failed to get imaging reports for patient: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to get imaging reports for patient: {str(e)}")
+
+
+async def get_imaging_report_detail(report_id: int, tenant_id: str) -> Optional[Dict]:
+    """
+    Get imaging report detail
+    """
+    try:
+        from database import patient_report_db
+        report = patient_report_db.get_imaging_report_by_id(report_id, tenant_id)
+        return report
+    except Exception as e:
+        logger.error(f"Failed to get imaging report detail: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to get imaging report detail: {str(e)}")
+
+
+async def update_imaging_report_service(
+    report_id: int,
+    report_data: dict,
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Update imaging report
+    """
+    try:
+        from database import patient_report_db
+        success = patient_report_db.update_imaging_report(report_id, report_data, tenant_id, user_id)
+        if not success:
+            raise ValueError(f"Imaging report not found: {report_id}")
+
+        return {
+            "success": True,
+            "report_id": report_id,
+            "message": "Imaging report updated successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to update imaging report: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to update imaging report: {str(e)}")
+
+
+async def delete_imaging_report_service(report_id: int, tenant_id: str, user_id: str) -> dict:
+    """
+    Delete imaging report
+    """
+    try:
+        from database import patient_report_db
+        success = patient_report_db.delete_imaging_report(report_id, tenant_id, user_id)
+        if not success:
+            raise ValueError(f"Imaging report not found: {report_id}")
+
+        return {
+            "success": True,
+            "report_id": report_id,
+            "message": "Imaging report deleted successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to delete imaging report: {str(e)}")
+        from consts.exceptions import AgentRunException
+        raise AgentRunException(f"Failed to delete imaging report: {str(e)}")

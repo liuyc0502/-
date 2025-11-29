@@ -38,6 +38,10 @@ import { PatientDetailView } from "@/components/doctor/patients/PatientDetailVie
 import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
 import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
 import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
+import { ConfirmLabReportModal } from "@/components/doctor/chat/ConfirmLabReportModal";
+import { ConfirmImagingReportModal } from "@/components/doctor/chat/ConfirmImagingReportModal";
+import { ConfirmPatientArchiveModal } from "@/components/doctor/chat/ConfirmPatientArchiveModal";
+import { ConfirmCaseDocumentModal } from "@/components/doctor/chat/ConfirmCaseDocumentModal";
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
@@ -113,6 +117,20 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
   const [caseLibraryTab, setCaseLibraryTab] = useState("search");
+
+  // Report confirmation modals state
+  const [labReportModalOpen, setLabReportModalOpen] = useState(false);
+  const [imagingReportModalOpen, setImagingReportModalOpen] = useState(false);
+  const [parsedLabReport, setParsedLabReport] = useState<any>(null);
+  const [parsedImagingReport, setParsedImagingReport] = useState<any>(null);
+  const [reportTimelineId, setReportTimelineId] = useState<number | null>(null);
+  const [reportPatientId, setReportPatientId] = useState<number | null>(null);
+
+  // Patient archive and case document modals state
+  const [patientArchiveModalOpen, setPatientArchiveModalOpen] = useState(false);
+  const [caseDocumentModalOpen, setCaseDocumentModalOpen] = useState(false);
+  const [parsedPatientArchive, setParsedPatientArchive] = useState<any>(null);
+  const [parsedCaseDocument, setParsedCaseDocument] = useState<any>(null);
 
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
@@ -344,6 +362,87 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       }
     };
   }, []);
+
+  // Monitor messages for MCP tool responses and trigger report modals
+  useEffect(() => {
+    if (variant !== "doctor" || currentMessages.length === 0) return;
+
+    // Get the last assistant message
+    const lastMessage = currentMessages[currentMessages.length - 1];
+    if (lastMessage.role !== "assistant" || !lastMessage.content) return;
+
+    try {
+      // Try to parse tool results from message content
+      const content = typeof lastMessage.content === 'string'
+        ? lastMessage.content
+        : JSON.stringify(lastMessage.content);
+
+      // Check for parse_lab_report tool result
+      if (content.includes('parse_lab_report') || content.includes('检验报告')) {
+        // Try to extract JSON data from the content
+        const labReportMatch = content.match(/\{[\s\S]*?"test_items"[\s\S]*?\}/);
+        if (labReportMatch && currentConversation?.linked_patient_id && currentConversation?.linked_timeline_id) {
+          try {
+            const parsedData = JSON.parse(labReportMatch[0]);
+            setParsedLabReport(parsedData);
+            setReportPatientId(currentConversation.linked_patient_id);
+            setReportTimelineId(currentConversation.linked_timeline_id);
+            setLabReportModalOpen(true);
+          } catch (e) {
+            console.error('Failed to parse lab report data:', e);
+          }
+        }
+      }
+
+      // Check for parse_imaging_report tool result
+      if (content.includes('parse_imaging_report') || content.includes('影像报告')) {
+        const imagingReportMatch = content.match(/\{[\s\S]*?"imaging_findings"[\s\S]*?\}/);
+        if (imagingReportMatch && currentConversation?.linked_patient_id && currentConversation?.linked_timeline_id) {
+          try {
+            const parsedData = JSON.parse(imagingReportMatch[0]);
+            setParsedImagingReport(parsedData);
+            setReportPatientId(currentConversation.linked_patient_id);
+            setReportTimelineId(currentConversation.linked_timeline_id);
+            setImagingReportModalOpen(true);
+          } catch (e) {
+            console.error('Failed to parse imaging report data:', e);
+          }
+        }
+      }
+
+      // Check for parse_patient_archive tool result
+      if (content.includes('parse_patient_archive') || content.includes('患者档案')) {
+        // Extract JSON containing patient information (look for 'name' and 'medical_record_no' fields)
+        const patientArchiveMatch = content.match(/\{[\s\S]*?"name"[\s\S]*?"medical_record_no"[\s\S]*?\}/);
+        if (patientArchiveMatch) {
+          try {
+            const parsedData = JSON.parse(patientArchiveMatch[0]);
+            setParsedPatientArchive(parsedData);
+            setPatientArchiveModalOpen(true);
+          } catch (e) {
+            console.error('Failed to parse patient archive data:', e);
+          }
+        }
+      }
+
+      // Check for parse_case_document tool result
+      if (content.includes('parse_case_document') || content.includes('病例文档')) {
+        // Extract JSON containing case information (look for 'case_title' and 'diagnosis' fields)
+        const caseDocumentMatch = content.match(/\{[\s\S]*?"case_title"[\s\S]*?"diagnosis"[\s\S]*?\}/);
+        if (caseDocumentMatch) {
+          try {
+            const parsedData = JSON.parse(caseDocumentMatch[0]);
+            setParsedCaseDocument(parsedData);
+            setCaseDocumentModalOpen(true);
+          } catch (e) {
+            console.error('Failed to parse case document data:', e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error processing tool results:', error);
+    }
+  }, [currentMessages, variant, currentConversation]);
 
   const handleSend = async () => {
     if (!input.trim() && attachments.length === 0) return; // Allow sending attachments only, without text content
@@ -1907,7 +2006,77 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
         </div>
       )}
 
+      {/* Report Confirmation Modals - Only for doctor variant */}
+      {variant === "doctor" && reportTimelineId && reportPatientId && (
+        <>
+          <ConfirmLabReportModal
+            open={labReportModalOpen}
+            onClose={() => {
+              setLabReportModalOpen(false);
+              setParsedLabReport(null);
+            }}
+            parsedData={parsedLabReport}
+            timelineId={reportTimelineId}
+            patientId={reportPatientId}
+            onSuccess={() => {
+              // Refresh patient timeline if viewing patient detail
+              if (selectedPatientId) {
+                // TODO: Trigger patient detail refresh
+              }
+            }}
+          />
 
+          <ConfirmImagingReportModal
+            open={imagingReportModalOpen}
+            onClose={() => {
+              setImagingReportModalOpen(false);
+              setParsedImagingReport(null);
+            }}
+            parsedData={parsedImagingReport}
+            timelineId={reportTimelineId}
+            patientId={reportPatientId}
+            onSuccess={() => {
+              // Refresh patient timeline if viewing patient detail
+              if (selectedPatientId) {
+                // TODO: Trigger patient detail refresh
+              }
+            }}
+          />
+        </>
+      )}
+
+      {/* Patient Archive and Case Document Modals - Only for doctor variant */}
+      {variant === "doctor" && (
+        <>
+          <ConfirmPatientArchiveModal
+            open={patientArchiveModalOpen}
+            onClose={() => {
+              setPatientArchiveModalOpen(false);
+              setParsedPatientArchive(null);
+            }}
+            parsedData={parsedPatientArchive}
+            onSuccess={(patientId) => {
+              // Navigate to patient detail after creation
+              setActiveView("patients");
+              setSelectedPatientId(patientId.toString());
+            }}
+          />
+
+          <ConfirmCaseDocumentModal
+            open={caseDocumentModalOpen}
+            onClose={() => {
+              setCaseDocumentModalOpen(false);
+              setParsedCaseDocument(null);
+            }}
+            parsedData={parsedCaseDocument}
+            onSuccess={(caseId) => {
+              // Navigate to case detail after creation
+              setActiveView("cases");
+              setSelectedCaseId(caseId.toString());
+            }}
+          />
+        </>
+      )}
 
     </>
   );

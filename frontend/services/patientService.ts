@@ -20,6 +20,10 @@ import type {
   TimelineListResponse,
   TimelineDetailResponse,
   TodoListResponse,
+  LabReport,
+  ImagingReport,
+  CreateLabReportRequest,
+  CreateImagingReportRequest,
 } from "@/types/patient";
  
  
@@ -600,6 +604,186 @@ export async function deleteTimelineAttachments(timelineId: number): Promise<Api
   
 
 // ============================================================================
+// Report Services (New)
+// ============================================================================
+
+/**
+ * Create a lab report with test items
+ */
+export async function createLabReport(
+  reportData: CreateLabReportRequest
+): Promise<{ success: boolean; report_id: number }> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.patient.reports}/lab`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reportData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create lab report: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error("Failed to create lab report:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get all lab reports for a timeline
+ */
+export async function getLabReportsByTimeline(
+  timelineId: number
+): Promise<LabReport[]> {
+  try {
+    const response = await fetch(
+      `${API_ENDPOINTS.patient.reports}/lab/timeline/${timelineId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+
+    // If no reports found (404), return empty array instead of throwing error
+    if (response.status === 404) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to get lab reports: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    // If error is not a network error and status is 404, return empty array
+    if (error instanceof Error && error.message.includes('404')) {
+      return [];
+    }
+    log.error(`Failed to get lab reports for timeline ${timelineId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a lab report
+ */
+export async function deleteLabReport(
+  reportId: number
+): Promise<{ success: boolean }> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.patient.reports}/lab/${reportId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete lab report: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete lab report ${reportId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Create an imaging report
+ */
+export async function createImagingReport(
+  reportData: CreateImagingReportRequest
+): Promise<{ success: boolean; report_id: number }> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.patient.reports}/imaging`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reportData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create imaging report: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error("Failed to create imaging report:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get all imaging reports for a timeline
+ */
+export async function getImagingReportsByTimeline(
+  timelineId: number
+): Promise<ImagingReport[]> {
+  try {
+    const response = await fetch(
+      `${API_ENDPOINTS.patient.reports}/imaging/timeline/${timelineId}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      }
+    );
+
+    // If no reports found (404), return empty array instead of throwing error
+    if (response.status === 404) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to get imaging reports: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    // If error is not a network error and status is 404, return empty array
+    if (error instanceof Error && error.message.includes('404')) {
+      return [];
+    }
+    log.error(`Failed to get imaging reports for timeline ${timelineId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete an imaging report
+ */
+export async function deleteImagingReport(
+  reportId: number
+): Promise<{ success: boolean }> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.patient.reports}/imaging/${reportId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete imaging report: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error(`Failed to delete imaging report ${reportId}:`, error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // Export all services
 // ============================================================================
 
@@ -633,8 +817,14 @@ const patientService = {
   getPatientTodos,
   updateTodoStatus,
   deletePatientTodo,
-  
- 
+
+  // Reports 
+  createLabReport,
+  getLabReportsByTimeline,
+  deleteLabReport,
+  createImagingReport,
+  getImagingReportsByTimeline,
+  deleteImagingReport,
 };
 
 export default patientService;

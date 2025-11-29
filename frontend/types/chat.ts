@@ -251,6 +251,8 @@ export interface ConversationListItem {
   summary?: string | null
   archived_at?: number | null
   archived_to_timeline?: boolean
+  linked_patient_id?: number | null
+  linked_timeline_id?: number | null
 }
 
 // File preview type

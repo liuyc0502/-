@@ -717,3 +717,65 @@ class CarePlanCompletion(TableBase):
     completion_time = Column(TIMESTAMP(timezone=False), doc="Actual completion timestamp")
     notes = Column(Text, doc="Patient notes or observations")
     tenant_id = Column(String(100), doc="Tenant ID")
+
+class PatientLabReport(TableBase):
+    """
+    Lab report main table
+    """
+    __tablename__ = "patient_lab_report_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    report_id = Column(Integer, Sequence("patient_lab_report_t_report_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Lab report ID, primary key")
+    timeline_id = Column(Integer, nullable=False, doc="Associated timeline ID")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID for quick reference")
+    report_type = Column(String(100), doc="Report type (e.g., liver function, kidney function)")
+    report_date = Column(String(20), doc="Report date (YYYY-MM-DD)")
+    report_institution = Column(String(200), doc="Testing institution/hospital")
+    report_number = Column(String(100), doc="Report number")
+    report_image_url = Column(String(500), doc="Report image URL")
+    ai_summary = Column(Text, doc="AI-generated summary")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+class PatientLabReportItem(TableBase):
+    """
+    Lab report item detail table
+    """
+    __tablename__ = "patient_lab_report_item_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    item_id = Column(Integer, Sequence("patient_lab_report_item_t_item_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Lab report item ID, primary key")
+    report_id = Column(Integer, nullable=False, doc="Associated lab report ID")
+    test_item_name = Column(String(200), doc="Test item name")
+    test_result = Column(String(100), doc="Test result value")
+    test_unit = Column(String(50), doc="Unit of measurement")
+    reference_range = Column(String(100), doc="Normal reference range")
+    test_method = Column(String(200), doc="Testing method")
+    abnormal_flag = Column(String(10), doc="Abnormal indicator (↑/↓/正常)")
+    result_hint = Column(String(100), doc="Result hint (high/low/normal/critical)")
+    display_order = Column(Integer, default=0, doc="Display order")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+class PatientImagingReport(TableBase):
+    """
+    Imaging report table
+    """
+    __tablename__ = "patient_imaging_report_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    report_id = Column(Integer, Sequence("patient_imaging_report_t_report_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Imaging report ID, primary key")
+    timeline_id = Column(Integer, nullable=False, doc="Associated timeline ID")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID for quick reference")
+    imaging_type = Column(String(100), doc="Imaging type (chest X-ray, CT, MRI, ultrasound)")
+    imaging_date = Column(String(20), doc="Imaging date (YYYY-MM-DD)")
+    imaging_institution = Column(String(200), doc="Imaging institution")
+    report_number = Column(String(100), doc="Report number")
+    examination_site = Column(String(200), doc="Examination site")
+    imaging_findings = Column(Text, doc="Imaging findings (detailed description)")
+    diagnostic_impression = Column(Text, doc="Diagnostic impression")
+    recommendations = Column(Text, doc="Recommendations")
+    report_image_url = Column(String(500), doc="Report image URL")
+    ai_summary = Column(Text, doc="AI-generated summary")
+    tenant_id = Column(String(100), doc="Tenant ID")

@@ -120,6 +120,7 @@ def query_all_enabled_tool_instances(agent_id: int, tenant_id: str):
 def update_tool_table_from_scan_tool_list(tenant_id: str, user_id: str, tool_list: List[ToolInfo]):
     """
     scan all tools and update the tool table in PG database, remove the duplicate tools
+    Soft delete tools that are no longer available in the scan
     """
     with get_db_session() as session:
         # get all existing tools (including complete information)
@@ -131,6 +132,9 @@ def update_tool_table_from_scan_tool_list(tenant_id: str, user_id: str, tool_lis
         for tool in existing_tools:
             tool.is_available = False
 
+        # Track which tools are found in the new scan
+        found_tool_keys = set()
+        
         for tool in tool_list:
             filtered_tool_data = filter_property(tool.__dict__, ToolInfo)
 
@@ -138,9 +142,12 @@ def update_tool_table_from_scan_tool_list(tenant_id: str, user_id: str, tool_lis
             is_available = True if re.match(
                 r'^[a-zA-Z_][a-zA-Z0-9_]*$', tool.name) is not None else False
 
-            if f"{tool.name}&{tool.source}" in existing_tool_dict:
+            tool_key = f"{tool.name}&{tool.source}"
+            found_tool_keys.add(tool_key)
+
+            if tool_key in existing_tool_dict:
                 # by tool name and source to update the existing tool
-                existing_tool = existing_tool_dict[f"{tool.name}&{tool.source}"]
+                existing_tool = existing_tool_dict[tool_key]
                 for key, value in filtered_tool_data.items():
                     setattr(existing_tool, key, value)
                 existing_tool.updated_by = user_id
@@ -151,6 +158,16 @@ def update_tool_table_from_scan_tool_list(tenant_id: str, user_id: str, tool_lis
                     {"created_by": user_id, "updated_by": user_id, "author": tenant_id, "is_available": is_available})
                 new_tool = ToolInfo(**filtered_tool_data)
                 session.add(new_tool)
+        
+        # Soft delete tools that are no longer available in the scan
+        for tool in existing_tools:
+            tool_key = f"{tool.name}&{tool.source}"
+            if tool_key not in found_tool_keys:
+                # Tool no longer exists in scan, soft delete it
+                tool.delete_flag = 'Y'
+                tool.updated_by = user_id
+                tool.is_available = False
+                
     logger.info("Updated tool table in PG database")
 
 

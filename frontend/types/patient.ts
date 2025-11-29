@@ -93,6 +93,84 @@ export interface Patient {
     create_time: string;
   }
   
+  // ============================================================================
+  // Report Types (New)
+  // ============================================================================
+  export interface LabReportItem {
+    item_id?: number;
+    report_id?: number;
+    test_item_name: string;
+    test_result: string;
+    test_unit?: string;
+    reference_range?: string;
+    test_method?: string;
+    abnormal_flag?: string; // '↑' | '↓' | '正常'
+    result_hint?: string; // '偏高' | '偏低' | '正常'
+    display_order?: number;
+  }
+
+  export interface LabReport {
+    report_id: number;
+    timeline_id: number;
+    patient_id: number;
+    report_type?: string;
+    report_date?: string;
+    report_institution?: string;
+    report_number?: string;
+    report_image_url?: string;
+    ai_summary?: string;
+    items: LabReportItem[];
+    tenant_id: string;
+    create_time: string;
+    update_time: string;
+  }
+
+  export interface ImagingReport {
+    report_id: number;
+    timeline_id: number;
+    patient_id: number;
+    imaging_type?: string;
+    imaging_date?: string;
+    imaging_institution?: string;
+    report_number?: string;
+    examination_site?: string;
+    imaging_findings?: string;
+    diagnostic_impression?: string;
+    recommendations?: string;
+    report_image_url?: string;
+    ai_summary?: string;
+    tenant_id: string;
+    create_time: string;
+    update_time: string;
+  }
+
+  export interface CreateLabReportRequest {
+    timeline_id: number;
+    patient_id: number;
+    report_type?: string;
+    report_date?: string;
+    report_institution?: string;
+    report_number?: string;
+    report_image_url?: string;
+    ai_summary?: string;
+    test_items: LabReportItem[];
+  }
+
+  export interface CreateImagingReportRequest {
+    timeline_id: number;
+    patient_id: number;
+    imaging_type?: string;
+    imaging_date?: string;
+    imaging_institution?: string;
+    report_number?: string;
+    examination_site?: string;
+    imaging_findings?: string;
+    diagnostic_impression?: string;
+    recommendations?: string;
+    report_image_url?: string;
+    ai_summary?: string;
+  }
+
   export interface Attachment {
     attachment_id: number;
     timeline_id: number;
