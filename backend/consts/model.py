@@ -371,8 +371,15 @@ class LinkPatientRequest(BaseModel):
     conversation_id: int = Field(..., description="Conversation ID")
     patient_id: Optional[int] = Field(None, description="Patient ID (null to unlink)")
     patient_name: Optional[str] = Field(None, description="Patient name")
- 
- 
+
+
+class LinkTimelineRequest(BaseModel):
+    """Request model for linking conversation to timeline"""
+    conversation_id: int = Field(..., description="Conversation ID")
+    timeline_id: Optional[int] = Field(None, description="Timeline ID (null to unlink)")
+    timeline_name: Optional[str] = Field(None, description="Timeline stage name")
+
+
 class UpdateConversationStatusRequest(BaseModel):
     """Request model for updating conversation status"""
     conversation_id: int = Field(..., description="Conversation ID")

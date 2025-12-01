@@ -26,7 +26,15 @@ export function CreateCarePlanModal({
   const formatDate = (date: any): string | undefined => {
     if (!date) return undefined;
     if (typeof date === 'string') return date;
-    // dayjs object has $d property (internal Date object)
+    // Check if it's a dayjs object with format method
+    if (typeof date.format === 'function') {
+      return date.format('YYYY-MM-DD');
+    }
+    // Check if it's a Date object
+    if (date instanceof Date) {
+      return date.toISOString().split('T')[0];
+    }
+    // Try to access internal Date object as fallback
     const dateObj = date.$d || date;
     if (dateObj instanceof Date) {
       return dateObj.toISOString().split('T')[0];
@@ -154,8 +162,16 @@ export function CreateCarePlanModal({
               size="large"
             />
           </Form.Item>
-          <Form.Item name="date_range" label="计划周期">
-            <RangePicker className="w-full" size="large" />
+          <Form.Item
+            name="date_range"
+            label="计划周期"
+          >
+            <RangePicker
+              className="w-full"
+              size="large"
+              format="YYYY-MM-DD"
+              allowClear
+            />
           </Form.Item>
         </div>
       ),

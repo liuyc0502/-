@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Modal, Form, Input, Button, App, Select } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { FileText } from "lucide-react";
+import medicalCaseService from "@/services/medicalCaseService";
 
 const PRIMARY_COLOR = "#D94527";
 
@@ -109,7 +110,6 @@ export function ConfirmCaseDocumentModal({
       };
 
       // Call API to create case from parsed data
-      const { medicalCaseService } = await import('@/services/medicalCaseService');
       const response = await medicalCaseService.createFromParsed(caseData);
 
       message.success(`病例创建成功：${response.case_no}`);

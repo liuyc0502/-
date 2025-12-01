@@ -825,3 +825,110 @@ def get_care_plan_with_details(plan_id: int, tenant_id: str) -> Optional[dict]:
     plan['precautions'] = list_precautions_by_plan(plan_id, tenant_id)
 
     return plan
+
+
+def create_care_plan_from_medical_order(
+    plan_data: dict,
+    medications: List[dict],
+    tasks: List[dict],
+    precautions: List[dict],
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Create a care plan with all related medications, tasks, and precautions in one transaction.
+    Used when importing medical order data from parsed documents.
+
+    Args:
+        plan_data: Care plan basic information
+        medications: List of medication data
+        tasks: List of task data
+        precautions: List of precaution data
+        tenant_id: Tenant ID
+        user_id: User ID
+
+    Returns:
+        Dict with plan_id and counts of created items
+    """
+    with get_db_session() as session:
+        # Step 1: Create the care plan
+        new_plan = CarePlan(
+            patient_id=plan_data.get('patient_id'),
+            plan_name=plan_data.get('plan_name'),
+            plan_description=plan_data.get('plan_description'),
+            start_date=plan_data.get('start_date'),
+            end_date=plan_data.get('end_date'),
+            status=plan_data.get('status', 'active'),
+            doctor_id=user_id,
+            tenant_id=tenant_id,
+            created_by=user_id,
+            updated_by=user_id,
+            delete_flag='N'
+        )
+
+        session.add(new_plan)
+        session.flush()  # Get plan_id
+
+        plan_id = new_plan.plan_id
+
+        # Step 2: Create medications
+        medication_count = 0
+        for med_data in medications:
+            new_medication = CarePlanMedication(
+                plan_id=plan_id,
+                medication_name=med_data.get('medication_name'),
+                dosage=med_data.get('dosage'),
+                frequency=med_data.get('frequency'),
+                time_slots=med_data.get('time_slots', []),
+                notes=med_data.get('notes'),
+                tenant_id=tenant_id,
+                created_by=user_id,
+                updated_by=user_id,
+                delete_flag='N'
+            )
+            session.add(new_medication)
+            medication_count += 1
+
+        # Step 3: Create tasks
+        task_count = 0
+        for task_data in tasks:
+            new_task = CarePlanTask(
+                plan_id=plan_id,
+                task_title=task_data.get('task_title'),
+                task_description=task_data.get('task_description'),
+                task_category=task_data.get('task_category'),
+                frequency=task_data.get('frequency'),
+                duration=task_data.get('duration'),
+                tenant_id=tenant_id,
+                created_by=user_id,
+                updated_by=user_id,
+                delete_flag='N'
+            )
+            session.add(new_task)
+            task_count += 1
+
+        # Step 4: Create precautions
+        precaution_count = 0
+        for precaution_data in precautions:
+            new_precaution = CarePlanPrecaution(
+                plan_id=plan_id,
+                precaution_content=precaution_data.get('precaution_content'),
+                priority=precaution_data.get('priority', 'medium'),
+                tenant_id=tenant_id,
+                created_by=user_id,
+                updated_by=user_id,
+                delete_flag='N'
+            )
+            session.add(new_precaution)
+            precaution_count += 1
+
+        session.commit()
+
+        logger.info(f"Created care plan {plan_id} with {medication_count} medications, {task_count} tasks, {precaution_count} precautions")
+
+        return {
+            "plan_id": plan_id,
+            "medication_count": medication_count,
+            "task_count": task_count,
+            "precaution_count": precaution_count
+        }

@@ -7,6 +7,7 @@ import { FileText, TestTube, Pill, TrendingDown, AlertCircle, Users, Edit, Check
 import { App, Input, InputNumber, Select } from "antd";
 import patientService from "@/services/patientService";
 import type { Patient, TimelineStage, PatientTodo } from "@/types/patient";
+import { AssociatedConversations } from "@/components/doctor/chat/AssociatedConversations";
 
 const { TextArea } = Input;
 
@@ -500,7 +501,12 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
           </Card>
         )}
 
-        
+        {/* Associated Conversations Card */}
+        <AssociatedConversations
+          patientId={patient.patient_id}
+          patientName={patient.name}
+          maxHeight="500px"
+        />
       </div>
 
       {/* Right Column - 60% width */}

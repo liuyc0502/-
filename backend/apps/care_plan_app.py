@@ -68,6 +68,20 @@ class RecordCompletionRequest(BaseModel):
     item_id: int = Field(..., description="Medication ID or Task ID")
     completed: bool = Field(..., description="Whether the item was completed")
     notes: Optional[str] = Field(None, description="Notes")
+
+
+class CreateCarePlanFromMedicalOrderRequest(BaseModel):
+    """Request model matching parse_medical_order MCP tool output"""
+    patient_id: int = Field(..., description="Patient ID")
+    patient_name: Optional[str] = Field(None, description="Patient name (for reference)")
+    order_date: Optional[str] = Field(None, description="Order date (YYYY-MM-DD)")
+    plan_name: Optional[str] = Field(None, description="Care plan name (auto-generated if not provided)")
+    plan_description: Optional[str] = Field(None, description="Plan description")
+    start_date: Optional[str] = Field(None, description="Start date (defaults to order_date)")
+    end_date: Optional[str] = Field(None, description="End date")
+    medications: List[MedicationData] = Field(default_factory=list, description="Medications list")
+    tasks: List[TaskData] = Field(default_factory=list, description="Tasks list")
+    precautions: List[PrecautionData] = Field(default_factory=list, description="Precautions list")
 # ============================================================================
 # Care Plan Endpoints
 # ============================================================================
@@ -477,6 +491,47 @@ async def get_weekly_progress(
         return JSONResponse(
             status_code=HTTPStatus.OK,
             content=progress
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@router.post("/care_plan/create_from_medical_order")
+async def create_care_plan_from_medical_order(
+    request: CreateCarePlanFromMedicalOrderRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Create a care plan from AI-parsed medical order data.
+    Used by the parse_medical_order MCP tool workflow.
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        parsed_data = request.dict(exclude_none=False)
+
+        result = await care_plan_service.create_care_plan_from_medical_order(
+            parsed_data=parsed_data,
+            tenant_id=tenant_id,
+            user_id=user_id
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(e)
         )
     except AgentRunException as e:
         raise HTTPException(

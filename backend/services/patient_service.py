@@ -74,6 +74,34 @@ async def list_patients_service(tenant_id: str, search_query: Optional[str] = No
     except Exception as e:
         logger.error(f"Failed to list patients: {str(e)}")
         raise AgentRunException(f"Failed to list patients: {str(e)}")
+
+
+async def find_patients_by_name_service(name: str, tenant_id: str, exact_match: bool = False) -> dict:
+    """
+    Find patients by name for duplicate detection.
+    Returns list of matching patients with metadata.
+
+    Args:
+        name: Patient name to search for
+        tenant_id: Tenant ID
+        exact_match: If True, use exact match; if False, use fuzzy match
+
+    Returns:
+        Dict with found patients and metadata
+    """
+    try:
+        patients = patient_db.find_patients_by_name(name, tenant_id, exact_match)
+
+        return {
+            "found": len(patients) > 0,
+            "count": len(patients),
+            "patients": patients,
+            "search_name": name,
+            "exact_match": exact_match
+        }
+    except Exception as e:
+        logger.error(f"Failed to find patients by name: {str(e)}")
+        raise AgentRunException(f"Failed to find patients by name: {str(e)}")
  
  
 async def update_patient_info(patient_id: int, patient_data: dict, tenant_id: str, user_id: str) -> dict:

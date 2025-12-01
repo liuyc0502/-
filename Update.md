@@ -1,4 +1,502 @@
 # 更新日志
+
+## 2025-11-30: MCP工具结果检测与弹窗触发修复
+
+### 问题描述
+调用 `parse_patient_archive` MCP工具后，虽然工具成功执行并返回了患者信息，但前端没有自动弹出确认弹窗。
+
+### 根本原因
+1. **执行日志被跳过**: 前端 `chatStreamHandler.tsx` 在处理 `EXECUTION_LOGS` 消息类型时直接跳过，导致工具执行的原始JSON结果没有被保存到消息中
+2. **检测范围不足**: 前端检测逻辑只检查消息的 `content` 字段，但工具结果可能出现在 `finalAnswer`、`steps` 或执行日志中
+
+### 修复方案
+
+#### 1. 保存执行日志 (`chatStreamHandler.tsx`)
+- **修改前**: `EXECUTION_LOGS` 消息类型被直接跳过
+- **修改后**: 将执行日志保存到 `step.executionLogs` 字段中，用于后续的工具结果检测
+- **实现**: 创建或更新 `currentStep`，将 `messageContent` 追加到 `executionLogs` 字段
+
+#### 2. 扩展检测逻辑 (`chatInterface.tsx`)
+- **多源内容收集**: 从以下字段收集内容用于工具结果检测：
+  - `lastMessage.content` - 消息内容
+  - `lastMessage.finalAnswer` - 最终回答
+  - `step.contents[].content` - 步骤内容
+  - `step.parsingContent` - 解析内容
+  - `step.executionLogs` - 执行日志（新增）
+- **改进JSON解析**: 
+  - 使用更健壮的正则表达式匹配嵌套JSON结构
+  - 支持从复杂文本中提取完整的JSON对象
+  - 处理JSON边界检测（查找匹配的大括号对）
+- **添加完成检查**: 只在消息完成后（`isComplete === true`）才触发检测，避免流式传输过程中重复触发
+
+#### 3. 类型定义更新 (`types/chat.ts`)
+- 在 `AgentStep` 接口中新增 `executionLogs?: string` 字段
+- 用于存储工具执行日志，不显示在UI中，仅用于工具结果检测
+
+### 技术实现
+
+**执行日志保存**:
+```typescript
+case chatConfig.messageTypes.EXECUTION_LOGS:
+  // Save execution logs for tool result detection
+  if (!currentStep.executionLogs) {
+    currentStep.executionLogs = "";
+  }
+  currentStep.executionLogs += messageContent;
+  break;
+```
+
+**多源内容检测**:
+```typescript
+// Collect all possible content sources
+const contentSources: string[] = [];
+if (lastMessage.content) contentSources.push(...);
+if (lastMessage.finalAnswer) contentSources.push(...);
+if (lastMessage.steps) {
+  for (const step of lastMessage.steps) {
+    if (step.contents) contentSources.push(...);
+    if (step.parsingContent) contentSources.push(...);
+    if (step.executionLogs) contentSources.push(...); // 新增
+  }
+}
+const combinedContent = contentSources.join('\n');
+```
+
+**健壮的JSON提取**:
+- 使用正则表达式匹配包含 `"success":true` 的JSON对象
+- 处理嵌套结构，正确识别JSON边界
+- 尝试多种解析策略，确保提取完整的JSON
+
+### 工作流程
+
+1. **后端调用工具**: Agent调用 `parse_patient_archive` MCP工具
+2. **工具返回结果**: 工具返回包含 `{"success": true, "name": "...", ...}` 的JSON
+3. **后端发送日志**: 通过 `EXECUTION_LOGS` 消息类型发送执行日志
+4. **前端保存日志**: `chatStreamHandler` 将日志保存到 `step.executionLogs`
+5. **消息完成**: 消息标记为 `isComplete = true`
+6. **检测触发**: `useEffect` 监听器检测到消息完成
+7. **多源搜索**: 从所有内容源中搜索工具名称和JSON结果
+8. **提取数据**: 使用改进的JSON解析逻辑提取工具结果
+9. **触发弹窗**: 找到有效结果后，设置 `parsedPatientArchive` 并打开 `ConfirmPatientArchiveModal`
+
+### 影响范围
+
+**修改文件**:
+- `/opt/frontend/app/[locale]/chat/streaming/chatStreamHandler.tsx` - 保存执行日志
+- `/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx` - 扩展检测逻辑
+- `/opt/frontend/types/chat.ts` - 添加类型定义
+
+**受益功能**:
+- ✅ `parse_patient_archive` - 患者档案解析确认弹窗
+- ✅ `parse_case_document` - 病例文档解析确认弹窗
+- ✅ `parse_lab_report` - 检验报告确认弹窗
+- ✅ `parse_imaging_report` - 影像报告确认弹窗
+- ✅ `parse_medical_order` - 医嘱确认弹窗
+
+### 技术亮点
+
+1. **向后兼容**: 不影响现有的检测逻辑，只是扩展了检测范围
+2. **健壮性**: 支持多种内容位置，无论工具结果出现在哪里都能检测到
+3. **性能优化**: 只在消息完成后检测，避免流式传输过程中的重复触发
+4. **类型安全**: 完整的TypeScript类型定义
+
+### 测试建议
+
+1. 上传患者档案图片，验证弹窗正常显示
+2. 检查控制台日志，确认工具结果被正确提取
+3. 验证其他工具（病例、报告、医嘱）的弹窗功能
+4. 测试流式传输过程中不会重复触发弹窗
+
+---
+
+1. 患者和时间线匹配弹窗组件
+文件: /opt/frontend/components/doctor/chat/PatientTimelineMatchModal.tsx 功能特性:
+患者选择:
+从匹配结果中选择（显示匹配度、病历号、年龄等信息）
+创建新患者选项
+显示匹配得分
+时间线选择:
+添加到现有时间线
+创建新时间线（自动设置日期）
+依赖患者选择（先选患者才能选时间线）
+级联逻辑:
+自动加载患者的时间线列表
+只有1个时间线时自动选中
+无时间线时默认创建模式
+2. 更新 ConfirmLabReportModal
+文件: /opt/frontend/components/doctor/chat/ConfirmLabReportModal.tsx 主要变更:
+✅ timelineId 和 patientId 改为可选参数
+✅ 新增 matchedPatients 参数接收匹配结果
+✅ 集成 PatientTimelineMatchModal
+✅ 自动检测：无患者/时间线时显示匹配弹窗
+✅ 支持创建新患者和新时间线
+✅ 验证逻辑：提交前确保患者和时间线已选择
+工作流程:
+打开检验报告确认弹窗
+如果未提供 patientId/timelineId → 显示患者时间线匹配弹窗
+用户选择或创建患者
+用户选择或创建时间线
+确认后关闭匹配弹窗，显示报告详情
+用户编辑报告内容并保存
+这样，检验报告现在完全支持灵活的患者和时间线关联了！接下来只需要对 ConfirmImagingReportModal 做同样的更新即可。
+
+
+
+## 2025-11-29: Timeline Linking in Chat Interface
+
+### 功能概述
+实现了聊天界面的时间线关联功能，允许医生在聊天时将对话关联到患者的特定诊疗时间线阶段。
+
+### 数据库变更
+
+#### 1. conversation_record_t 表结构更新
+**迁移文件**: `/opt/backend/database/migrations/add_timeline_linking_to_conversations.sql`
+
+**新增字段**:
+- `linked_timeline_id` (INTEGER): 关联的时间线 ID (可空)
+- `linked_timeline_name` (VARCHAR(200)): 时间线阶段名称，用于快速引用
+
+**索引**:
+- `idx_conversation_linked_timeline`: 对 `linked_timeline_id` 创建索引，提升查询性能
+
+#### 2. ORM 模型更新
+**文件**: `/opt/backend/database/db_models.py`
+
+在 `ConversationRecord` 类中新增字段:
+```python
+# Timeline linking fields
+linked_timeline_id = Column(Integer, doc="Linked timeline ID (nullable)", default=None)
+linked_timeline_name = Column(String(200), doc="Timeline stage name for quick reference", default=None)
+```
+
+### 后端 API 实现
+
+#### 1. Request Model
+**文件**: `/opt/backend/consts/model.py`
+
+**新增**: `LinkTimelineRequest` 类
+```python
+class LinkTimelineRequest(BaseModel):
+    conversation_id: int
+    timeline_id: Optional[int]  # null to unlink
+    timeline_name: Optional[str]
+```
+
+#### 2. Database Layer
+**文件**: `/opt/backend/database/conversation_db.py`
+
+**新增函数**: `link_conversation_to_timeline()`
+- 参数: conversation_id, timeline_id, timeline_name, user_id
+- 功能: 更新对话的时间线关联信息
+- 返回: bool (成功/失败)
+
+#### 3. Service Layer
+**文件**: `/opt/backend/services/conversation_management_service.py`
+
+**新增函数**: `link_conversation_to_timeline_service()`
+- 调用数据库层函数
+- 返回操作结果和消息
+
+#### 4. API Endpoint
+**文件**: `/opt/backend/apps/conversation_management_app.py`
+
+**新增端点**: `PUT /conversation/link_timeline`
+- Request Body: LinkTimelineRequest
+- Response: ConversationResponse
+- 功能: 关联或取消关联对话与时间线
+
+### 前端实现
+
+#### 1. API Service
+**文件**: `/opt/frontend/services/api.ts`
+- 新增 endpoint: `conversation.linkTimeline`
+
+**文件**: `/opt/frontend/services/conversationService.ts`
+- 新增方法: `linkTimeline(params)`
+  - 参数: conversation_id, timeline_id, timeline_name
+  - 调用 `PUT /conversation/link_timeline` API
+
+#### 2. TimelineSelector 组件
+**文件**: `/opt/frontend/app/[locale]/chat/components/TimelineSelector.tsx`
+
+**功能特性**:
+- 基于 PatientSelector 模式实现
+- 依赖患者选择: 只有选择患者后才能选择时间线
+- 自动加载患者时间线列表
+- 支持待定选择: 在对话创建前临时存储选择
+- 显示时间线阶段名称和日期
+- 搜索过滤功能
+- Tooltip 提示: 未选患者时提示 "Please select a patient first"
+
+**Props**:
+```typescript
+interface TimelineSelectorProps {
+  conversationId: number | null;
+  currentTimelineId?: number | null;
+  currentTimelineName?: string | null;
+  currentPatientId?: number | null;  // 依赖患者ID
+  onTimelineChange?: (timelineId, timelineName) => void;
+  disabled?: boolean;
+}
+```
+
+#### 3. ChatHeader 组件更新
+**文件**: `/opt/frontend/app/[locale]/chat/components/chatHeader.tsx`
+
+**新增 Props**:
+- `timelineId`: 当前时间线 ID
+- `timelineName`: 当前时间线名称
+- `onTimelineChange`: 时间线变更回调
+
+**UI 布局**:
+在患者选择器后添加时间线选择器:
+```
+[关联患者] [关联时间线] [状态] [标签]
+```
+
+#### 4. ChatInterface 集成
+**文件**: `/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx`
+
+**ChatHeader 调用更新**:
+```typescript
+<ChatHeader
+  timelineId={currentConversation?.linked_timeline_id}
+  timelineName={currentConversation?.linked_timeline_name}
+  onTimelineChange={(timelineId, timelineName) => {
+    conversationManagement.fetchConversationList(variant);
+  }}
+/>
+```
+
+#### 5. TypeScript 类型定义
+**文件**: `/opt/frontend/types/conversation.ts`
+
+`ConversationListItem` 接口已包含:
+- `linked_timeline_id?: number | null`
+- `linked_timeline_name?: string | null` (需确认前端是否需要此字段)
+
+### 使用流程
+
+1. **选择患者**: 用户首先在聊天界面选择患者
+2. **选择时间线**: 时间线选择器自动加载该患者的时间线列表
+3. **自动保存**: 选择后自动调用 API 保存关联关系
+4. **待定处理**: 如果对话尚未创建，选择会被暂存，待对话创建后自动保存
+
+### 技术要点
+
+1. **级联依赖**: 时间线选择依赖患者选择，未选患者时禁用时间线选择器
+2. **待定选择机制**: 与 PatientSelector 保持一致的待定选择处理
+3. **索引优化**: 为 linked_timeline_id 创建索引，提升查询性能
+4. **可空设计**: timeline_id 为 null 时表示取消关联
+5. **类型安全**: 全栈 TypeScript 类型定义保证数据一致性
+
+### 数据库迁移
+
+运行迁移 SQL:
+```bash
+psql -h <host> -U <user> -d <database> -f backend/database/migrations/add_timeline_linking_to_conversations.sql
+```
+
+### 测试要点
+
+1. 选择患者后时间线列表正确加载
+2. 选择时间线后 API 调用成功
+3. 对话列表刷新后显示正确的时间线关联信息
+4. 取消时间线关联 (选择 "No timeline linked") 正常工作
+5. 未选患者时时间线选择器正确禁用
+6. 待定选择在对话创建后正确保存
+
+---
+
+## 2025-11-29: Medical Order Confirmation Modal and Care Plan Batch Creation
+
+### 功能概述
+实现了完整的医嘱确认弹窗和康复计划批量创建功能，支持从 AI 解析的医嘱单自动创建包含用药、任务和注意事项的康复计划。
+
+### 前端实现
+
+#### 1. 医嘱确认弹窗组件
+**文件**: `/opt/frontend/components/doctor/chat/ConfirmMedicalOrderModal.tsx`
+
+**功能特性**:
+- 横向布局 (1400px 宽度) 避免滚动条
+- 三列表格显示:
+  - 用药方案: 药品名称、剂量、频次、服药时间、备注
+  - 康复任务: 任务名称、类别 (运动/护理/监测/饮食)、频次、时长、说明
+  - 注意事项: 优先级 (高/中/低)、内容
+- 基本信息编辑: 患者姓名、医嘱日期、康复计划名称
+- 集成真实 API 调用 `carePlanService.createCarePlanFromMedicalOrder()`
+- 成功后显示创建统计: X项用药、Y项任务、Z项注意事项
+
+#### 2. 前端 Service 层
+**文件**: `/opt/frontend/services/carePlanService.ts`
+
+**新增函数**: `createCarePlanFromMedicalOrder(orderData)`
+- 调用 `/care_plan/create_from_medical_order` API
+- 返回 plan_id 和各项统计数据
+
+**文件**: `/opt/frontend/services/api.ts`
+- 新增 endpoint: `carePlan.createFromMedicalOrder`
+
+#### 3. 聊天界面集成
+**文件**: `/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx`
+
+**新增状态**:
+- `medicalOrderModalOpen`: 控制弹窗显示
+- `parsedMedicalOrder`: 存储解析的医嘱数据
+
+**消息监听逻辑**:
+- 监听包含 `parse_medical_order` 或 `医嘱` 的消息
+- 支持 `[PARSED_DATA]...[/PARSED_DATA]` 标签提取
+- Fallback 到 regex 匹配包含 `medications` 的 JSON
+- 自动关联当前对话的患者信息
+
+### 后端实现
+
+#### 1. 数据库层
+**文件**: `/opt/backend/database/care_plan_db.py`
+
+**新增函数**: `create_care_plan_from_medical_order()`
+- 参数: plan_data, medications, tasks, precautions, tenant_id, user_id
+- 单事务批量创建:
+  1. 创建 care_plan 主记录
+  2. 批量创建 medications (care_plan_medication_t)
+  3. 批量创建 tasks (care_plan_task_t)
+  4. 批量创建 precautions (care_plan_precaution_t)
+- 返回: plan_id, medication_count, task_count, precaution_count
+
+#### 2. Service 层
+**文件**: `/opt/backend/services/care_plan_service.py`
+
+**新增函数**: `create_care_plan_from_medical_order(parsed_data, tenant_id, user_id)`
+- 验证 patient_id 必填
+- 自动生成 plan_name: "医嘱 - {患者姓名} - {日期}"
+- 自动设置 start_date (优先级: start_date > order_date > 当前日期)
+- 调用数据库层 composite 函数一次性创建所有数据
+- 返回成功状态和统计信息
+
+#### 3. API 层
+**文件**: `/opt/backend/apps/care_plan_app.py`
+
+**新增 Request Model**: `CreateCarePlanFromMedicalOrderRequest`
+- patient_id (必填)
+- patient_name, order_date, plan_name (可选)
+- medications, tasks, precautions (列表)
+
+**新增 Endpoint**: `POST /care_plan/create_from_medical_order`
+- 认证检查
+- 调用 service 层创建康复计划
+- 返回 200 OK with plan_id 和统计数据
+
+### 工作流程
+
+1. **用户上传医嘱单图片** → AI 调用 `parse_medical_order` MCP tool
+2. **MCP Tool 解析** → 返回包含 medications, tasks, precautions 的 JSON
+3. **前端监听** → 检测到 parse_medical_order 响应，提取 JSON 数据
+4. **弹窗确认** → 显示 ConfirmMedicalOrderModal，用户可编辑
+5. **提交创建** → 调用后端 API 批量创建康复计划
+6. **成功反馈** → 显示创建成功及统计信息
+
+### 数据流
+
+```
+用户上传医嘱单
+    ↓
+AI 解析 (parse_medical_order)
+    ↓
+前端提取 JSON 数据
+    ↓
+显示确认弹窗
+    ↓
+用户确认 → API 请求
+    ↓
+Backend Service 验证
+    ↓
+Database 单事务创建
+    ↓
+返回 plan_id + 统计
+    ↓
+前端显示成功消息
+```
+
+### 技术亮点
+
+1. **单事务批量创建**: 使用 SQLAlchemy session.flush() 获取 plan_id，确保数据一致性
+2. **智能字段补全**: 自动生成计划名称和开始日期
+3. **患者自动关联**: 从对话上下文中自动获取 patient_id
+4. **横向表格布局**: 避免滚动条，提升用户体验
+5. **标签提取 + Regex Fallback**: 确保 JSON 提取的鲁棒性
+
+### 相关文件
+
+**前端**:
+- `/opt/frontend/components/doctor/chat/ConfirmMedicalOrderModal.tsx` (新建)
+- `/opt/frontend/services/carePlanService.ts` (新增函数)
+- `/opt/frontend/services/api.ts` (新增 endpoint)
+- `/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx` (集成弹窗)
+
+**后端**:
+- `/opt/backend/database/care_plan_db.py` (新增 composite 函数)
+- `/opt/backend/services/care_plan_service.py` (新增 service)
+- `/opt/backend/apps/care_plan_app.py` (新增 endpoint 和 request model)
+
+### 待完成功能
+
+1. **患者档案重复检查**: 解析患者档案后先检查是否已存在
+2. **报告患者匹配**: 解析报告后匹配患者并选择时间线
+3. **医嘱 [PARSED_DATA] 标签**: 后端 MCP tool 添加标签输出
+
+
+1. 创建了 AssociatedConversations 组件
+文件: /opt/frontend/components/doctor/chat/AssociatedConversations.tsx 功能:
+显示与患者关联的所有对话列表
+支持按患者ID过滤对话
+显示对话标题、状态、摘要、标签和时间戳
+点击对话可跳转到聊天页面并选中该对话
+空状态提示："暂无关联对话，在聊天界面关联患者后，对话将显示在此处"
+支持自定义最大高度和是否显示标题
+2. 集成到患者档案详情页
+文件: /opt/frontend/components/doctor/patients/PatientOverview.tsx 位置: 患者概览标签页左侧列，显示在"基本信息"和"诊疗摘要"卡片下方 传入参数:
+patientId: 患者ID
+patientName: 患者姓名
+maxHeight: "500px"
+3. 集成到时间线详情页
+文件: /opt/frontend/components/doctor/patients/PatientTimeline.tsx 位置: 时间线详情底部，显示在"患者报告解读"和"给患者的建议"卡片下方 传入参数:
+patientId: 患者ID
+patientName: 患者姓名
+timelineId: 时间线ID (未来可用于更精细的过滤)
+maxHeight: "400px"
+🔄 双向链接关系
+正向链接 (已存在)
+聊天界面 → 患者
+位置: ChatHeader 组件顶部
+组件: PatientSelector
+功能: 选择患者并关联到对话
+数据字段: conversation.patient_id, conversation.patient_name
+反向链接 (新增)
+患者档案 → 对话列表
+位置: 患者概览标签页
+组件: AssociatedConversations
+功能: 显示关联该患者的所有对话
+点击: 跳转到聊天页面 /doctor?conversation_id={id}
+时间线 → 对话列表
+位置: 时间线详情底部
+组件: AssociatedConversations
+功能: 显示关联该患者的对话 (未来可按时间线过滤)
+点击: 跳转到聊天页面
+📊 组件特性
+对话卡片显示:
+对话标题 (未命名显示为"未命名对话")
+状态标签 (待处理/进行中/已解决/已关闭) - 带颜色区分
+摘要 (最多2行，超出省略)
+标签 (最多显示3个，超出显示+N)
+更新时间 (智能格式化: 今天显示时间，一周内显示日期+时间，更早显示完整日期)
+交互:
+Hover效果: 背景变灰
+点击整个卡片都可跳转
+加载状态: Spin组件
+空状态: 友好提示
+
 ## 2025-11-29
 
 ### 新增患者档案和病例文档确认弹窗
@@ -597,100 +1095,6 @@ Agent调用MCP工具解析（parse_lab_report 或 parse_imaging_report）
 
 ---
 
-
-#### 5. MCP工具集
-- 🔧 **image_annotation_tools.py** (5个工具):
-  - `create_image_annotation` - 创建标注
-  - `get_image_annotations` - 获取图像所有标注
-  - `update_annotation_label` - 更新标注标签
-  - `delete_annotation` - 删除标注
-  - `get_annotation_details` - 获取标注详情
-- 🤖 **medical_image_analysis_tools.py** (3个工具):
-  - `analyze_annotated_region` - 分析标注区域（含图像裁剪）
-  - `compare_annotated_regions` - 对比多个标注区域
-  - `get_annotation_analysis_history` - 获取分析历史
-- 📝 **document_parsing_tools.py** (4个工具):
-  - `parse_patient_document` - 解析患者档案文档
-  - `parse_case_document` - 解析病例文档
-  - `extract_text_from_image` - 纯文本提取
-  - `extract_lab_results_from_image` - 实验室结果提取
-
-#### 6. 前端组件架构
-- 🎯 **基础组件** (纯UI):
-  - `AnnotationCanvas` - 标注画布（绘制、渲染、交互）
-  - `AnnotationToolbar` - 工具栏（工具选择、类型选择）
-  - `AnnotationList` - 标注列表（展示、编辑、删除）
-- 🏗️ **集成组件** (完整功能):
-  - `ImageAnnotationView` - 标注主视图（集成所有基础组件）
-  - `ImageUploadPurposeModal` - 上传用途选择（3种用途）
-- 📋 **业务组件** (OCR表单):
-  - `OcrPatientFormModal` - 患者档案OCR表单
-  - `OcrCaseFormModal` - 病例库OCR表单
-
-**技术实现**:
-
-**后端架构** (三层架构):
-- 数据库层：SQLAlchemy ORM模型 + PostgreSQL JSONB存储坐标
-- Service层：业务逻辑编排，调用数据库和MCP工具
-- API层：RESTful端点，Pydantic验证，HTTP异常处理
-
-**前端技术栈**:
-- react-konva + konva：高性能Canvas标注
-- Ant Design：UI组件库
-- TypeScript：类型安全
-- moment：日期处理
-
-**OCR集成**:
-- 通过MCP Client调用PaddleOCR服务（http://localhost:5020/mcp）
-- 支持图片URL和Base64两种输入
-- 返回结构化文本或详细坐标
-
-**AI分析流程**:
-1. 用户圈画标注区域
-2. 后端根据坐标裁剪图像
-3. 上传裁剪图像到MinIO
-4. 调用多模态模型分析（含裁剪图像URL）
-5. 保存分析结果到数据库
-6. 前端展示分析结果，支持点击"区域X"高亮
-
-**使用场景**:
-- 病理医生标注切片图像，AI辅助诊断
-- 上传患者档案扫描件，OCR自动录入
-- 上传病例文档，OCR自动填充病例表单
-- 对标注区域提问："区域1是否为恶性肿瘤？"
-- 多区域对比："区域1和区域2有什么区别？"
-
-**用户体验**:
-- ✅ 直观的左右分栏界面（图片+聊天）
-- ✅ 所见即所得的标注绘制
-- ✅ 智能化的OCR识别与表单映射
-- ✅ 语义化的区域引用（"区域1"、"区域2"）
-- ✅ 聊天中点击区域名称可高亮图片
-- ✅ 完整的标注CRUD操作
-- ✅ 分析历史记录可追溯
-
-**集成完成** (2025-11-26):
-1. ✅ 在ChatInterface中集成ImageUploadPurposeModal - 图片上传后自动弹出用途选择
-2. ✅ 在ChatInterface中添加标注模式切换 - 支持全屏标注模式和正常聊天模式切换
-3. ✅ 集成ImageAnnotationView组件 - 左右分栏（左侧标注画布，右侧AI聊天占位符）
-4. ✅ 集成OCR表单弹窗 - OcrPatientFormModal、OcrCaseFormModal
-
-**集成说明**:
-- 📤 **图片上传流程**: 用户上传图片 → 自动显示用途选择弹窗（3个选项）
-- 🎨 **病例图片分析**: 选择后聊天页面原地变成左右分栏（左侧标注画布，右侧保留原有聊天界面）
-- 📋 **患者档案录入**: 选择后打开OCR患者表单，自动识别并预填充字段
-- 📝 **病例库录入**: 选择后打开OCR病例表单，自动识别并预填充字段
-- 🔙 **退出标注模式**: 点击"退出标注模式"按钮，聊天页面恢复全屏
-- 💾 **状态管理**: 使用React状态管理标注模式、图片URL、表单显示状态
-- 🎯 **布局适配**: 标注模式下左侧占50%宽度，聊天区域占50%宽度；非标注模式聊天区域占100%
-
-**待完成工作**:
-1. 创建医学图像分析子智能体并分配到医生端Portal
-2. 配置多模态视觉模型（GPT-4V或Claude 3.5 Sonnet）
-3. 完善标注模式右侧聊天功能（当前为占位符UI）
-4. 在标注模式聊天中实现"区域X"语义引用和高亮交互
-5. 安装前端依赖：`npm install react-konva konva moment`
-6. 运行数据库迁移脚本
 
 ---
 
@@ -2360,3 +2764,128 @@ cd /opt && source backend/.venv/bin/activate && python3 backend/database/migrati
 
 **访问方式**: 
 - 打开 `http://localhost:3000` 即可直接看到四端选择落地页
+
+
+## 2025-11-29: Patient Archive Duplicate Detection and Associated Conversations UI
+
+### 1. 患者档案重复检查功能
+
+#### 功能概述
+在创建患者档案前自动检查是否已存在同名患者，避免重复录入。
+
+#### 后端实现
+
+**数据库层** (`/opt/backend/database/patient_db.py`):
+- 新增 `find_patients_by_name(name, tenant_id, exact_match)` 函数
+- 支持精确匹配 (exact_match=True) 和模糊匹配 (ILIKE)
+- 返回匹配患者列表，按创建时间倒序
+
+**Service层** (`/opt/backend/services/patient_service.py`):
+- 新增 `find_patients_by_name_service()` 函数
+- 返回结构化数据: `{found, count, patients, search_name, exact_match}`
+
+**API层** (`/opt/backend/apps/patient_app.py`):
+- 新增 `GET /patient/check_duplicate` endpoint
+- Query参数:
+  - `name` (string, 必填): 患者姓名
+  - `exact_match` (boolean, 可选, 默认false): 是否精确匹配
+
+#### 前端实现
+
+**API配置** (`/opt/frontend/services/api.ts`):
+- 新增 `patient.checkDuplicate` endpoint
+
+**Service层** (`/opt/frontend/services/patientService.ts`):
+- 新增 `checkDuplicatePatient(name, exactMatch)` 函数
+- 调用后端 API 进行重复检查
+
+**聊天界面集成** (`/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx`):
+- 解析患者档案后，自动调用 `checkDuplicatePatient(name, true)` 进行精确匹配
+- 逻辑流程:
+  1. 如果找到同名患者 → 显示 `window.confirm` 对话框
+  2. 提示: "患者XXX已存在（病历号：PXXXXXX）。是否查看该患者档案？"
+  3. 用户点击"确定" → 跳转到患者详情页 (`setActiveView("patients"); setSelectedPatientId(...)`)
+  4. 用户点击"取消" → 关闭对话框，不做任何操作
+  5. 如果未找到同名患者 → 显示 `ConfirmPatientArchiveModal` 创建确认弹窗
+
+#### 技术亮点
+- **精确匹配优先**: 使用 exact_match=true 避免误判
+- **友好提示**: 显示已存在患者的病历号，帮助用户识别
+- **无缝跳转**: 自动导航到已存在患者的详情页
+- **非阻塞式**: 用户可以选择取消，不强制操作
+
+---
+
+### 2. 双向关联对话UI (Bidirectional Chat-Patient Linking)
+
+#### 功能概述
+实现患者档案页面和时间线页面显示关联的对话列表，补充已有的聊天界面关联患者功能。
+
+#### 新增组件
+
+**AssociatedConversations 组件** (`/opt/frontend/components/doctor/chat/AssociatedConversations.tsx`):
+- 显示与患者关联的所有对话列表
+- Props:
+  - `patientId`: 患者ID (必填)
+  - `patientName`: 患者姓名 (可选)
+  - `timelineId`: 时间线ID (可选，未来可用于过滤)
+  - `maxHeight`: 最大高度 (默认 400px)
+  - `showTitle`: 是否显示标题 (默认 true)
+
+**功能特性**:
+- 对话卡片显示:
+  - 对话标题 (未命名显示"未命名对话")
+  - 状态标签 (待处理/进行中/已解决/已关闭) - 带颜色
+  - 摘要 (最多2行)
+  - 标签 (最多显示3个，超出显示 +N)
+  - 更新时间 (智能格式化)
+- 交互:
+  - Hover 效果
+  - 点击跳转到聊天页面: `/doctor?conversation_id={id}`
+- 空状态: "暂无关联对话，在聊天界面关联患者后，对话将显示在此处"
+
+#### 集成位置
+
+**患者概览页** (`/opt/frontend/components/doctor/patients/PatientOverview.tsx`):
+- 位置: 左侧列，"基本信息"和"诊疗摘要"卡片下方
+- Props: `patientId`, `patientName`, `maxHeight="500px"`
+
+**患者时间线页** (`/opt/frontend/components/doctor/patients/PatientTimeline.tsx`):
+- 位置: 时间线详情底部，"患者报告解读"和"给患者的建议"下方
+- Props: `patientId`, `patientName`, `timelineId`, `maxHeight="400px"`
+
+#### 双向链接关系
+
+**正向链接** (已存在):
+- **聊天界面 → 患者**: ChatHeader 组件的 PatientSelector
+- **数据存储**: `conversation.patient_id`, `conversation.patient_name`
+
+**反向链接** (新增):
+- **患者档案 → 对话列表**: AssociatedConversations 组件
+- **时间线 → 对话列表**: AssociatedConversations 组件
+
+#### 技术实现
+- 数据获取: 调用 `conversationService.getList("doctor")` 获取所有医生门户对话
+- 过滤逻辑: `conversations.filter(conv => conv.patient_id === patientId)`
+- 排序: 按 `update_time` 或 `create_time` 倒序
+- 时间格式化: 今天显示时间，一周内显示日期+时间，更早显示完整日期
+
+---
+
+### 相关文件清单
+
+**患者重复检查**:
+- Backend:
+  - `/opt/backend/database/patient_db.py` (新增 find_patients_by_name)
+  - `/opt/backend/services/patient_service.py` (新增 find_patients_by_name_service)
+  - `/opt/backend/apps/patient_app.py` (新增 check_duplicate_patient endpoint)
+- Frontend:
+  - `/opt/frontend/services/api.ts` (新增 checkDuplicate endpoint)
+  - `/opt/frontend/services/patientService.ts` (新增 checkDuplicatePatient)
+  - `/opt/frontend/app/[locale]/chat/internal/chatInterface.tsx` (集成重复检查逻辑)
+
+**双向关联对话**:
+- `/opt/frontend/components/doctor/chat/AssociatedConversations.tsx` (新建)
+- `/opt/frontend/components/doctor/patients/PatientOverview.tsx` (集成组件)
+- `/opt/frontend/components/doctor/patients/PatientTimeline.tsx` (集成组件)
+

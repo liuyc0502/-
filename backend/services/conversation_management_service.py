@@ -763,7 +763,45 @@ def link_conversation_to_patient_service(
     except Exception as e:
         logging.error(f"Failed to link conversation to patient: {str(e)}")
         raise Exception(f"Failed to link conversation: {str(e)}")
- 
+
+
+def link_conversation_to_timeline_service(
+    conversation_id: int,
+    timeline_id: Optional[int],
+    timeline_name: Optional[str],
+    user_id: str
+) -> Dict[str, Any]:
+    """
+    Link or unlink a conversation to a timeline
+
+    Args:
+        conversation_id: Conversation ID
+        timeline_id: Timeline ID (None to unlink)
+        timeline_name: Timeline stage name (None to unlink)
+        user_id: User ID performing the action
+
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        from database.conversation_db import link_conversation_to_timeline
+
+        success = link_conversation_to_timeline(
+            conversation_id=conversation_id,
+            timeline_id=timeline_id,
+            timeline_name=timeline_name,
+            user_id=user_id
+        )
+
+        action = "linked to timeline" if timeline_id else "unlinked from timeline"
+        return {
+            "success": success,
+            "message": f"Conversation {action} successfully"
+        }
+    except Exception as e:
+        logging.error(f"Failed to link conversation to timeline: {str(e)}")
+        raise Exception(f"Failed to link conversation to timeline: {str(e)}")
+
 
 def update_conversation_status_service(
     conversation_id: int,

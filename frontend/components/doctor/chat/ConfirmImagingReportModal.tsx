@@ -5,6 +5,7 @@ import { Modal, Form, Input, Button, DatePicker, App } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { ImageIcon } from "lucide-react";
 import patientService from "@/services/patientService";
+import { PatientTimelineMatchModal } from "./PatientTimelineMatchModal";
 
 const PRIMARY_COLOR = "#D94527";
 
@@ -22,12 +23,24 @@ interface ParsedImagingReport {
   ai_summary?: string;
 }
 
+interface MatchedPatient {
+  patient_id: number;
+  name: string;
+  medical_record_no?: string;
+  age?: number;
+  gender?: string;
+  match_score?: number;
+  recent_visit_date?: string;
+}
+
+
 interface ConfirmImagingReportModalProps {
   open: boolean;
   onClose: () => void;
   parsedData: ParsedImagingReport | null;
-  timelineId: number;
-  patientId: number;
+  timelineId?: number | null;
+  patientId?: number | null;
+  matchedPatients?: MatchedPatient[];
   onSuccess: () => void;
 }
 
@@ -35,30 +48,36 @@ export function ConfirmImagingReportModal({
   open,
   onClose,
   parsedData,
-  timelineId,
-  patientId,
+  timelineId: initialTimelineId,
+  patientId: initialPatientId,
+  matchedPatients = [],
   onSuccess,
 }: ConfirmImagingReportModalProps) {
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
 
-  // Convert date string to Date object for DatePicker
-  const parseDate = (dateStr: string | undefined): Date | undefined => {
-    if (!dateStr) return undefined;
-    try {
-      const date = new Date(dateStr);
-      return isNaN(date.getTime()) ? undefined : date;
-    } catch {
-      return undefined;
-    }
-  };
+  // Patient and timeline selection state
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(initialPatientId || null);
+  const [selectedTimelineId, setSelectedTimelineId] = useState<number | null>(initialTimelineId || null);
 
   // Format date object to YYYY-MM-DD string
   const formatDate = (date: any): string | undefined => {
     if (!date) return undefined;
     if (typeof date === 'string') return date;
-    // Handle Date object from Ant Design DatePicker
+    // Check if it's a dayjs object with format method
+    if (typeof date.format === 'function') {
+      return date.format('YYYY-MM-DD');
+    }
+    // Handle Date object as fallback
+    if (date instanceof Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    // Try to access internal Date object
     const dateObj = date.$d || date;
     if (dateObj instanceof Date) {
       const year = dateObj.getFullYear();
@@ -69,11 +88,19 @@ export function ConfirmImagingReportModal({
     return undefined;
   };
 
+  // Show patient/timeline match modal if no patient/timeline provided
+  useEffect(() => {
+    if (open && (!selectedPatientId || !selectedTimelineId)) {
+      setShowMatchModal(true);
+    }
+  }, [open, selectedPatientId, selectedTimelineId]);
+
   useEffect(() => {
     if (parsedData && open) {
       form.setFieldsValue({
         imaging_type: parsedData.imaging_type,
-        imaging_date: parsedData.imaging_date ? parseDate(parsedData.imaging_date) : undefined,
+        // Don't set imaging_date here - let user select it manually to avoid dayjs issues
+        // imaging_date: parsedData.imaging_date,
         imaging_institution: parsedData.imaging_institution,
         report_number: parsedData.report_number,
         examination_site: parsedData.examination_site,
@@ -86,16 +113,73 @@ export function ConfirmImagingReportModal({
     }
   }, [parsedData, open, form]);
 
+  const handlePatientTimelineConfirm = async (
+    patientId: number,
+    patientName: string,
+    timelineId: number | null,
+    timelineName: string | null,
+    isNewTimeline: boolean,
+    newTimelineDate?: string
+  ) => {
+    try {
+      setLoading(true);
+      let finalPatientId = patientId;
+      let finalTimelineId = timelineId;
+
+      // Create new patient if needed (patientId === -1)
+      if (patientId === -1) {
+        const newPatient = await patientService.createPatient({
+          name: patientName,
+          gender: "",
+          age: 0,
+          medical_record_no: "",
+          email: "",
+        });
+        finalPatientId = newPatient.patient_id;
+        message.success(`已创建新患者: ${patientName}`);
+      }
+
+      // Create new timeline if needed
+      if (isNewTimeline && newTimelineDate) {
+        const newTimeline = await patientService.createTimelineStage({
+          patient_id: finalPatientId,
+          stage_type: "consultation",
+          stage_title: timelineName || `${newTimelineDate} 诊疗记录`,
+          stage_date: newTimelineDate,
+          status: "current",
+        });
+        finalTimelineId = newTimeline.timeline_id;
+        message.success(`已创建新时间线: ${timelineName || `${newTimelineDate} 诊疗记录`}`);
+      }
+
+      setSelectedPatientId(finalPatientId);
+      setSelectedTimelineId(finalTimelineId);
+      setShowMatchModal(false);
+    } catch (error) {
+      console.error("Failed to create patient/timeline:", error);
+      message.error("创建失败，请重试");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
+
+      if (!selectedPatientId || !selectedTimelineId) {
+        message.error("请先选择患者和时间线");
+        setShowMatchModal(true);
+        return;
+      }
+
       await form.validateFields();
       const values = form.getFieldsValue();
 
       setLoading(true);
 
       const reportData = {
-        timeline_id: timelineId,
-        patient_id: patientId,
+        timeline_id: selectedTimelineId,
+        patient_id: selectedPatientId,
         imaging_type: values.imaging_type || undefined,
         imaging_date: formatDate(values.imaging_date),
         imaging_institution: values.imaging_institution || undefined,
@@ -126,6 +210,19 @@ export function ConfirmImagingReportModal({
   };
 
   return (
+    <>
+    {/* Patient and Timeline Selection Modal */}
+    <PatientTimelineMatchModal
+        open={showMatchModal}
+        onClose={() => setShowMatchModal(false)}
+        onConfirm={handlePatientTimelineConfirm}
+        reportPatientName={parsedData?.patient_name}
+        reportDate={parsedData?.imaging_date}
+        matchedPatients={matchedPatients}
+        title="选择患者和时间线 - 影像报告"
+      />
+   
+    
     <Modal
       title={
         <div className="flex items-center gap-2">
@@ -227,5 +324,6 @@ export function ConfirmImagingReportModal({
         </Form>
       </div>
     </Modal>
+    </>
   );
 }

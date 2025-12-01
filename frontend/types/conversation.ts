@@ -8,8 +8,11 @@ export interface ConversationListItem {
   conversation_status?: string;
   tags?: string[];
   summary?: string | null;
-  archived_at?: string | null;
+  archived_at?: number | null;
   archived_to_timeline?: boolean;
+  linked_patient_id?: number | null;
+  linked_timeline_id?: number | null;
+  linked_timeline_name?: string | null;
 }
 
 export interface ConversationListResponse {

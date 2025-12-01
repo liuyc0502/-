@@ -224,6 +224,46 @@ async def create_patient(
             detail=f"Failed to create patient: {str(e)}"
         )
 
+
+@router.get("/patient/check_duplicate")
+async def check_duplicate_patient(
+    name: str,
+    exact_match: bool = False,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Check if a patient with the given name already exists.
+    Used for duplicate detection before creating a new patient.
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+        result = await patient_service.find_patients_by_name_service(
+            name,
+            tenant_id,
+            exact_match
+        )
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+    except AgentRunException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Check duplicate patient failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check duplicate patient: {str(e)}"
+        )
+
+
 @router.get("/patient/list")
 async def list_patients(
     search: Optional[str] = None,
@@ -959,3 +999,44 @@ async def delete_timeline_attachments(
         )
 
 
+
+
+@router.get("/patient/check_duplicate")
+async def check_duplicate_patient(
+    name: str,
+    exact_match: bool = False,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Check if patient with given name already exists.
+    Used for duplicate detection when creating patient archives.
+    
+    Query params:
+        name: Patient name to search for
+        exact_match: If true, use exact match; if false, use fuzzy match (default: false)
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        if not user_id or not tenant_id:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Unauthorized"
+            )
+
+        result = await patient_service.find_patients_by_name_service(
+            name=name,
+            tenant_id=tenant_id,
+            exact_match=exact_match
+        )
+
+        return JSONResponse(
+            status_code=HTTPStatus.OK,
+            content=result
+        )
+
+    except Exception as e:
+        logger.error(f"Check duplicate patient failed: {str(e)}")
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )

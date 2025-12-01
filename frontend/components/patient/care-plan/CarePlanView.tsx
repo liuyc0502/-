@@ -31,6 +31,12 @@ export function CarePlanView() {
   const [todayPlan, setTodayPlan] = useState<TodayPlanResponse | null>(null);
   const [weeklyProgress, setWeeklyProgress] = useState<WeeklyProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Safe fallbacks to avoid undefined access
+  const medications = todayPlan?.medications ?? [];
+  const tasks = todayPlan?.tasks ?? [];
+  const precautions = todayPlan?.precautions ?? [];
+  const completionChart = weeklyProgress?.completion_chart ?? [];
  
   // Load patient profile first
   useEffect(() => {
@@ -68,7 +74,16 @@ export function CarePlanView() {
       setLoading(true);
       const dateStr = selectedDate.toISOString().split('T')[0];
       const plan = await carePlanService.getTodayPlan(patient.patient_id, dateStr);
-      setTodayPlan(plan);
+      if (!plan) {
+        setTodayPlan(null);
+        return;
+      }
+      setTodayPlan({
+        ...plan,
+        medications: plan?.medications ?? [],
+        tasks: plan?.tasks ?? [],
+        precautions: plan?.precautions ?? [],
+      });
     } catch (error) {
       message.error("加载康复计划失败");
       console.error("Failed to load today's plan:", error);
@@ -82,7 +97,11 @@ export function CarePlanView() {
  
     try {
       const progress = await carePlanService.getWeeklyProgress(patient.patient_id);
-      setWeeklyProgress(progress);
+      setWeeklyProgress({
+        ...progress,
+        completion_chart: progress?.completion_chart ?? [],
+        daily_stats: progress?.daily_stats ?? [],
+      });
     } catch (error) {
       console.error("Failed to load weekly progress:", error);
     }
@@ -108,16 +127,18 @@ export function CarePlanView() {
 
       // Update local state
       if (itemType === 'medication') {
+        const meds = todayPlan.medications ?? [];
         setTodayPlan({
           ...todayPlan,
-          medications: todayPlan.medications.map(med =>
+          medications: meds.map(med =>
             med.medication_id === itemId ? { ...med, completed } : med
           ),
         });
       } else {
+        const taskList = todayPlan.tasks ?? [];
         setTodayPlan({
           ...todayPlan,
-          tasks: todayPlan.tasks.map(task =>
+          tasks: taskList.map(task =>
             task.task_id === itemId ? { ...task, completed } : task
           ),
         });
@@ -131,11 +152,11 @@ export function CarePlanView() {
     }
   };
 
-  const completedMedications = todayPlan?.medications.filter(m => m.completed).length || 0;
+  const completedMedications = medications.filter(m => m.completed).length || 0;
 
-  const completedTasks = todayPlan?.tasks.filter(t => t.completed).length || 0;
+  const completedTasks = tasks.filter(t => t.completed).length || 0;
 
-  const totalItems = (todayPlan?.medications.length || 0) + (todayPlan?.tasks.length || 0);
+  const totalItems = medications.length + tasks.length;
 
   const completedItems = completedMedications + completedTasks;
 
@@ -187,17 +208,17 @@ export function CarePlanView() {
                       用药提醒
                     </h2>
                     <div className="text-sm text-gray-600">
-                      {completedMedications}/{todayPlan?.medications.length || 0} 已完成
+                      {completedMedications}/{medications.length} 已完成
                     </div>
                   </div>
 
                   {loading ? (
                     <div className="text-center py-8 text-gray-500">加载中...</div>
-                  ) : !todayPlan || todayPlan.medications.length === 0 ? (
+                  ) : !todayPlan || medications.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">今日暂无用药安排</div>
                   ) : (
                     <div className="space-y-3">
-                      {todayPlan.medications.map((med) => (
+                      {medications.map((med) => (
                         <div
                           key={med.medication_id}
                           className={`p-4 rounded-lg border transition-all ${
@@ -254,17 +275,17 @@ export function CarePlanView() {
                       康复任务
                     </h2>
                     <div className="text-sm text-gray-600">
-                      {completedTasks}/{todayPlan?.tasks.length || 0} 已完成
+                      {completedTasks}/{tasks.length} 已完成
                     </div>
                   </div>
 
                   {loading ? (
                     <div className="text-center py-8 text-gray-500">加载中...</div>
-                  ) : !todayPlan || todayPlan.tasks.length === 0 ? (
+                  ) : !todayPlan || tasks.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">今日暂无康复任务</div>
                   ) : (
                     <div className="space-y-3">
-                      {todayPlan.tasks.map((task) => (
+                      {tasks.map((task) => (
                         <div
                           key={task.task_id}
                           className={`p-4 rounded-lg border transition-all ${
@@ -350,7 +371,7 @@ export function CarePlanView() {
                       <div className="pt-3 border-t border-gray-200">
                         <div className="text-xs text-gray-500 mb-2">每日完成度</div>
                         <div className="flex items-end justify-between gap-1 h-24">
-                          {weeklyProgress.completion_chart.map((day, index) => {
+                          {completionChart.map((day, index) => {
                             const date = new Date(day.date);
                             const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
                             const dayName = dayNames[date.getDay()];
@@ -385,11 +406,11 @@ export function CarePlanView() {
                     注意事项
                   </h3>
 
-                  {!todayPlan || todayPlan.precautions.length === 0 ? (
+                  {!todayPlan || precautions.length === 0 ? (
                     <div className="text-center py-4 text-gray-500">暂无注意事项</div>
                   ) : (
                     <ul className="space-y-2">
-                      {todayPlan.precautions.map((item, index) => (
+                      {precautions.map((item, index) => (
                         <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
                           <span className="text-orange-500 mt-0.5">•</span>
                           <span>{item}</span>

@@ -3,88 +3,46 @@ import { getAuthHeaders, fetchWithAuth } from '@/lib/auth';
 // @ts-ignore
 const fetch = fetchWithAuth;
 
-export interface MedicalCase {
-  case_id: number;
-  case_no: string;
-  case_title?: string;
-  diagnosis: string;
-  disease_type: string;
-  age: number;
-  gender: string;
-  chief_complaint?: string;
-  category?: string;
-  is_classic?: boolean;
-  tags?: string[];
-  view_count?: number;
-  create_time?: string;
-  update_time?: string;
-}
+import { MedicalCase, MedicalCaseDetail, MedicalCaseListResponse, MedicalCaseSearchParams } from '@/types/medicalcase';
 
 
-export interface MedicalCaseDetail extends MedicalCase{
-  detail?: {
-    present_illness_history?: string;
-    past_medical_history?: string;
-    family_history?: string;
-    physical_examination?: any;
-    imaging_results?: any;
-    diagnosis_basis?: string;
-    treatment_plan?: string;
-    medications?: string[];
-    prognosis?: string;
-    clinical_notes?: string;
-  };
-  symptoms?: Array<{
-    symptom_id: number;
-    symptom_name: string;
-    symptom_description?: string;
-    is_key_symptom?: boolean;
-  }>;
-  lab_results?: Array<{
-    lab_result_id: number;
-    test_name: string;
-    test_full_name?: string;
-    test_value: string;
-    test_unit?: string;
-    normal_range?: string;
-    is_abnormal?: boolean;
-    abnormal_indicator?: string;
-  }>;
-  images?: Array<{
-    image_id: number;
-    image_type: string;
-    image_description?: string;
-    image_url: string;
-    thumbnail_url?: string;
-    display_order?: number;
-  }>;
-}
 
+  /**
+   * Get medical case detail by ID
+   */
+ export async function getDetail(caseId: number): Promise<MedicalCaseDetail> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.detail(caseId), {
+      headers: getAuthHeaders(),
+    });
 
-export interface MedicalCaseListResponse {
-  cases: MedicalCase[];
-  total: number;
-}
+    if (!response.ok) {
+      throw new Error(`Failed to fetch case detail: ${caseId}`);
+    }
 
- 
-export interface MedicalCaseSearchParams {
-  search?: string;
-  disease_types?: string[];
-  age_range?: string;
-  gender?: string;
-  is_classic?: boolean;
-  limit?: number;
-  offset?: number;
-}
+    return await response.json();
+  }
 
- 
-export const medicalCaseService = {
+  /**
+   * Get medical case by case number
+   */
+ export async function getByCaseNo(caseNo: string): Promise<MedicalCaseDetail> {
+    const response = await fetch(API_ENDPOINTS.medicalCase.byCaseNo(caseNo), {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch case: ${caseNo}`);
+    }
+
+    return await response.json();
+  }
+
   /**
    * Get medical case list with optional filters
    */
-  async getList(params: MedicalCaseSearchParams = {}): Promise<MedicalCaseListResponse> {
+ export async function getList(params: MedicalCaseSearchParams = {}): Promise<MedicalCaseListResponse> {
     const queryParams = new URLSearchParams();
-
+  
     if (params.search) {
       queryParams.append('search', params.search);
     }
@@ -106,53 +64,23 @@ export const medicalCaseService = {
     if (params.offset) {
       queryParams.append('offset', params.offset.toString());
     }
-
+  
     const url = `${API_ENDPOINTS.medicalCase.list}?${queryParams.toString()}`;
     const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
-
+  
     if (!response.ok) {
       throw new Error('Failed to fetch medical cases');
     }
-
+  
     return await response.json();
-  },
-
-  /**
-   * Get medical case detail by ID
-   */
-  async getDetail(caseId: number): Promise<MedicalCaseDetail> {
-    const response = await fetch(API_ENDPOINTS.medicalCase.detail(caseId), {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch case detail: ${caseId}`);
-    }
-
-    return await response.json();
-  },
-
-  /**
-   * Get medical case by case number
-   */
-  async getByCaseNo(caseNo: string): Promise<MedicalCaseDetail> {
-    const response = await fetch(API_ENDPOINTS.medicalCase.byCaseNo(caseNo), {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch case: ${caseNo}`);
-    }
-
-    return await response.json();
-  },
+  }
  
   /**
    * Search medical cases by natural language query
    */
-  async search(query: string, limit: number = 10): Promise<MedicalCaseListResponse> {
+ export async function search(query: string, limit: number = 10): Promise<MedicalCaseListResponse> {
     const queryParams = new URLSearchParams({
       query,
       limit: limit.toString(),
@@ -168,12 +96,12 @@ export const medicalCaseService = {
     }
 
     return await response.json();
-  },
+  }
  
   /**
    * Create a new medical case
    */
-  async create(caseData: Partial<MedicalCase>): Promise<{ success: boolean; case_id: number; message: string }> {
+ export async function create(caseData: Partial<MedicalCase>): Promise<{ success: boolean; case_id: number; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.create, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -185,12 +113,12 @@ export const medicalCaseService = {
     }
 
     return await response.json();
-  },
+  }
  
   /**
    * Update medical case
    */
-  async update(caseId: number, caseData: Partial<MedicalCase>): Promise<{ success: boolean; message: string }> {
+ export async function update(caseId: number, caseData: Partial<MedicalCase>): Promise<{ success: boolean; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.update(caseId), {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -203,12 +131,12 @@ export const medicalCaseService = {
     }
 
     return await response.json();
-  },
+  }
  
   /**
    * Delete medical case
    */
-  async delete(caseId: number): Promise<{ success: boolean; message: string }> {
+ export async function deleteCase(caseId: number): Promise<{ success: boolean; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.delete(caseId), {
       method: 'DELETE',
       headers: getAuthHeaders(),
@@ -219,12 +147,12 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+ }
 
   /**
    * Toggle favorite (add or remove)
    */
-  async toggleFavorite(caseId: number, action: 'add' | 'remove'): Promise<{ success: boolean; favorited: boolean; message: string }> {
+ export async function toggleFavorite(caseId: number, action: 'add' | 'remove'): Promise<{ success: boolean; favorited: boolean; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.favorite.toggle, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -237,13 +165,13 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
 
  
   /**
    * Get user's favorite cases
    */
-  async getFavorites(limit: number = 100, offset: number = 0): Promise<MedicalCaseListResponse> {
+ export async function getFavorites(limit: number = 100, offset: number = 0): Promise<MedicalCaseListResponse> {
     const queryParams = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),
@@ -260,13 +188,13 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
 
  
   /**
    * Get recently viewed cases
    */
-  async getRecentCases(limit: number = 50): Promise<MedicalCaseListResponse> {
+ export async function getRecentCases(limit: number = 50): Promise<MedicalCaseListResponse> {
     const queryParams = new URLSearchParams({
       limit: limit.toString(),
     });
@@ -283,12 +211,12 @@ export const medicalCaseService = {
     }
 
     return await response.json();
-  },
+  }
  
   /**
    * Create or update case detail
    */
-  async createDetail(detailData: any): Promise<{ success: boolean; detail_id: number; message: string }> {
+ export async function createDetail(detailData: any): Promise<{ success: boolean; detail_id: number; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.detailCreate, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -300,12 +228,12 @@ export const medicalCaseService = {
     } 
 
     return await response.json();
-  },
+  }
  
   /**
    * Add images to a case
    */
-  async addImages(caseId: number, images: Array<{
+ export async function addImages(caseId: number, images: Array<{
     image_type?: string;
     image_description?: string;
     image_url: string;
@@ -323,12 +251,12 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
  
   /**
    * Delete all images for a case
    */
-  async deleteImages(caseId: number): Promise<{ success: boolean; message: string }> {
+ export async function deleteImages(caseId: number): Promise<{ success: boolean; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.images.delete(caseId), {
       method: 'DELETE',
       headers: getAuthHeaders(),
@@ -339,12 +267,12 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
  
   /**
    * Add symptoms to a case
    */
-  async addSymptoms(caseId: number, symptoms: Array<{
+ export async function addSymptoms(caseId: number, symptoms: Array<{
     symptom_name: string;
     symptom_description?: string;
     is_key_symptom?: boolean;
@@ -360,12 +288,12 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
  
   /**
    * Delete all symptoms for a case
    */
-  async deleteSymptoms(caseId: number): Promise<{ success: boolean; message: string }> {
+ export async function deleteSymptoms(caseId: number): Promise<{ success: boolean; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.symptoms.delete(caseId), {
       method: 'DELETE',
       headers: getAuthHeaders(),
@@ -376,12 +304,12 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
  
   /**
    * Add lab results to a case
    */
-  async addLabResults(caseId: number, labResults: Array<{
+ export async function addLabResults(caseId: number, labResults: Array<{
     test_name: string;
     test_full_name?: string;
     test_value: string;
@@ -401,12 +329,12 @@ export const medicalCaseService = {
     }
  
     return await response.json();
-  },
+  }
  
   /**
    * Delete all lab results for a case
    */
-  async deleteLabResults(caseId: number): Promise<{ success: boolean; message: string }> {
+ export async function deleteLabResults(caseId: number): Promise<{ success: boolean; message: string }> {
     const response = await fetch(API_ENDPOINTS.medicalCase.labResults.delete(caseId), {
       method: 'DELETE',
       headers: getAuthHeaders(),
@@ -418,12 +346,12 @@ export const medicalCaseService = {
 
 
     return await response.json();
-  },
+  }
 
   /**
    * Create a medical case from AI-parsed document data
    */
-  async createFromParsed(caseData: Partial<MedicalCase> & {
+ export async function createFromParsed(caseData: Partial<MedicalCase> & {
     symptoms?: string[] | string;
     physical_examination?: string;
     lab_results?: string;
@@ -445,5 +373,29 @@ export const medicalCaseService = {
     }
 
     return await response.json();
-  },
-};
+  }
+
+
+  const medicalCaseService = {
+    getDetail,
+    getByCaseNo,
+    getList,
+    search,
+    create,
+    update,
+    delete: deleteCase,
+    deleteCase,
+    toggleFavorite,
+    getFavorites,
+    getRecentCases,
+    createDetail,
+    addImages,
+    deleteImages,
+    addSymptoms,
+    deleteSymptoms,
+    addLabResults,
+    deleteLabResults,
+    createFromParsed,
+  };
+
+export default medicalCaseService;

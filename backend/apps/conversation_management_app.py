@@ -12,6 +12,7 @@ from consts.model import (
     OpinionRequest,
     RenameRequest,
     LinkPatientRequest,
+    LinkTimelineRequest,
     UpdateConversationStatusRequest,
     UpdateConversationTagsRequest,
     UpdateConversationSummaryRequest,
@@ -26,9 +27,10 @@ from services.conversation_management_service import (
     get_conversation_list_service,
     get_sources_service,
     rename_conversation_service,
-    update_message_opinion_service, 
+    update_message_opinion_service,
     get_message_id_by_index_impl,
     link_conversation_to_patient_service,
+    link_conversation_to_timeline_service,
     update_conversation_status_service,
     update_conversation_tags_service,
     update_conversation_summary_service,
@@ -311,8 +313,34 @@ async def link_patient_endpoint(request: LinkPatientRequest, authorization: Opti
     except Exception as e:
         logging.error(f"Failed to link patient: {str(e)}")
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
- 
- 
+
+
+@router.put("/link_timeline", response_model=ConversationResponse)
+async def link_timeline_endpoint(request: LinkTimelineRequest, authorization: Optional[str] = Header(None)):
+    """
+    Link or unlink a conversation to a timeline
+
+    Args:
+        request: LinkTimelineRequest object containing:
+            - conversation_id: Conversation ID
+            - timeline_id: Timeline ID (null to unlink)
+            - timeline_name: Timeline stage name
+        authorization: Authorization header
+
+    Returns:
+        ConversationResponse object
+    """
+    try:
+        user_id, tenant_id = get_current_user_id(authorization)
+        result = link_conversation_to_timeline_service(
+            request.conversation_id, request.timeline_id, request.timeline_name, user_id
+        )
+        return ConversationResponse(code=0, message="success", data=result)
+    except Exception as e:
+        logging.error(f"Failed to link timeline: {str(e)}")
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.put("/status", response_model=ConversationResponse)
 async def update_status_endpoint(request: UpdateConversationStatusRequest, authorization: Optional[str] = Header(None)):
     """

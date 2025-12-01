@@ -71,16 +71,37 @@ export const conversationService = {
       headers: getAuthHeaders(),
       body: JSON.stringify(params),
     });
- 
+
     const data = await response.json();
- 
+
     if (data.code === 0) {
       return data.data;
     }
- 
+
     throw new ApiError(data.code, data.message);
   },
- 
+
+  // Link or unlink conversation to timeline
+  async linkTimeline(params: {
+    conversation_id: number;
+    timeline_id: number | null;
+    timeline_name?: string | null;
+  }) {
+    const response = await fetch(API_ENDPOINTS.conversation.linkTimeline, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+
+    const data = await response.json();
+
+    if (data.code === 0) {
+      return data.data;
+    }
+
+    throw new ApiError(data.code, data.message);
+  },
+
   // Update conversation status
   async updateStatus(params: {
     conversation_id: number;

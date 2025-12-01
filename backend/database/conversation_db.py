@@ -1114,8 +1114,39 @@ def link_conversation_to_patient(conversation_id: int, patient_id: Optional[int]
         session.commit()
         logger.info(f"Conversation {conversation_id} {'linked to' if patient_id else 'unlinked from'} patient {patient_id}")
         return True
- 
- 
+
+
+def link_conversation_to_timeline(conversation_id: int, timeline_id: Optional[int], timeline_name: Optional[str], user_id: str) -> bool:
+    """
+    Link or unlink a conversation to a timeline
+
+    Args:
+        conversation_id: Conversation ID
+        timeline_id: Timeline ID (None to unlink)
+        timeline_name: Timeline stage name (None to unlink)
+        user_id: User ID performing the action
+
+    Returns:
+        bool: True if successful
+    """
+    with get_db_session() as session:
+        conversation = session.query(ConversationRecord).filter(
+            ConversationRecord.conversation_id == conversation_id,
+            ConversationRecord.delete_flag == 'N'
+        ).first()
+
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+
+        conversation.linked_timeline_id = timeline_id
+        conversation.linked_timeline_name = timeline_name
+        conversation.updated_by = user_id
+
+        session.commit()
+        logger.info(f"Conversation {conversation_id} {'linked to' if timeline_id else 'unlinked from'} timeline {timeline_id}")
+        return True
+
+
 def update_conversation_status(conversation_id: int, status: str, user_id: str) -> bool:
     """
     Update conversation status

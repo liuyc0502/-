@@ -89,6 +89,36 @@ def get_patient_by_medical_record_no(medical_record_no: str, tenant_id: str) -> 
         return None
 
 
+def find_patients_by_name(name: str, tenant_id: str, exact_match: bool = False) -> List[dict]:
+    """
+    Find patients by name with fuzzy or exact matching.
+    Used for duplicate detection when creating patient archives.
+
+    Args:
+        name: Patient name to search for
+        tenant_id: Tenant ID
+        exact_match: If True, use exact match; if False, use fuzzy match (ILIKE)
+
+    Returns:
+        List of matching patients
+    """
+    with get_db_session() as session:
+        query = session.query(PatientInfo).filter(
+            PatientInfo.tenant_id == tenant_id,
+            PatientInfo.delete_flag != 'Y'
+        )
+
+        if exact_match:
+            query = query.filter(PatientInfo.name == name)
+        else:
+            # Fuzzy match with ILIKE
+            search_pattern = f"%{name}%"
+            query = query.filter(PatientInfo.name.ilike(search_pattern))
+
+        patients = query.order_by(PatientInfo.create_time.desc()).all()
+        return [as_dict(p) for p in patients]
+
+
 def list_patients(tenant_id: str, search_query: Optional[str] = None,
                  filter_type: Optional[str] = None, limit: int = 100, offset: int = 0) -> List[dict]:
     """

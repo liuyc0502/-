@@ -195,45 +195,49 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                 return (
                   <Card
                     key={patient.patient_id}
-                    className="hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1 bg-white border-gray-200"
+                    className="hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1 bg-white border-gray-200 flex flex-col"
                     onClick={() => onSelectPatient(patient.patient_id.toString())}
                   >
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">{patient.name}</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {patient.gender} · {patient.age}岁 · {patient.medical_record_no}
+                    <CardContent className="p-6 flex flex-col flex-1">
+                      <div className="space-y-4 flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">{patient.name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {patient.gender} · {patient.age}岁 · {patient.medical_record_no}
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeletePatient(patient, e)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="删除患者"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div
+                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getDiagnosisColor(
+                            latestDiagnosis
+                          )}`}
+                        >
+                          {latestDiagnosis}
+                        </div>
+                        <div className="text-sm text-orange-600 min-h-[1.25rem]">
+                          {patient.allergies && patient.allergies.length > 0 ? (
+                            <>过敏史: {patient.allergies.join(", ")}</>
+                          ) : (
+                            <span className="invisible">占位</span>
+                          )}
+                        </div>
+                        <div className="pt-2 border-t border-gray-100">
+                          <p className="text-sm text-gray-600">
+                            最近更新: <span className="font-medium text-gray-900">{lastVisit}</span>
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => handleDeletePatient(patient, e)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="删除患者"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getDiagnosisColor(
-                          latestDiagnosis
-                        )}`}
-                      >
-                        {latestDiagnosis}
-                      </div>
-                      {patient.allergies && patient.allergies.length > 0 && (
-                        <div className="text-sm text-orange-600">
-                          过敏史: {patient.allergies.join(", ")}
-                        </div>
-                      )}
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-sm text-gray-600">
-                          最近更新: <span className="font-medium text-gray-900">{lastVisit}</span>
-                        </p>
                       </div>
                       <Button
                         variant="outline"
-                        className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
+                        className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white mt-4"
                       >
                         查看档案
                       </Button>

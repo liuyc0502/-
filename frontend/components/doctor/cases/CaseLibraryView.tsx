@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { App } from "antd";
-import { medicalCaseService, type MedicalCase } from "@/services/medicalCaseService";
+import medicalCaseService from "@/services/medicalCaseService";
+import type { MedicalCase } from "@/types/medicalcase";
 import { CreateCaseDialog } from "./CreateCaseDialog";
 
 const diseaseTypes = ["类风湿", "红斑狼疮", "强直性脊柱炎", "痛风", "骨关节炎", "干燥综合征"];

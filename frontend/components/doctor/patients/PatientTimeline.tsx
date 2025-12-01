@@ -19,6 +19,7 @@ import type { Patient, TimelineStage, TimelineWithDetail, LabReport, ImagingRepo
 import { CreateTimelineModal } from "./CreateTimelineModal";
 import { EditTimelineDetailModal } from "./EditTimelineDetailModal";
 import { storageService } from "@/services/storageService";
+import { AssociatedConversations } from "@/components/doctor/chat/AssociatedConversations";
 
 // ============================================================================
 // Constants
@@ -898,6 +899,16 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
             )}
           </Card>
         </div>
+
+        {/* Associated Conversations */}
+        {patient && (
+          <AssociatedConversations
+            patientId={patient.patient_id}
+            patientName={patient.name}
+            timelineId={selectedTimeline.timeline_id}
+            maxHeight="400px"
+          />
+        )}
       </div>
     );
   };

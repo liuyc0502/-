@@ -42,10 +42,27 @@ export function CreateTimelineModal({
       const values = await form.validateFields();
       setLoading(true);
 
+      // Format stage_date - DatePicker returns a dayjs object
+      let stageDate: string;
+      if (values.stage_date) {
+        // Check if it's a dayjs object with format method
+        if (typeof values.stage_date.format === 'function') {
+          stageDate = values.stage_date.format('YYYY-MM-DD');
+        } else if (values.stage_date instanceof Date) {
+          stageDate = values.stage_date.toISOString().split('T')[0];
+        } else if (typeof values.stage_date === 'string') {
+          stageDate = values.stage_date;
+        } else {
+          throw new Error('Invalid date format');
+        }
+      } else {
+        throw new Error('Date is required');
+      }
+
       await patientService.createTimelineStage({
         patient_id: patientId,
         stage_type: values.stage_type,
-        stage_date: values.stage_date.format("YYYY-MM-DD"),
+        stage_date: stageDate,
         stage_title: values.stage_title,
         diagnosis: values.diagnosis || "",
         status: values.status,
@@ -111,8 +128,23 @@ export function CreateTimelineModal({
             label="日期"
             name="stage_date"
             rules={[{ required: true, message: "请选择日期" }]}
+            getValueFromEvent={(value) => value}
+            normalize={(value) => {
+              // Ensure we only set valid dayjs objects or null
+              if (!value) return null;
+              // If it's already a dayjs object, return it
+              if (value && typeof value.format === 'function') {
+                return value;
+              }
+              // Otherwise return null to avoid invalid values
+              return null;
+            }}
           >
-            <DatePicker className="w-full" />
+            <DatePicker 
+              className="w-full" 
+              format="YYYY-MM-DD"
+              allowClear
+            />
           </Form.Item>
         </div>
 

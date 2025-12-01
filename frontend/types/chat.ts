@@ -1,5 +1,6 @@
 import { chatConfig } from "@/const/chatConfig";
 import type { PortalChatConfig, PortalChatVariant } from "@/const/portalChatConfig";
+import type { ConversationListItem } from "@/types/conversation";
 
 export type PortalNavItemId = PortalChatConfig["navItems"][number]["id"];
 
@@ -49,6 +50,8 @@ export interface AgentStep {
   // New format content array
   contents: StepContent[]
   parsingContent?: string
+  // Execution logs for tool result detection (not displayed in UI)
+  executionLogs?: string
 }
 
 // Agent related types
@@ -239,21 +242,8 @@ export interface ApiConversationDetail {
   message: ApiMessage[]
 }
 
-export interface ConversationListItem {
-  conversation_id: number
-  conversation_title: string
-  create_time: number
-  update_time: number
-  patient_id?: number | null
-  patient_name?: string | null
-  conversation_status?: string
-  tags?: string[]
-  summary?: string | null
-  archived_at?: number | null
-  archived_to_timeline?: boolean
-  linked_patient_id?: number | null
-  linked_timeline_id?: number | null
-}
+// Re-export ConversationListItem from conversation types to avoid duplication
+export type { ConversationListItem };
 
 // File preview type
 export interface FilePreview {

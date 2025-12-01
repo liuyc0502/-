@@ -257,46 +257,6 @@ async def parse_case_document_impl(image_url: str) -> Dict[str, Any]:
 
 
 
-
-@doc_parsing_tools.tool(
-    name="extract_text_from_image",
-    description="Extract raw text from any medical document image using OCR. Use when doctor simply wants to get the text content from a document without structured parsing."
-)
-async def extract_text_from_image_tool(
-    image_url: str,
-    output_mode: str = "simple"  # 'simple' or 'detailed'
-) -> Dict[str, Any]:
-    """
-    Extract text from image using PaddleOCR.
-
-    Args:
-        image_url: URL or path to image
-        output_mode: 'simple' for clean text, 'detailed' for JSON with bounding boxes
-
-    Returns:
-        Dict with extracted text
-    """
-    try:
-        logger.info(f"Extracting text from image: {image_url}")
-
-        ocr_result = await call_paddleocr(image_url, output_mode=output_mode)
-
-        if ocr_result.startswith("OCR Error"):
-            return {"error": ocr_result}
-
-        return {
-            "success": True,
-            "image_url": image_url,
-            "output_mode": output_mode,
-            "extracted_text": ocr_result,
-            "message": "Text extracted successfully"
-        }
-
-    except Exception as e:
-        logger.error(f"Error extracting text: {str(e)}")
-        return {"error": str(e)}
-
-
 @doc_parsing_tools.tool(
     name="detect_document_type",
     description="Intelligently detect medical document type from image. Use when user uploads an image without specifying what type of document it is."
@@ -554,113 +514,6 @@ async def parse_medical_order(image_url: str) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-@doc_parsing_tools.tool(
-    name="match_patient_by_name",
-    description="Match patient by name, optionally using age and date for disambiguation. Use after parsing a report to find the corresponding patient in the system."
-)
-async def match_patient_by_name(
-    patient_name: str,
-    report_date: Optional[str] = None,
-    patient_age: Optional[int] = None
-) -> Dict[str, Any]:
-    """
-    Match patient by name with optional age and date filtering.
-
-    Args:
-        patient_name: Patient name to search for
-        report_date: Report date for matching recent visits
-        patient_age: Patient age for disambiguation
-
-    Returns:
-        Dict with matched patients and recommendation
-    """
-    try:
-        from database.patient_db import list_patients
-
-        logger.info(f"Matching patient by name: {patient_name}")
-
-        # Search for patients with matching name
-        all_patients = list_patients(
-            tenant_id=DEFAULT_TENANT_ID,
-            search_query=patient_name,
-            limit=100
-        )
-
-        if not all_patients:
-            return {
-                "found": False,
-                "match_type": "none",
-                "patients": [],
-                "recommendation": f"未找到姓名为 '{patient_name}' 的患者，建议创建新患者档案。"
-            }
-
-        # Filter and score matches
-        matched_patients = []
-        for patient in all_patients:
-            match_score = 0.0
-
-            # Exact name match
-            if patient.get("name") == patient_name:
-                match_score += 0.5
-
-            # Age match
-            if patient_age and patient.get("age"):
-                age_diff = abs(patient.get("age") - patient_age)
-                if age_diff == 0:
-                    match_score += 0.3
-                elif age_diff <= 2:
-                    match_score += 0.2
-                elif age_diff <= 5:
-                    match_score += 0.1
-
-            # Recent visit (if report_date provided)
-            if report_date:
-                # This would require checking last visit date from timeline
-                # For now, add small bonus
-                match_score += 0.2
-
-            if match_score > 0:
-                matched_patients.append({
-                    "patient_id": patient.get("patient_id"),
-                    "medical_record_no": patient.get("medical_record_no"),
-                    "name": patient.get("name"),
-                    "age": patient.get("age"),
-                    "gender": patient.get("gender"),
-                    "diagnosis": patient.get("diagnosis"),
-                    "match_score": round(match_score, 2)
-                })
-
-        # Sort by match score
-        matched_patients.sort(key=lambda x: x["match_score"], reverse=True)
-
-        # Determine match type and recommendation
-        if len(matched_patients) == 0:
-            match_type = "none"
-            recommendation = f"未找到匹配的患者，建议创建新患者档案。"
-        elif len(matched_patients) == 1:
-            match_type = "single"
-            patient = matched_patients[0]
-            recommendation = f"找到1位匹配患者：{patient['name']}（病历号 {patient['medical_record_no']}），建议关联到该患者。"
-        else:
-            match_type = "multiple"
-            top_match = matched_patients[0]
-            if patient_age:
-                recommendation = f"找到{len(matched_patients)}位同名患者，根据年龄({patient_age}岁)推荐病历号 {top_match['medical_record_no']}。"
-            else:
-                recommendation = f"找到{len(matched_patients)}位同名患者，请根据年龄、性别等信息手动选择。"
-
-        logger.info(f"Patient matching complete: {match_type}, found {len(matched_patients)} candidates")
-
-        return {
-            "found": len(matched_patients) > 0,
-            "match_type": match_type,
-            "patients": matched_patients[:5],  # Return top 5 matches
-            "recommendation": recommendation
-        }
-
-    except Exception as e:
-        logger.error(f"Error matching patient: {str(e)}")
-        return {"error": str(e)}
 
 
 @doc_parsing_tools.tool(
@@ -779,7 +632,7 @@ async def parse_case_document(image_url: str) -> Dict[str, Any]:
 
         # Step 3: Extract parsed data and format return structure
         parsed_data = result.get("parsed_data", {})
-        
+
         # Override case_no with auto-generated one
         parsed_data["case_no"] = next_case_no
 
@@ -811,3 +664,243 @@ async def parse_case_document(image_url: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error parsing case document: {str(e)}")
         return {"error": str(e)}
+
+
+# ===== Analysis-Only Tools (Natural Language Interpretation, No Structured Data) =====
+
+
+async def generate_medical_interpretation(ocr_text: str, document_type: str) -> str:
+    """
+    Generate natural language interpretation of medical document using LLM.
+
+    Args:
+        ocr_text: OCR extracted text
+        document_type: Type of document (检验报告/影像报告/患者信息/病例)
+
+    Returns:
+        Natural language interpretation string
+    """
+    try:
+        from smolagents import OpenAIServerModel
+        from utils.config_utils import get_model_name_from_config, tenant_config_manager
+
+        llm_model_config = tenant_config_manager.get_model_config("LLM_ID", tenant_id=DEFAULT_TENANT_ID)
+        if not llm_model_config:
+            return "无法生成解读：未配置 LLM 模型。"
+
+        # Build interpretation prompt based on document type
+        prompts = {
+            "检验报告": """请作为专业医生解读这份检验报告：
+
+{ocr_text}
+
+要求：
+1. 说明报告类型（如：肝功能、肾功能、血常规等）
+2. 列出关键检验指标和结果
+3. 指出异常项目（偏高↑/偏低↓）及其可能的临床意义
+4. 给出简要的总体评估
+
+用专业但易懂的自然语言回复，不要使用 JSON 或表格格式。""",
+
+            "影像报告": """请作为专业医生解读这份影像报告：
+
+{ocr_text}
+
+要求：
+1. 说明影像类型（如：胸部CT、腹部MRI、X光等）
+2. 总结主要影像所见
+3. 解释诊断意见/影像印象
+4. 说明是否需要进一步检查或随访
+
+用专业但易懂的自然语言回复。""",
+
+            "患者信息": """请总结这份患者基本信息：
+
+{ocr_text}
+
+要求：
+1. 患者姓名、年龄、性别等基本信息
+2. 主要诊断或病情描述
+3. 过敏史、既往史等重要医疗信息
+4. 其他需要注意的关键信息
+
+用简洁清晰的自然语言回复。""",
+
+            "病例": """请总结这份病例资料：
+
+{ocr_text}
+
+要求：
+1. 病例概况（患者基本信息、主诉）
+2. 主要临床表现和检查结果
+3. 诊断结论
+4. 治疗方案和预后
+
+用专业的自然语言回复。"""
+        }
+
+        system_prompt = "你是一位专业的临床医生，擅长解读各类医疗文档。请用自然语言为医生同行解读文档内容，语言专业但易懂。"
+        user_prompt = prompts.get(document_type, prompts["检验报告"]).format(ocr_text=ocr_text[:3000])
+
+        llm = OpenAIServerModel(
+            model_id=get_model_name_from_config(llm_model_config),
+            api_base=llm_model_config.get("base_url", ""),
+            api_key=llm_model_config.get("api_key", ""),
+            temperature=0.3,
+        )
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+
+        completion_kwargs = llm._prepare_completion_kwargs(
+            messages=messages,
+            model=llm.model_id,
+            temperature=0.3,
+        )
+        response = llm.client.chat.completions.create(**completion_kwargs)
+
+        interpretation = response.choices[0].message.content.strip()
+        logger.info(f"Generated {document_type} interpretation successfully")
+        return interpretation
+
+    except Exception as e:
+        logger.error(f"Error generating interpretation: {str(e)}")
+        return f"解读生成失败: {str(e)}"
+
+
+@doc_parsing_tools.tool(
+    name="analyze_lab_report",
+    description="Analyze and interpret laboratory test report in natural language. Use when doctor wants to understand/review lab report results without saving. Keywords: '看看', '分析', '解读', '怎么样', '帮我看下'."
+)
+async def analyze_lab_report(image_url: str) -> str:
+    """
+    Analyze lab report and return natural language interpretation.
+    Does NOT return structured data or trigger save workflow.
+
+    Args:
+        image_url: URL or path to lab report image
+
+    Returns:
+        Natural language interpretation string
+    """
+    try:
+        logger.info(f"Analyzing lab report (natural language) from: {image_url}")
+
+        # Extract text with OCR
+        ocr_text = await call_paddleocr(image_url, output_mode="simple")
+
+        if ocr_text.startswith("OCR Error"):
+            return f"OCR 识别失败: {ocr_text}"
+
+        # Generate natural language interpretation
+        interpretation = await generate_medical_interpretation(ocr_text, "检验报告")
+
+        return interpretation
+
+    except Exception as e:
+        logger.error(f"Error analyzing lab report: {str(e)}")
+        return f"分析失败: {str(e)}"
+
+
+@doc_parsing_tools.tool(
+    name="analyze_imaging_report",
+    description="Analyze and interpret imaging report in natural language. Use when doctor wants to understand/review imaging findings without saving. Keywords: '看看', '分析', '解读', '怎么样', '帮我看下'."
+)
+async def analyze_imaging_report(image_url: str) -> str:
+    """
+    Analyze imaging report and return natural language interpretation.
+    Does NOT return structured data or trigger save workflow.
+
+    Args:
+        image_url: URL or path to imaging report image
+
+    Returns:
+        Natural language interpretation string
+    """
+    try:
+        logger.info(f"Analyzing imaging report (natural language) from: {image_url}")
+
+        # Extract text with OCR
+        ocr_text = await call_paddleocr(image_url, output_mode="simple")
+
+        if ocr_text.startswith("OCR Error"):
+            return f"OCR 识别失败: {ocr_text}"
+
+        # Generate natural language interpretation
+        interpretation = await generate_medical_interpretation(ocr_text, "影像报告")
+
+        return interpretation
+
+    except Exception as e:
+        logger.error(f"Error analyzing imaging report: {str(e)}")
+        return f"分析失败: {str(e)}"
+
+
+@doc_parsing_tools.tool(
+    name="analyze_patient_info",
+    description="Analyze and summarize patient information in natural language. Use when doctor wants to review patient data without creating a record. Keywords: '看看', '分析', '这是谁', '什么情况'."
+)
+async def analyze_patient_info(image_url: str) -> str:
+    """
+    Analyze patient information and return natural language summary.
+    Does NOT return structured data or trigger save workflow.
+
+    Args:
+        image_url: URL or path to patient info image
+
+    Returns:
+        Natural language summary string
+    """
+    try:
+        logger.info(f"Analyzing patient info (natural language) from: {image_url}")
+
+        # Extract text with OCR
+        ocr_text = await call_paddleocr(image_url, output_mode="simple")
+
+        if ocr_text.startswith("OCR Error"):
+            return f"OCR 识别失败: {ocr_text}"
+
+        # Generate natural language summary
+        interpretation = await generate_medical_interpretation(ocr_text, "患者信息")
+
+        return interpretation
+
+    except Exception as e:
+        logger.error(f"Error analyzing patient info: {str(e)}")
+        return f"分析失败: {str(e)}"
+
+
+@doc_parsing_tools.tool(
+    name="analyze_case_info",
+    description="Analyze and summarize case information in natural language. Use when doctor wants to review case content without creating a record. Keywords: '看看', '分析', '解读', '了解一下'."
+)
+async def analyze_case_info(image_url: str) -> str:
+    """
+    Analyze case information and return natural language summary.
+    Does NOT return structured data or trigger save workflow.
+
+    Args:
+        image_url: URL or path to case document image
+
+    Returns:
+        Natural language summary string
+    """
+    try:
+        logger.info(f"Analyzing case info (natural language) from: {image_url}")
+
+        # Extract text with OCR
+        ocr_text = await call_paddleocr(image_url, output_mode="simple")
+
+        if ocr_text.startswith("OCR Error"):
+            return f"OCR 识别失败: {ocr_text}"
+
+        # Generate natural language summary
+        interpretation = await generate_medical_interpretation(ocr_text, "病例")
+
+        return interpretation
+
+    except Exception as e:
+        logger.error(f"Error analyzing case info: {str(e)}")
+        return f"分析失败: {str(e)}"

@@ -40,22 +40,22 @@ export function ConfirmPatientArchiveModal({
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
 
-  // Convert date string to Date object for DatePicker
-  const parseDate = (dateStr: string | undefined): Date | undefined => {
-    if (!dateStr) return undefined;
-    try {
-      const date = new Date(dateStr);
-      return isNaN(date.getTime()) ? undefined : date;
-    } catch {
-      return undefined;
-    }
-  };
-
   // Format date object to YYYY-MM-DD string
   const formatDate = (date: any): string | undefined => {
     if (!date) return undefined;
     if (typeof date === 'string') return date;
-    // Handle Date object from Ant Design DatePicker
+    // Check if it's a dayjs object with format method
+    if (typeof date.format === 'function') {
+      return date.format('YYYY-MM-DD');
+    }
+    // Handle Date object as fallback
+    if (date instanceof Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    // Try to access internal Date object
     const dateObj = date.$d || date;
     if (dateObj instanceof Date) {
       const year = dateObj.getFullYear();
@@ -87,7 +87,8 @@ export function ConfirmPatientArchiveModal({
         name: parsedData.name,
         age: parsedData.age ? parseInt(parsedData.age) : undefined,
         gender: parsedData.gender,
-        date_of_birth: parsedData.date_of_birth ? parseDate(parsedData.date_of_birth) : undefined,
+        // Don't set date_of_birth here - let user select it manually to avoid dayjs issues
+        // date_of_birth: parsedData.date_of_birth,
         medical_record_no: parsedData.medical_record_no,
         email: parsedData.email || '',
         phone: parsedData.phone,

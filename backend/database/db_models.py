@@ -29,6 +29,10 @@ class ConversationRecord(TableBase):
      # Patient linking fields
     patient_id = Column(Integer, doc="Linked patient ID (nullable for general consultations)", default=None)
     patient_name = Column(String(100), doc="Patient name for quick reference", default=None)
+
+    # Timeline linking fields
+    linked_timeline_id = Column(Integer, doc="Linked timeline ID (nullable)", default=None)
+    linked_timeline_name = Column(String(200), doc="Timeline stage name for quick reference", default=None)
  
     # Status and categorization
     conversation_status = Column(String(20), doc="Status: active/pending_followup/difficult_case/completed/archived", default='active')

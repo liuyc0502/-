@@ -353,9 +353,38 @@ export async function getWeeklyProgress(
     throw error;
   }
 }
+/**
+ * Create a care plan from medical order (parsed by AI)
+ */
+export async function createCarePlanFromMedicalOrder(
+  orderData: any
+): Promise<CreateCarePlanResponse> {
+  try {
+    const response = await fetch(API_ENDPOINTS.carePlan.createFromMedicalOrder, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create care plan from medical order: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    log.error("Failed to create care plan from medical order:", error);
+    throw error;
+  }
+}
+
 // Export as default object for convenient importing
 const carePlanService = {
   createCarePlan,
+  createCarePlanFromMedicalOrder,
   getCarePlan,
   listCarePlans,
   updateCarePlan,

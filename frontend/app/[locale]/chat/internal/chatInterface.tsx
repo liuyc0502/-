@@ -18,6 +18,7 @@ import { useConfig } from "@/hooks/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { conversationService } from "@/services/conversationService";
 import { storageService } from "@/services/storageService";
+import  patientService  from "@/services/patientService";
 import { useConversationManagement } from "@/hooks/chat/useConversationManagement";
 import { getPortalMainAgent } from "@/services/portalAgentAssignmentService";
 
@@ -42,6 +43,7 @@ import { ConfirmLabReportModal } from "@/components/doctor/chat/ConfirmLabReport
 import { ConfirmImagingReportModal } from "@/components/doctor/chat/ConfirmImagingReportModal";
 import { ConfirmPatientArchiveModal } from "@/components/doctor/chat/ConfirmPatientArchiveModal";
 import { ConfirmCaseDocumentModal } from "@/components/doctor/chat/ConfirmCaseDocumentModal";
+import { ConfirmMedicalOrderModal } from "@/components/doctor/chat/ConfirmMedicalOrderModal";
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
@@ -131,6 +133,10 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [caseDocumentModalOpen, setCaseDocumentModalOpen] = useState(false);
   const [parsedPatientArchive, setParsedPatientArchive] = useState<any>(null);
   const [parsedCaseDocument, setParsedCaseDocument] = useState<any>(null);
+
+  // Medical order modal state
+  const [medicalOrderModalOpen, setMedicalOrderModalOpen] = useState(false);
+  const [parsedMedicalOrder, setParsedMedicalOrder] = useState<any>(null);
 
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
@@ -369,73 +375,272 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
 
     // Get the last assistant message
     const lastMessage = currentMessages[currentMessages.length - 1];
-    if (lastMessage.role !== "assistant" || !lastMessage.content) return;
+    if (lastMessage.role !== "assistant") return;
+
+    // Skip if message is not complete yet (still streaming)
+    if (!lastMessage.isComplete) return;
+
+    // DEBUG: Log when checking for tool results
+    console.log('[DEBUG] Checking message for tool results, isComplete:', lastMessage.isComplete);
+    console.log('[DEBUG] Message steps count:', lastMessage.steps?.length || 0);
 
     try {
-      // Try to parse tool results from message content
-      const content = typeof lastMessage.content === 'string'
-        ? lastMessage.content
-        : JSON.stringify(lastMessage.content);
+      // Collect all possible content sources for tool result detection
+      const contentSources: string[] = [];
 
-      // Check for parse_lab_report tool result
-      if (content.includes('parse_lab_report') || content.includes('检验报告')) {
-        // Try to extract JSON data from the content
-        const labReportMatch = content.match(/\{[\s\S]*?"test_items"[\s\S]*?\}/);
-        if (labReportMatch && currentConversation?.linked_patient_id && currentConversation?.linked_timeline_id) {
+      // Add message content
+      if (lastMessage.content) {
+        contentSources.push(
+          typeof lastMessage.content === 'string'
+            ? lastMessage.content
+            : JSON.stringify(lastMessage.content)
+        );
+      }
+
+      // Add final answer
+      if (lastMessage.finalAnswer) {
+        contentSources.push(lastMessage.finalAnswer);
+        console.log('[DEBUG] finalAnswer found:', lastMessage.finalAnswer.substring(0, 100));
+      }
+
+      // Add step contents (where tool execution results are stored)
+      if (lastMessage.steps && lastMessage.steps.length > 0) {
+        for (const step of lastMessage.steps) {
+          if (step.contents && step.contents.length > 0) {
+            for (const stepContent of step.contents) {
+              if (stepContent.content) {
+                contentSources.push(stepContent.content);
+              }
+            }
+          }
+          // Also check parsingContent which may contain tool call info
+          if (step.parsingContent) {
+            contentSources.push(step.parsingContent);
+            console.log('[DEBUG] parsingContent found:', step.parsingContent.substring(0, 100));
+          }
+          // Check executionLogs which contains MCP tool results
+          if (step.executionLogs) {
+            contentSources.push(step.executionLogs);
+            console.log('[DEBUG] executionLogs found:', step.executionLogs.substring(0, 200));
+          }
+        }
+      }
+
+      // Combine all content sources for searching
+      const combinedContent = contentSources.join('\n');
+      console.log('[DEBUG] Combined content length:', combinedContent.length);
+      console.log('[DEBUG] Contains parse_patient_archive:', combinedContent.includes('parse_patient_archive'));
+      console.log('[DEBUG] Contains parse_imaging_report:', combinedContent.includes('parse_imaging_report'));
+      console.log('[DEBUG] Contains parse_lab_report:', combinedContent.includes('parse_lab_report'));
+
+      // If no content to search, return early
+      if (!combinedContent.trim()) return;
+
+      // Helper function to extract JSON from combined content
+      const extractJsonFromContent = (searchContent: string): any | null => {
+        // Try to find a complete JSON object with success:true
+        // Use a more robust regex that handles nested structures
+        const jsonRegex = /\{[^{}]*"success"\s*:\s*true[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+        const matches = searchContent.match(jsonRegex);
+
+        if (!matches) return null;
+
+        // Try each match to find a valid JSON
+        for (const match of matches) {
           try {
-            const parsedData = JSON.parse(labReportMatch[0]);
-            setParsedLabReport(parsedData);
+            // Try to parse directly first
+            const parsed = JSON.parse(match);
+            if (parsed.success === true) {
+              return parsed;
+            }
+          } catch {
+            // If direct parse fails, try to find the largest valid JSON containing this match
+            const startIdx = searchContent.indexOf(match);
+            if (startIdx === -1) continue;
+
+            // Find the start of the JSON object
+            let braceCount = 0;
+            let jsonStart = -1;
+            for (let i = startIdx; i >= 0; i--) {
+              if (searchContent[i] === '}') braceCount++;
+              if (searchContent[i] === '{') {
+                braceCount--;
+                if (braceCount < 0) {
+                  jsonStart = i;
+                  break;
+                }
+              }
+            }
+
+            if (jsonStart === -1) jsonStart = startIdx;
+
+            // Find the end of the JSON object
+            braceCount = 0;
+            let jsonEnd = -1;
+            for (let i = jsonStart; i < searchContent.length; i++) {
+              if (searchContent[i] === '{') braceCount++;
+              if (searchContent[i] === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                  jsonEnd = i + 1;
+                  break;
+                }
+              }
+            }
+
+            if (jsonEnd > jsonStart) {
+              try {
+                const jsonStr = searchContent.substring(jsonStart, jsonEnd);
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.success === true) {
+                  return parsed;
+                }
+              } catch {
+                continue;
+              }
+            }
+          }
+        }
+
+        return null;
+      };
+
+      // Helper function to extract JSON with success:true validation
+      const extractToolResult = (toolName: string, requiredFields: string[]) => {
+        // Only match parse_* tools, not analyze_* tools
+        if (!toolName.startsWith('parse_')) return null;
+
+        // Check if tool name appears in combined content
+        if (!combinedContent.includes(toolName)) return null;
+
+        // Extract JSON from the content
+        const parsed = extractJsonFromContent(combinedContent);
+
+        if (!parsed) {
+          log.info(`Tool ${toolName} JSON not found in content`);
+          return null;
+        }
+
+        // Validate success field
+        if (parsed.success !== true) {
+          log.info(`Tool ${toolName} did not return success:true, skipping modal`);
+          return null;
+        }
+
+        // Validate required fields exist
+        const hasRequiredFields = requiredFields.every(field => field in parsed);
+        if (!hasRequiredFields) {
+          log.warn(`Tool ${toolName} missing required fields:`, requiredFields);
+          return null;
+        }
+
+        return parsed;
+      };
+
+      // Check for parse_lab_report tool result (NOT analyze_lab_report)
+      if (combinedContent.includes('parse_lab_report') && !combinedContent.includes('analyze_lab_report')) {
+        const parsedData = extractToolResult('parse_lab_report', ['test_items']);
+
+        if (parsedData) {
+          setParsedLabReport(parsedData);
+          // Set patient/timeline IDs if available, otherwise modal will prompt user to select
+          if (currentConversation?.linked_patient_id) {
             setReportPatientId(currentConversation.linked_patient_id);
-            setReportTimelineId(currentConversation.linked_timeline_id);
-            setLabReportModalOpen(true);
-          } catch (e) {
-            log.error('Failed to parse lab report data:', e);
           }
+          if (currentConversation?.linked_timeline_id) {
+            setReportTimelineId(currentConversation.linked_timeline_id);
+          }
+          setLabReportModalOpen(true);
         }
       }
 
-      // Check for parse_imaging_report tool result
-      if (content.includes('parse_imaging_report') || content.includes('影像报告')) {
-        const imagingReportMatch = content.match(/\{[\s\S]*?"imaging_findings"[\s\S]*?\}/);
-        if (imagingReportMatch && currentConversation?.linked_patient_id && currentConversation?.linked_timeline_id) {
-          try {
-            const parsedData = JSON.parse(imagingReportMatch[0]);
-            setParsedImagingReport(parsedData);
+      // Check for parse_imaging_report tool result (NOT analyze_imaging_report)
+      if (combinedContent.includes('parse_imaging_report') && !combinedContent.includes('analyze_imaging_report')) {
+        console.log('[DEBUG] Detected parse_imaging_report, extracting data...');
+        const parsedData = extractToolResult('parse_imaging_report', ['imaging_findings']);
+        console.log('[DEBUG] parse_imaging_report parsedData:', parsedData);
+
+        if (parsedData) {
+          console.log('[DEBUG] Opening imaging report modal...');
+          setParsedImagingReport(parsedData);
+          // Set patient/timeline IDs if available, otherwise modal will prompt user to select
+          if (currentConversation?.linked_patient_id) {
             setReportPatientId(currentConversation.linked_patient_id);
+          }
+          if (currentConversation?.linked_timeline_id) {
             setReportTimelineId(currentConversation.linked_timeline_id);
-            setImagingReportModalOpen(true);
-          } catch (e) {
-            log.error('Failed to parse imaging report data:', e);
           }
+          setImagingReportModalOpen(true);
+        } else {
+          console.log('[DEBUG] parse_imaging_report: parsedData is null, modal not opened');
         }
       }
 
-      // Check for parse_patient_archive tool result
-      if (content.includes('parse_patient_archive') || content.includes('患者档案')) {
-        // Try to extract JSON data from the content
-        const patientArchiveMatch = content.match(/\{[\s\S]*?"name"[\s\S]*?"medical_record_no"[\s\S]*?\}/);
-        if (patientArchiveMatch) {
-          try {
-            const parsedData = JSON.parse(patientArchiveMatch[0]);
-            setParsedPatientArchive(parsedData);
-            setPatientArchiveModalOpen(true);
-          } catch (e) {
-            log.error('Failed to parse patient archive data:', e);
-          }
+      // Check for parse_patient_archive tool result (NOT analyze_patient_info)
+      if (combinedContent.includes('parse_patient_archive') && !combinedContent.includes('analyze_patient_info')) {
+        const parsedData = extractToolResult('parse_patient_archive', ['name', 'medical_record_no']);
+
+        if (parsedData) {
+          (async () => {
+            try {
+              // Check if patient already exists before showing modal
+              if (parsedData.name) {
+                try {
+                  const duplicateCheck = await patientService.checkDuplicatePatient(parsedData.name, true);
+
+                  if (duplicateCheck.found && duplicateCheck.count > 0) {
+                    // Patient already exists - show confirmation dialog
+                    const existingPatient = duplicateCheck.patients[0];
+                    const shouldView = window.confirm(
+                      `患者"${parsedData.name}"已存在（病历号：${existingPatient.medical_record_no}）。\n\n是否查看该患者档案？`
+                    );
+
+                    if (shouldView) {
+                      // Navigate to patient detail page
+                      setActiveView("patients");
+                      setSelectedPatientId(existingPatient.patient_id.toString());
+                    }
+                    // Don't show create modal if patient exists
+                    return;
+                  }
+                } catch (duplicateCheckError) {
+                  // If duplicate check fails, still show the modal to allow patient creation
+                  log.warn('Failed to check duplicate patient, proceeding with modal:', duplicateCheckError);
+                }
+              }
+
+              // Patient doesn't exist or duplicate check failed - show create modal
+              setParsedPatientArchive(parsedData);
+              setPatientArchiveModalOpen(true);
+            } catch (e) {
+              log.error('Failed to parse patient archive data:', e);
+            }
+          })();
         }
       }
 
-      // Check for parse_case_document tool result
-      if (content.includes('parse_case_document') || content.includes('病例文档')) {
-        const caseDocumentMatch = content.match(/\{[\s\S]*?"case_title"[\s\S]*?"diagnosis"[\s\S]*?\}/);
-        if (caseDocumentMatch) {
-          try {
-            const parsedData = JSON.parse(caseDocumentMatch[0]);
-            setParsedCaseDocument(parsedData);
-            setCaseDocumentModalOpen(true);
-          } catch (e) {
-            log.error('Failed to parse case document data:', e);
+      // Check for parse_case_document tool result (NOT analyze_case_info)
+      if (combinedContent.includes('parse_case_document') && !combinedContent.includes('analyze_case_info')) {
+        const parsedData = extractToolResult('parse_case_document', ['case_title', 'diagnosis']);
+
+        if (parsedData) {
+          setParsedCaseDocument(parsedData);
+          setCaseDocumentModalOpen(true);
+        }
+      }
+
+      // Check for parse_medical_order tool result
+      if (combinedContent.includes('parse_medical_order')) {
+        const parsedData = extractToolResult('parse_medical_order', ['medications']);
+
+        if (parsedData) {
+          // Check if patient is already linked to conversation
+          if (currentConversation?.patient_id) {
+            parsedData.patient_id = currentConversation.patient_id;
+            parsedData.patient_name = currentConversation.patient_name;
           }
+          setParsedMedicalOrder(parsedData);
+          setMedicalOrderModalOpen(true);
         }
       }
     } catch (error) {
@@ -1839,10 +2044,16 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   conversationId={conversationManagement.selectedConversationId}
                   patientId={currentConversation?.patient_id}
                   patientName={currentConversation?.patient_name}
+                  timelineId={currentConversation?.linked_timeline_id}
+                  timelineName={currentConversation?.linked_timeline_name}
                   conversationStatus={currentConversation?.conversation_status}
                   conversationTags={currentConversation?.tags}
                   conversationSummary={currentConversation?.summary || undefined}
                   onPatientChange={(patientId, patientName) => {
+                    // Refresh conversation list to get updated data
+                    conversationManagement.fetchConversationList(variant);
+                  }}
+                  onTimelineChange={(timelineId, timelineName) => {
                     // Refresh conversation list to get updated data
                     conversationManagement.fetchConversationList(variant);
                   }}
@@ -2006,7 +2217,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       )}
 
       {/* Report Confirmation Modals - Only for doctor variant */}
-      {variant === "doctor" && reportTimelineId && reportPatientId && (
+      {/* Note: Modal components handle missing patient/timeline IDs internally by showing selection dialog */}
+      {variant === "doctor" && (
         <>
           <ConfirmLabReportModal
             open={labReportModalOpen}
@@ -2072,6 +2284,21 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
               // Navigate to case detail after creation
               setActiveView("cases");
               setSelectedCaseId(caseId.toString());
+            }}
+          />
+
+          <ConfirmMedicalOrderModal
+            open={medicalOrderModalOpen}
+            onClose={() => {
+              setMedicalOrderModalOpen(false);
+              setParsedMedicalOrder(null);
+            }}
+            parsedData={parsedMedicalOrder}
+            patientId={currentConversation?.patient_id}
+            patientName={currentConversation?.patient_name}
+            onSuccess={(planId) => {
+              // Show success message - plan is created
+              console.log("Care plan created with ID:", planId);
             }}
           />
         </>

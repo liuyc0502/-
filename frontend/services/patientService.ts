@@ -614,7 +614,7 @@ export async function createLabReport(
   reportData: CreateLabReportRequest
 ): Promise<{ success: boolean; report_id: number }> {
   try {
-    const response = await fetch(`${API_ENDPOINTS.patient.reports}/lab`, {
+    const response = await fetch(API_ENDPOINTS.patient.reports.lab.create, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -643,7 +643,7 @@ export async function getLabReportsByTimeline(
 ): Promise<LabReport[]> {
   try {
     const response = await fetch(
-      `${API_ENDPOINTS.patient.reports}/lab/timeline/${timelineId}`,
+      API_ENDPOINTS.patient.reports.lab.byTimeline(timelineId),
       {
         method: "GET",
         headers: getAuthHeaders(),
@@ -678,7 +678,7 @@ export async function deleteLabReport(
   reportId: number
 ): Promise<{ success: boolean }> {
   try {
-    const response = await fetch(`${API_ENDPOINTS.patient.reports}/lab/${reportId}`, {
+    const response = await fetch(API_ENDPOINTS.patient.reports.lab.delete(reportId), {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
@@ -702,7 +702,7 @@ export async function createImagingReport(
   reportData: CreateImagingReportRequest
 ): Promise<{ success: boolean; report_id: number }> {
   try {
-    const response = await fetch(`${API_ENDPOINTS.patient.reports}/imaging`, {
+    const response = await fetch(API_ENDPOINTS.patient.reports.imaging.create, {
       method: "POST",
       headers: {
         ...getAuthHeaders(),
@@ -731,7 +731,7 @@ export async function getImagingReportsByTimeline(
 ): Promise<ImagingReport[]> {
   try {
     const response = await fetch(
-      `${API_ENDPOINTS.patient.reports}/imaging/timeline/${timelineId}`,
+      API_ENDPOINTS.patient.reports.imaging.byTimeline(timelineId),
       {
         method: "GET",
         headers: getAuthHeaders(),
@@ -766,7 +766,7 @@ export async function deleteImagingReport(
   reportId: number
 ): Promise<{ success: boolean }> {
   try {
-    const response = await fetch(`${API_ENDPOINTS.patient.reports}/imaging/${reportId}`, {
+    const response = await fetch(API_ENDPOINTS.patient.reports.imaging.delete(reportId), {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
@@ -785,11 +785,40 @@ export async function deleteImagingReport(
 
 // ============================================================================
 // Export all services
+/**
+ * Check if patient with given name already exists (duplicate detection)
+ */
+async function checkDuplicatePatient(
+  name: string,
+  exactMatch: boolean = false
+): Promise<{ found: boolean; count: number; patients: any[]; search_name: string; exact_match: boolean }> {
+  try {
+    const url = new URL(API_ENDPOINTS.patient.checkDuplicate, window.location.origin);
+    url.searchParams.append("name", name);
+    url.searchParams.append("exact_match", String(exactMatch));
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to check duplicate patient: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    log.error("Failed to check duplicate patient:", error);
+    throw error;
+  }
+}
+
 // ============================================================================
 
 const patientService = {
   // Patient
   createPatient,
+  checkDuplicatePatient,
   getPatient,
   getPatientByEmail,
   listPatients,

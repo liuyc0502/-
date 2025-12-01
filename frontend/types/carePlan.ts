@@ -163,6 +163,9 @@ export interface ApiSuccessResponse {
 
 export interface CreateCarePlanResponse extends ApiSuccessResponse {
   plan_id: number;
+  medication_count?: number;
+  task_count?: number;
+  precaution_count?: number;
 }
 
 export interface CarePlanListResponse {

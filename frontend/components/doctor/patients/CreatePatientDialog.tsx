@@ -10,7 +10,7 @@ const { TextArea } = Input;
 interface CreatePatientDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (patientId?: number) => void;
 }
 
 export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientDialogProps) {
@@ -23,6 +23,19 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
       const values = await form.validateFields();
       setLoading(true);
 
+      // Format date_of_birth - DatePicker returns a dayjs object
+      let dateOfBirth: string | undefined = undefined;
+      if (values.date_of_birth) {
+        // Check if it's a dayjs object with format method
+        if (typeof values.date_of_birth.format === 'function') {
+          dateOfBirth = values.date_of_birth.format('YYYY-MM-DD');
+        } else if (values.date_of_birth instanceof Date) {
+          dateOfBirth = values.date_of_birth.toISOString().split('T')[0];
+        } else if (typeof values.date_of_birth === 'string') {
+          dateOfBirth = values.date_of_birth;
+        }
+      }
+
       // Format the data
       const patientData: CreatePatientRequest = {
         name: values.name,
@@ -32,7 +45,7 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
         email: values.email,
         phone: values.phone,
         address: values.address,
-        date_of_birth: values.date_of_birth ? new Date(values.date_of_birth).toISOString().split('T')[0] : undefined,
+        date_of_birth: dateOfBirth,
         allergies: values.allergies ? values.allergies.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
         family_history: values.family_history,
         past_medical_history: values.past_medical_history
@@ -40,10 +53,10 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
           : [],
       };
 
-      await patientService.createPatient(patientData);
+      const response = await patientService.createPatient(patientData);
       message.success("患者档案创建成功");
       form.resetFields();
-      onSuccess();
+      onSuccess(response.patient_id);
       onClose();
     } catch (error: any) {
       if (error.errorFields) {
@@ -124,11 +137,23 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
           <Form.Item
             label="出生日期"
             name="date_of_birth"
+            getValueFromEvent={(value) => value}
+            normalize={(value) => {
+              // Ensure we only set valid dayjs objects or null
+              if (!value) return null;
+              // If it's already a dayjs object, return it
+              if (value && typeof value.format === 'function') {
+                return value;
+              }
+              // Otherwise return null to avoid invalid values
+              return null;
+            }}
           >
             <DatePicker
               placeholder="请选择出生日期"
               className="w-full"
               format="YYYY-MM-DD"
+              allowClear
             />
           </Form.Item>
         </div>

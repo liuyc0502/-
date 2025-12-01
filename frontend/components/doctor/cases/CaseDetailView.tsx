@@ -27,7 +27,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input, Select, InputNumber, App, Modal, Form, Checkbox, Upload, Button as AntButton } from "antd";
 import { UploadOutlined, LoadingOutlined } from "@ant-design/icons";
 import type { UploadProps } from "antd";
-import { medicalCaseService, type MedicalCaseDetail } from "@/services/medicalCaseService";
+import medicalCaseService from "@/services/medicalCaseService";
+import type { MedicalCaseDetail } from "@/types/medicalcase";
 import { storageService } from "@/services/storageService";
 const { TextArea } = Input;
 interface CaseDetailViewProps {
@@ -504,7 +505,7 @@ const handleDeleteAllLabResults = () => {
                       {caseCategories.find((c) => c.value === caseData.category)?.label || caseData.category}
                     </span>
                   )}
-                  {caseData.tags?.map((tag) => (
+                  {caseData.tags?.map((tag: string) => (
                     <span
                       key={tag}
                       className="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-full flex items-center gap-1"

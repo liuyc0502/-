@@ -22,6 +22,7 @@ import { USER_ROLES } from "@/const/modelConfig";
 import MemoryManageModal from "../internal/memory/memoryManageModal";
 import type { PortalChatConfig } from "@/const/portalChatConfig";
 import { PatientSelector } from "./PatientSelector";
+import { TimelineSelector } from "./TimelineSelector";
 import { ConversationStatus } from "./ConversationStatus";
 import { TagsManager } from "./TagsManager";
 import { SummaryEditor } from "./SummaryEditor";
@@ -45,27 +46,33 @@ interface ChatHeaderProps {
   conversationId?: number | null;
   patientId?: number | null;
   patientName?: string | null;
+  timelineId?: number | null;
+  timelineName?: string | null;
   conversationStatus?: string;
   conversationTags?: string[];
   conversationSummary?: string;
   onPatientChange?: (patientId: number | null, patientName: string | null) => void;
+  onTimelineChange?: (timelineId: number | null, timelineName: string | null) => void;
   onStatusChange?: (status: string) => void;
   onTagsChange?: (tags: string[]) => void;
   onSummaryChange?: (summary: string) => void;
   showPatientLinking?: boolean; // Show patient linking features (default: false)
 }
 
-export function ChatHeader({ 
-  title, 
+export function ChatHeader({
+  title,
   onRename,
   portalConfig ,
   conversationId,
   patientId,
   patientName,
+  timelineId,
+  timelineName,
   conversationStatus,
   conversationTags,
   conversationSummary,
   onPatientChange,
+  onTimelineChange,
   onStatusChange,
   onTagsChange,
   onSummaryChange,
@@ -203,21 +210,33 @@ export function ChatHeader({
           {showPatientLinking && (
             <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-4">
               {/* Row 1: Patient, Status, Tags */}
-              <div className="flex items-center gap-6 flx-wrap justify-center">
+              <div className="flex items-center gap-6 flex-wrap justify-center">
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#999]">关联患者</span>
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-xs text-[#999] whitespace-nowrap">关联患者</span>
                   <PatientSelector
                     conversationId={conversationId || null}
                     currentPatientId={patientId}
                     currentPatientName={patientName}
                     onPatientChange={onPatientChange}
-                    
+
                   />
                 </div>
- 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#999]">状态</span>
+
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-xs text-[#999] whitespace-nowrap">关联时间线</span>
+                  <TimelineSelector
+                    conversationId={conversationId || null}
+                    currentTimelineId={timelineId}
+                    currentTimelineName={timelineName}
+                    currentPatientId={patientId}
+                    onTimelineChange={onTimelineChange}
+
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-xs text-[#999] whitespace-nowrap">状态</span>
                   <ConversationStatus
                     conversationId={conversationId || null}
                     currentStatus={conversationStatus}
@@ -226,8 +245,8 @@ export function ChatHeader({
                   />
                 </div>
  
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#999]">标签</span>
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-xs text-[#999] whitespace-nowrap">标签</span>
                   <TagsManager
                     conversationId={conversationId || null}
                     currentTags={conversationTags}
@@ -239,7 +258,7 @@ export function ChatHeader({
  
               {/* Row 2: Summary */}
               <div className="flex items-center gap-2 mt-2 w-full max-w-lg">
-                <span className="text-xs text-[#999] flex-shrink-0">摘要</span>
+                <span className="text-xs text-[#999] flex-shrink-0 whitespace-nowrap">摘要</span>
                 <div className="flex-1">
                   <SummaryEditor
                     conversationId={conversationId || null}

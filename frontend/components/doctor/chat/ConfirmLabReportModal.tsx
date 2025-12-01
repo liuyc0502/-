@@ -6,6 +6,7 @@ import { SaveOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { TestTube } from "lucide-react";
 import patientService from "@/services/patientService";
 import type { LabReportItem } from "@/types/patient";
+import { PatientTimelineMatchModal } from "./PatientTimelineMatchModal";
 
 const PRIMARY_COLOR = "#D94527";
 
@@ -20,12 +21,23 @@ interface ParsedLabReport {
   test_items: LabReportItem[];
 }
 
+interface MatchedPatient {
+  patient_id: number;
+  name: string;
+  medical_record_no?: string;
+  age?: number;
+  gender?: string;
+  match_score?: number;
+  recent_visit_date?: string;
+}
+
 interface ConfirmLabReportModalProps {
   open: boolean;
   onClose: () => void;
   parsedData: ParsedLabReport | null;
-  timelineId: number;
-  patientId: number;
+  timelineId?: number | null;
+  patientId?: number | null;
+  matchedPatients?: MatchedPatient[];
   onSuccess: () => void;
 }
 
@@ -33,8 +45,9 @@ export function ConfirmLabReportModal({
   open,
   onClose,
   parsedData,
-  timelineId,
-  patientId,
+  timelineId: initialTimelineId,
+  patientId: initialPatientId,
+  matchedPatients = [],
   onSuccess,
 }: ConfirmLabReportModalProps) {
   const [form] = Form.useForm();
@@ -43,22 +56,27 @@ export function ConfirmLabReportModal({
   const [testItems, setTestItems] = useState<LabReportItem[]>([]);
   const [editingKey, setEditingKey] = useState<number | null>(null);
 
-  // Convert date string to Date object for DatePicker
-  const parseDate = (dateStr: string | undefined): Date | undefined => {
-    if (!dateStr) return undefined;
-    try {
-      const date = new Date(dateStr);
-      return isNaN(date.getTime()) ? undefined : date;
-    } catch {
-      return undefined;
-    }
-  };
+  // Patient and timeline selection state
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(initialPatientId || null);
+  const [selectedTimelineId, setSelectedTimelineId] = useState<number | null>(initialTimelineId || null);
 
   // Format date object to YYYY-MM-DD string
   const formatDate = (date: any): string | undefined => {
     if (!date) return undefined;
     if (typeof date === 'string') return date;
-    // Handle Date object from Ant Design DatePicker
+    // Check if it's a dayjs object with format method
+    if (typeof date.format === 'function') {
+      return date.format('YYYY-MM-DD');
+    }
+    // Handle Date object as fallback
+    if (date instanceof Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    // Try to access internal Date object
     const dateObj = date.$d || date;
     if (dateObj instanceof Date) {
       const year = dateObj.getFullYear();
@@ -69,11 +87,19 @@ export function ConfirmLabReportModal({
     return undefined;
   };
 
+  // Show patient/timeline match modal if no patient/timeline provided
+  useEffect(() => {
+    if (open && (!selectedPatientId || !selectedTimelineId)) {
+      setShowMatchModal(true);
+    }
+  }, [open, selectedPatientId, selectedTimelineId]);
+
   useEffect(() => {
     if (parsedData && open) {
       form.setFieldsValue({
         report_type: parsedData.report_type,
-        report_date: parsedData.report_date ? parseDate(parsedData.report_date) : undefined,
+        // Don't set report_date here - let user select it manually to avoid dayjs issues
+        // report_date: parsedData.report_date,
         report_institution: parsedData.report_institution,
         report_number: parsedData.report_number,
         report_image_url: parsedData.report_image_url,
@@ -97,8 +123,65 @@ export function ConfirmLabReportModal({
     setTestItems(testItems.filter((_, i) => i !== index));
   };
 
+  const handlePatientTimelineConfirm = async (
+    patientId: number,
+    patientName: string,
+    timelineId: number | null,
+    timelineName: string | null,
+    isNewTimeline: boolean,
+    newTimelineDate?: string
+  ) => {
+    try {
+      setLoading(true);
+      let finalPatientId = patientId;
+      let finalTimelineId = timelineId;
+
+      // Create new patient if needed (patientId === -1)
+      if (patientId === -1) {
+        const newPatient = await patientService.createPatient({
+          name: patientName,
+          gender: "",
+          age: 0,
+          medical_record_no: "",
+          email: "",
+        });
+        finalPatientId = newPatient.patient_id;
+        message.success(`已创建新患者: ${patientName}`);
+      }
+
+      // Create new timeline if needed
+      if (isNewTimeline && newTimelineDate) {
+        const newTimeline = await patientService.createTimelineStage({
+          patient_id: finalPatientId,
+          stage_type: "consultation",
+          stage_title: timelineName || `${newTimelineDate} 诊疗记录`,
+          stage_date: newTimelineDate,
+          status: "current",
+        });
+        finalTimelineId = newTimeline.timeline_id;
+        message.success(`已创建新时间线: ${timelineName || `${newTimelineDate} 诊疗记录`}`);
+      }
+
+      setSelectedPatientId(finalPatientId);
+      setSelectedTimelineId(finalTimelineId);
+      setShowMatchModal(false);
+    } catch (error) {
+      console.error("Failed to create patient/timeline:", error);
+      message.error("创建失败，请重试");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
+      // Validate patient and timeline selection first
+      if (!selectedPatientId || !selectedTimelineId) {
+        message.error("请先选择患者和时间线");
+        setShowMatchModal(true);
+        return;
+      }
+
       await form.validateFields();
       const values = form.getFieldsValue();
 
@@ -114,8 +197,8 @@ export function ConfirmLabReportModal({
       setLoading(true);
 
       const reportData = {
-        timeline_id: timelineId,
-        patient_id: patientId,
+        timeline_id: selectedTimelineId,
+        patient_id: selectedPatientId,
         report_type: values.report_type || undefined,
         report_date: formatDate(values.report_date),
         report_institution: values.report_institution || undefined,
@@ -248,74 +331,88 @@ export function ConfirmLabReportModal({
   ];
 
   return (
-    <Modal
-      title={
-        <div className="flex items-center gap-2">
-          <TestTube className="h-5 w-5 text-[#D94527]" />
-          <span>确认检验报告 - AI已自动解析</span>
-        </div>
-      }
-      open={open}
-      onCancel={handleClose}
-      width={1300}
-      style={{ top: 20 }}
-      footer={[
-        <Button key="cancel" onClick={handleClose}>
-          取消
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          loading={loading}
-          icon={<SaveOutlined />}
-          onClick={handleSubmit}
-          style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
-        >
-          确认保存
-        </Button>,
-      ]}
-    >
-      <div className="space-y-4">
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-3">
-          <p className="text-sm text-blue-900">
-            <strong>提示：</strong>AI已自动解析报告内容，请核对信息准确性。点击表格行的编辑按钮可修改数据。
-          </p>
-        </div>
+    <>
+      {/* Patient and Timeline Selection Modal */}
+      <PatientTimelineMatchModal
+        open={showMatchModal}
+        onClose={() => setShowMatchModal(false)}
+        onConfirm={handlePatientTimelineConfirm}
+        reportPatientName={parsedData?.patient_name}
+        reportDate={parsedData?.report_date}
+        matchedPatients={matchedPatients}
+        title="选择患者和时间线 - 检验报告"
+      />
 
-        <Form form={form} layout="vertical">
-          <div className="grid grid-cols-4 gap-3">
-            <Form.Item label="报告类型" name="report_type">
-              <Input placeholder="例如：血常规" />
-            </Form.Item>
-            <Form.Item label="报告日期" name="report_date">
-              <DatePicker className="w-full" />
-            </Form.Item>
-            <Form.Item label="检验机构" name="report_institution">
-              <Input placeholder="检验机构" />
-            </Form.Item>
-            <Form.Item label="报告编号" name="report_number">
-              <Input placeholder="报告编号" />
-            </Form.Item>
+      {/* Lab Report Confirmation Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <TestTube className="h-5 w-5 text-[#D94527]" />
+            <span>确认检验报告 - AI已自动解析</span>
+          </div>
+        }
+        open={open && !showMatchModal}
+        onCancel={handleClose}
+        width={1300}
+        style={{ top: 20 }}
+        footer={[
+          <Button key="cancel" onClick={handleClose}>
+            取消
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={loading}
+            icon={<SaveOutlined />}
+            onClick={handleSubmit}
+            style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
+          >
+            确认保存
+          </Button>,
+        ]}
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-3">
+            <p className="text-sm text-blue-900">
+              <strong>提示：</strong>AI已自动解析报告内容，请核对信息准确性。点击表格行的编辑按钮可修改数据。
+            </p>
           </div>
 
-          <Form.Item label="AI分析摘要" name="ai_summary">
-            <Input.TextArea rows={2} placeholder="AI生成的报告摘要" maxLength={500} />
-          </Form.Item>
-        </Form>
+          <Form form={form} layout="vertical">
+            <div className="grid grid-cols-4 gap-3">
+              <Form.Item label="报告类型" name="report_type">
+                <Input placeholder="例如：血常规" />
+              </Form.Item>
+              <Form.Item label="报告日期" name="report_date">
+                <DatePicker className="w-full" />
+              </Form.Item>
+              <Form.Item label="检验机构" name="report_institution">
+                <Input placeholder="检验机构" />
+              </Form.Item>
+              <Form.Item label="报告编号" name="report_number">
+                <Input placeholder="报告编号" />
+              </Form.Item>
+            </div>
 
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-2">检验项目详情</h4>
-          <Table
-            columns={columns}
-            dataSource={testItems}
-            pagination={false}
-            size="small"
-            rowKey={(_, index) => `item-${index}`}
-            scroll={{ y: 280 }}
-            bordered
-          />
+            <Form.Item label="AI分析摘要" name="ai_summary">
+              <Input.TextArea rows={2} placeholder="AI生成的报告摘要" maxLength={500} />
+            </Form.Item>
+          </Form>
+
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-2">检验项目详情</h4>
+            <Table
+              columns={columns}
+              dataSource={testItems}
+              pagination={false}
+              size="small"
+              rowKey={(_, index) => `item-${index}`}
+              scroll={{ y: 280 }}
+              bordered
+            />
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+    </>
   );
 }

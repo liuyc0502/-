@@ -456,3 +456,75 @@ async def get_weekly_progress_service(patient_id: int, tenant_id: str,
     except Exception as e:
         logger.error(f"Failed to get weekly progress: {str(e)}")
         raise AgentRunException(f"Failed to get weekly progress: {str(e)}")
+
+
+# ============================================================================
+# Medical Order Import Services
+# ============================================================================
+
+async def create_care_plan_from_medical_order(
+    parsed_data: dict,
+    tenant_id: str,
+    user_id: str
+) -> dict:
+    """
+    Create a care plan from AI-parsed medical order data.
+    This is specifically designed to handle data from the parse_medical_order MCP tool.
+
+    Args:
+        parsed_data: Parsed medical order data with patient_name, order_date, medications, tasks, precautions
+        tenant_id: Tenant ID
+        user_id: User ID (doctor)
+
+    Returns:
+        Dict with success status, plan_id, and message
+    """
+    try:
+        # Validate required fields
+        patient_id = parsed_data.get('patient_id')
+        if not patient_id:
+            raise ValueError("Patient ID is required")
+
+        # Prepare plan basic data
+        plan_name = parsed_data.get('plan_name') or f"医嘱 - {parsed_data.get('patient_name', '未知患者')} - {parsed_data.get('order_date', datetime.now().strftime('%Y-%m-%d'))}"
+        plan_description = parsed_data.get('plan_description') or f"医嘱单 - {parsed_data.get('order_date', datetime.now().strftime('%Y-%m-%d'))}"
+        start_date = parsed_data.get('start_date') or parsed_data.get('order_date') or datetime.now().strftime('%Y-%m-%d')
+
+        plan_data = {
+            'patient_id': patient_id,
+            'plan_name': plan_name,
+            'plan_description': plan_description,
+            'start_date': start_date,
+            'end_date': parsed_data.get('end_date'),  # Optional
+            'status': 'active'
+        }
+
+        # Extract medications, tasks, and precautions
+        medications = parsed_data.get('medications', [])
+        tasks = parsed_data.get('tasks', [])
+        precautions = parsed_data.get('precautions', [])
+
+        # Create care plan with all related data using composite function
+        result = care_plan_db.create_care_plan_from_medical_order(
+            plan_data=plan_data,
+            medications=medications,
+            tasks=tasks,
+            precautions=precautions,
+            tenant_id=tenant_id,
+            user_id=user_id
+        )
+
+        logger.info(f"Created care plan from medical order: {result['plan_id']} with {result['medication_count']} meds, {result['task_count']} tasks, {result['precaution_count']} precautions")
+
+        return {
+            "success": True,
+            "plan_id": result['plan_id'],
+            "medication_count": result['medication_count'],
+            "task_count": result['task_count'],
+            "precaution_count": result['precaution_count'],
+            "message": f"Care plan created successfully with {result['medication_count']} medications, {result['task_count']} tasks, and {result['precaution_count']} precautions"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to create care plan from medical order: {str(e)}")
+        raise AgentRunException(f"Failed to create care plan from medical order: {str(e)}")

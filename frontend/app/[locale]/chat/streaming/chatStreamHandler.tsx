@@ -626,7 +626,34 @@ export const handleStreamResponse = async (
                   break;
 
                 case chatConfig.messageTypes.EXECUTION_LOGS:
-                  // Execution result message, skip
+                  // Save execution logs for tool result detection (used by MCP tool modal triggers)
+                  // DEBUG: Log when execution logs are received
+                  console.log('[DEBUG] EXECUTION_LOGS received:', messageContent.substring(0, 200));
+                  
+                  // If there's no currentStep, create one
+                  if (!currentStep) {
+                    currentStep = {
+                      id: `step-exec-logs-${Date.now()}-${Math.random()
+                        .toString(36)
+                        .substring(2, 9)}`,
+                      title: "Tool Execution",
+                      content: "",
+                      expanded: true,
+                      contents: [],
+                      metrics: "",
+                      thinking: { content: "", expanded: true },
+                      code: { content: "", expanded: true },
+                      output: { content: "", expanded: true },
+                    };
+                  }
+
+                  // Store execution logs in step's executionLogs field for tool result detection
+                  // This is not displayed but used for detecting MCP tool results
+                  if (!currentStep.executionLogs) {
+                    currentStep.executionLogs = "";
+                  }
+                  currentStep.executionLogs += messageContent;
+                  console.log('[DEBUG] executionLogs updated, total length:', currentStep.executionLogs.length);
                   break;
 
                 case chatConfig.messageTypes.AGENT_NEW_RUN:

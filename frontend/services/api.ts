@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     opinion: `${API_BASE_URL}/conversation/message/update_opinion`,
     messageId: `${API_BASE_URL}/conversation/message/id`,
     linkPatient: `${API_BASE_URL}/conversation/link_patient`,
+    linkTimeline: `${API_BASE_URL}/conversation/link_timeline`,
     status: `${API_BASE_URL}/conversation/status`,
     tags: `${API_BASE_URL}/conversation/tags`,
     summary: `${API_BASE_URL}/conversation/summary`,
@@ -174,6 +175,7 @@ export const API_ENDPOINTS = {
   
   patient: {
     create: `${API_BASE_URL}/patient/create`,
+    checkDuplicate: `${API_BASE_URL}/patient/check_duplicate`,
     list: `${API_BASE_URL}/patient/list`,
     detail: (patientId: number) => `${API_BASE_URL}/patient/${patientId}`,
     update: (patientId: number) => `${API_BASE_URL}/patient/${patientId}`,
@@ -206,6 +208,16 @@ export const API_ENDPOINTS = {
     reports: {
       list: (patientId: number) => `${API_BASE_URL}/patient/reports?patient_id=${patientId}`,
       detail: (timelineId: number) => `${API_BASE_URL}/patient/reports/${timelineId}`,
+      lab: {
+        create: `${API_BASE_URL}/patient/reports/lab`,
+        byTimeline: (timelineId: number) => `${API_BASE_URL}/patient/reports/lab/timeline/${timelineId}`,
+        delete: (reportId: number) => `${API_BASE_URL}/patient/reports/lab/${reportId}`,
+      },
+      imaging: {
+        create: `${API_BASE_URL}/patient/reports/imaging`,
+        byTimeline: (timelineId: number) => `${API_BASE_URL}/patient/reports/imaging/timeline/${timelineId}`,
+        delete: (reportId: number) => `${API_BASE_URL}/patient/reports/imaging/${reportId}`,
+      },
     },
   },
 
@@ -242,6 +254,7 @@ export const API_ENDPOINTS = {
 
   carePlan: {
     create: `${API_BASE_URL}/care_plan/create`,
+    createFromMedicalOrder: `${API_BASE_URL}/care_plan/create_from_medical_order`,
     list: (patientId: number) => `${API_BASE_URL}/care_plan/list/${patientId}`,
     detail: (planId: number) => `${API_BASE_URL}/care_plan/get/${planId}`,
     update: (planId: number) => `${API_BASE_URL}/care_plan/update/${planId}`,
