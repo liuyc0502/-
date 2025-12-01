@@ -1,5 +1,76 @@
 # 更新日志
 
+## 2025-12-01: 代码备份到新分支
+
+### 操作内容
+- 🌿 **创建新分支**: `backup/20251201-023743`
+- 📦 **提交更改**: 54 个文件，4468 行新增，657 行删除
+- 🚀 **推送到远程仓库**: 成功推送到 `origin/backup/20251201-023743`
+
+### 主要更新文件
+包括但不限于：
+- `Update.md` (更新)
+- `backend/apps/care_plan_app.py` (更新)
+- `backend/apps/conversation_management_app.py` (更新)
+- `backend/apps/patient_app.py` (更新)
+- `backend/consts/model.py` (更新)
+- `backend/database/care_plan_db.py` (更新)
+- `backend/database/conversation_db.py` (更新)
+- `backend/database/db_models.py` (更新)
+- `backend/database/patient_db.py` (更新)
+- `backend/services/care_plan_service.py` (更新)
+- `backend/services/conversation_management_service.py` (更新)
+- `backend/services/patient_service.py` (更新)
+- `backend/tool_collection/mcp/document_parsing_tools.py` (更新)
+- `frontend/app/[locale]/chat/components/PatientSelector.tsx` (更新)
+- `frontend/app/[locale]/chat/components/chatHeader.tsx` (更新)
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
+- `frontend/app/[locale]/chat/streaming/chatStreamHandler.tsx` (更新)
+- `frontend/components/doctor/cases/CaseDetailView.tsx` (更新)
+- `frontend/components/doctor/cases/CaseLibraryView.tsx` (更新)
+- `frontend/components/doctor/chat/ConfirmCaseDocumentModal.tsx` (更新)
+- `frontend/components/doctor/chat/ConfirmImagingReportModal.tsx` (更新)
+- `frontend/components/doctor/chat/ConfirmLabReportModal.tsx` (更新)
+- `frontend/components/doctor/chat/ConfirmPatientArchiveModal.tsx` (更新)
+- `frontend/components/doctor/patients/CreateCarePlanModal.tsx` (更新)
+- `frontend/components/doctor/patients/CreatePatientDialog.tsx` (更新)
+- `frontend/components/doctor/patients/CreateTimelineModal.tsx` (更新)
+- `frontend/components/doctor/patients/PatientListView.tsx` (更新)
+- `frontend/components/doctor/patients/PatientOverview.tsx` (更新)
+- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
+- `frontend/components/patient/care-plan/CarePlanView.tsx` (更新)
+- `frontend/services/api.ts` (更新)
+- `frontend/services/carePlanService.ts` (更新)
+- `frontend/services/conversationService.ts` (更新)
+- `frontend/services/medicalCaseService.ts` (更新)
+- `frontend/services/patientService.ts` (更新)
+- `frontend/types/carePlan.ts` (更新)
+- `frontend/types/chat.ts` (更新)
+- `frontend/types/conversation.ts` (更新)
+- `sdk/nexent/core/tools/__init__.py` (更新)
+- `start_all.sh` (更新)
+- `stop_all.sh` (更新)
+
+### 新增文件
+- `backend/database/migrations/add_timeline_linking_to_conversations.sql` (新建)
+- `backend/database/migrations/run_timeline_linking_migration.py` (新建)
+- `backend/prompts/doctor_portal_main_agent_config.md` (新建)
+- `frontend/app/[locale]/chat/components/TimelineSelector.tsx` (新建)
+- `frontend/components/doctor/chat/AssociatedConversations.tsx` (新建)
+- `frontend/components/doctor/chat/ConfirmMedicalOrderModal.tsx` (新建)
+- `frontend/components/doctor/chat/PatientTimelineMatchModal.tsx` (新建)
+- `frontend/types/medicalcase.ts` (新建)
+- `sdk/nexent/core/tools/analyze_image_tool.py` (新建)
+- `sdk/nexent/core/tools/analyze_text_file_tool.py` (新建)
+
+### 分支信息
+- 分支名称: `backup/20251201-023743`
+- 远程仓库: `origin/backup/20251201-023743`
+- 提交 ID: `b2ba76cd`
+- 提交信息: 备份代码: 2025-12-01 02:37:56
+
+---
+
 ## 2025-11-30: MCP工具结果检测与弹窗触发修复
 
 ### 问题描述
