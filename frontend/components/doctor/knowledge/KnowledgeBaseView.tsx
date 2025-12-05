@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, BookOpen, TrendingUp, Lightbulb, ArrowLeft } from "lucide-react";
+import { Search, ChevronRight, BookOpen, TrendingUp, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -222,12 +222,6 @@ export function KnowledgeBaseView({
                 className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
               >
                 学习记录
-              </TabsTrigger>
-              <TabsTrigger
-                value="map"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
-              >
-                知识地图
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -490,50 +484,8 @@ export function KnowledgeBaseView({
                   </div>
                 </CardContent>
               </Card>
-
-              {/* AI Recommendations */}
-              <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold text-purple-900 flex items-center gap-2">
-                    <Lightbulb className="h-5 w-5" />
-                    AI学习建议
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="bg-white rounded-lg p-4 border border-purple-200">
-                    <h4 className="font-semibold text-gray-900 mb-2">薄弱知识点</h4>
-                    <p className="text-sm text-gray-700 mb-3">您对"生物制剂使用时机"相关知识查阅较少</p>
-                    <div className="space-y-1 text-sm text-gray-600 pl-4">
-                      <p>• TNF-α抑制剂的适应症</p>
-                      <p>• 生物制剂的安全性监测</p>
-                    </div>
-                    <button className="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
-                      开始学习
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
-            {/* Knowledge Map Tab */}
-            <TabsContent value="map" className="mt-0">
-              <Card className="bg-white border-gray-200">
-                <CardContent className="p-8">
-                  <div className="flex items-center justify-center min-h-[500px]">
-                    <div className="text-center space-y-4">
-                      <div className="w-64 h-64 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                        <div className="text-center">
-                          <BookOpen className="h-16 w-16 text-[#D94527] mx-auto mb-4" />
-                          <p className="text-lg font-bold text-gray-900">知识图谱</p>
-                          <p className="text-sm text-gray-600 mt-2">交互式知识关系可视化</p>
-                        </div>
-                      </div>
-                      <p className="text-gray-500">知识图谱功能开发中...</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal, Form, Input, Select, InputNumber, message } from "antd";
-import { medicalCaseService } from "@/services/medicalCaseService";
+import medicalCaseService from "@/services/medicalCaseService";
 
 const { TextArea } = Input;
 

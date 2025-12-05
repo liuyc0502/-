@@ -64,10 +64,6 @@ export function BasicInfoTab() {
               <User className="h-5 w-5 text-[#10B981]" />
               个人信息
             </h2>
-            <Button variant="outline" size="sm" className="text-[#10B981] border-[#10B981] hover:bg-[#10B981] hover:text-white">
-              <Edit className="h-4 w-4 mr-2" />
-              编辑
-            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

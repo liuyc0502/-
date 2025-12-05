@@ -28,6 +28,9 @@ interface MetricFormData {
   metric_unit?: string;
   metric_trend?: string;
   metric_status?: string;
+  normal_range_min?: number;
+  normal_range_max?: number;
+  percentage?: number;
 }
 
 interface AttachmentFormData {
@@ -253,6 +256,9 @@ export function EditTimelineDetailModal({
           metric_unit: m.metric_unit,
           metric_trend: m.metric_trend,
           metric_status: m.metric_status,
+          normal_range_min: m.normal_range_min,
+          normal_range_max: m.normal_range_max,
+          percentage: m.percentage,
         })),
         attachments: detail.attachments.map(a => ({
           file_name: a.file_name,
@@ -319,6 +325,9 @@ export function EditTimelineDetailModal({
               metric_unit: m.metric_unit || "",
               metric_trend: m.metric_trend || "normal",
               metric_status: m.metric_status || "normal",
+              normal_range_min: m.normal_range_min,
+              normal_range_max: m.normal_range_max,
+              percentage: m.percentage || 50,
             })),
           });
         }
@@ -553,7 +562,7 @@ export function EditTimelineDetailModal({
                       />
                     }
                   >
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-4 gap-3">
                       <Form.Item
                         name={[field.name, "metric_name"]}
                         fieldKey={[field.name, "metric_name"]}
@@ -587,6 +596,22 @@ export function EditTimelineDetailModal({
                         <Input placeholder="IU/mL" />
                       </Form.Item>
                       <Form.Item
+                        name={[field.name, "normal_range_min"]}
+                        fieldKey={[field.name, "normal_range_min"]}
+                        label="参考范围(最小)"
+                        className="mb-2"
+                      >
+                        <Input type="number" placeholder="0" />
+                      </Form.Item>
+                      <Form.Item
+                        name={[field.name, "normal_range_max"]}
+                        fieldKey={[field.name, "normal_range_max"]}
+                        label="参考范围(最大)"
+                        className="mb-2"
+                      >
+                        <Input type="number" placeholder="20" />
+                      </Form.Item>
+                      <Form.Item
                         name={[field.name, "metric_trend"]}
                         fieldKey={[field.name, "metric_trend"]}
                         label="趋势"
@@ -598,9 +623,18 @@ export function EditTimelineDetailModal({
                         name={[field.name, "metric_status"]}
                         fieldKey={[field.name, "metric_status"]}
                         label="状态"
-                        className="mb-0"
+                        className="mb-2"
                       >
                         <Input placeholder="error/warning/normal/improving" />
+                      </Form.Item>
+                      <Form.Item
+                        name={[field.name, "percentage"]}
+                        fieldKey={[field.name, "percentage"]}
+                        label="进度条(%)"
+                        className="mb-0 col-span-4"
+                        tooltip="0-100之间的数值，用于显示进度条位置"
+                      >
+                        <Input type="number" min={0} max={100} placeholder="50" style={{ maxWidth: 200 }} />
                       </Form.Item>
                     </div>
                   </Card>

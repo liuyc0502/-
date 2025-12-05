@@ -227,9 +227,21 @@ export default function Home() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-white flex flex-col">
+    <div
+      className="relative w-screen h-screen overflow-hidden flex flex-col"
+      style={{
+        background: `
+          radial-gradient(ellipse 1000px 800px at 10% 20%, rgba(217, 69, 39, 0.12) 0%, transparent 60%),
+          radial-gradient(ellipse 900px 900px at 50% 50%, rgba(16, 185, 129, 0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 800px 700px at 90% 30%, rgba(124, 58, 237, 0.11) 0%, transparent 60%),
+          radial-gradient(ellipse 1100px 600px at 30% 85%, rgba(217, 69, 39, 0.09) 0%, transparent 70%),
+          radial-gradient(ellipse 700px 700px at 75% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 65%),
+          linear-gradient(135deg, rgba(255, 253, 252, 0.95) 0%, rgba(252, 254, 253, 0.9) 50%, rgba(255, 255, 255, 0.98) 100%)
+        `
+      }}
+    >
       {/* Header Navigation */}
-      <header className="w-full py-4 px-6 flex items-center justify-between border-b border-slate-200 bg-white z-20">
+      <header className="w-full py-4 px-6 flex items-center justify-between z-20">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold text-slate-900 flex items-start">
             <img
@@ -295,12 +307,13 @@ export default function Home() {
                   className="flex-1 pt-16"
                 >
                   <h1
-                    className="font-mono leading-tight"
+                    className="font-mono leading-tight font-bold"
                     style={{
                       fontSize: "96px",
                       fontFamily: "'Courier New', Monaco, 'Roboto Mono', monospace",
                       color: portal.color,
                       lineHeight: 1.15,
+                      fontWeight: 700,
                     }}
                   >
                     {portal.title}
@@ -322,11 +335,11 @@ export default function Home() {
                 >
                   <Button
                     onClick={(e) => handlePortalClick(portal.id, e)}
-                    className="relative bg-gray-900 text-white border-2 border-gray-900 px-12 py-8 text-xl font-semibold hover:bg-gray-800 transition-all duration-300 hover:scale-105"
+                    className="relative bg-gray-900 text-white border-2 border-gray-900 px-12 py-8 text-2xl font-bold hover:bg-gray-800 transition-all duration-300 hover:scale-105"
                     style={{
                       borderRadius: "8px",
                       fontFamily: "'Inter', 'SF Pro', Arial, sans-serif",
-                      fontWeight: 600,
+                      fontWeight: 700,
                     }}
                   >
                     {portal.buttonText}

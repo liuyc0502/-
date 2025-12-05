@@ -101,7 +101,7 @@ export function CarePlanCompletionStats({ patientId, planId }: CarePlanCompletio
           variant="ghost"
           size="sm"
           onClick={() => setExpanded(!expanded)}
-          className="text-gray-600 hover:text-[#FF4D4F]"
+          className="text-gray-600 hover:text-[#D94527]"
         >
           {expanded ? (
             <>

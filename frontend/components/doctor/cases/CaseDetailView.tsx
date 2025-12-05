@@ -160,23 +160,12 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
     try {
       let value = editValues[field];
       
-      // Helper function to parse JSON string to object
-      const parseJsonField = (val: string | undefined): Record<string, any> => {
-        if (!val || val.trim() === "") {
-          return {};
-        }
-        try {
-          const parsed = JSON.parse(val);
-          return typeof parsed === "object" && parsed !== null ? parsed : {};
-        } catch (e) {
-          // If not valid JSON, treat as plain text and wrap in an object
-          return { text: val };
-        }
-      };
-
-      // Parse JSON fields for detail updates
+      // For physical_examination and imaging_results, store as plain text instead of JSON
+      // This makes it easier for users to edit without dealing with JSON syntax
       if (field === "physical_examination" || field === "imaging_results") {
-        value = parseJsonField(value);
+        // Keep as plain text string, no conversion needed
+        // The backend JSON column will accept string values
+        value = value || "";
       }
 
       if (field === "medications" && typeof value === "string") {
@@ -209,11 +198,38 @@ export function CaseDetailView({ caseId, onBack }: CaseDetailViewProps) {
         // Update basic case info
         await medicalCaseService.update(parseInt(caseId), { [field]: value });
       } else {
-        // Update case detail
-        await medicalCaseService.createDetail({
+        // Update case detail - merge with existing detail data to prevent overwriting other fields
+        const detailPayload: any = {
           case_id: parseInt(caseId),
           [field]: value,
-        });
+        };
+
+        // Include existing detail fields to prevent them from being cleared
+        if (caseData && caseData.detail) {
+          const detailFields = [
+            'present_illness_history',
+            'past_medical_history',
+            'family_history',
+            'physical_examination',
+            'imaging_results',
+            'diagnosis_basis',
+            'treatment_plan',
+            'medications',
+            'prognosis',
+            'clinical_notes'
+          ];
+
+          detailFields.forEach(f => {
+            // Only include if not the field being updated and has a value
+            // Read from caseData.detail, not from caseData directly
+            const detailValue = (caseData.detail as any)[f];
+            if (f !== field && detailValue !== null && detailValue !== undefined) {
+              detailPayload[f] = detailValue;
+            }
+          });
+        }
+
+        await medicalCaseService.createDetail(detailPayload);
       }
       message.success("保存成功");
       await loadCaseDetail();
@@ -918,11 +934,18 @@ const handleDeleteAllLabResults = () => {
                     <CardContent>
                       <EditableField
                         field="physical_examination"
-                        value={
-                          typeof caseData.detail?.physical_examination === "string"
-                            ? caseData.detail.physical_examination
-                            : JSON.stringify(caseData.detail?.physical_examination || "", null, 2)
-                        }
+                        value={(() => {
+                          const val = caseData.detail?.physical_examination;
+                          if (typeof val === "string") {
+                            return val;
+                          } else if (val && typeof val === "object" && "text" in val) {
+                            // Extract text from { text: "..." } format
+                            return val.text || "";
+                          } else if (val) {
+                            return JSON.stringify(val, null, 2);
+                          }
+                          return "";
+                        })()}
                         label="体格检查信息"
                         type="textarea"
                         rows={6}
@@ -1002,11 +1025,18 @@ const handleDeleteAllLabResults = () => {
                     <CardContent>
                       <EditableField
                         field="imaging_results"
-                        value={
-                          typeof caseData.detail?.imaging_results === "string"
-                            ? caseData.detail.imaging_results
-                            : JSON.stringify(caseData.detail?.imaging_results || "", null, 2)
-                        }
+                        value={(() => {
+                          const val = caseData.detail?.imaging_results;
+                          if (typeof val === "string") {
+                            return val;
+                          } else if (val && typeof val === "object" && "text" in val) {
+                            // Extract text from { text: "..." } format
+                            return val.text || "";
+                          } else if (val) {
+                            return JSON.stringify(val, null, 2);
+                          }
+                          return "";
+                        })()}
                         label="影像学检查信息"
                         type="textarea"
                         rows={6}
@@ -1113,10 +1143,6 @@ const handleDeleteAllLabResults = () => {
                       </>
                     )}
                   </Button>
-                  <Button variant="outline" className="w-full">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    分享
-                  </Button>
                   <Button
                     variant="outline"
                     className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
@@ -1169,23 +1195,7 @@ const handleDeleteAllLabResults = () => {
                   </div>
                 </CardContent>
               </Card>
-              {/* Quick Actions */}
-              <Card className="bg-white border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-sm font-bold">快捷操作</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-sm">
-                    应用到患者
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-sm">
-                    加入对比
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-sm">
-                    导出病例
-                  </Button>
-                </CardContent>
-              </Card>
+            
             </div>
           </div>
         </div>
@@ -1196,6 +1206,7 @@ const handleDeleteAllLabResults = () => {
         open={isImageModalOpen}
         onCancel={() => setIsImageModalOpen(false)}
         footer={null}
+        width={600}
       >
         <Form
           form={imageForm}
@@ -1204,10 +1215,10 @@ const handleDeleteAllLabResults = () => {
         >
           <Form.Item
             name="image_url"
-            label="影像URL"
-            rules={[{ required: true, message: '请输入影像URL' }]}
+            label="影像文件"
+            rules={[{ required: true, message: '请上传影像文件或输入URL' }]}
           >
-            <Input placeholder="请输入影像文件的URL地址" />
+            <CaseImageUploader />
           </Form.Item>
           <Form.Item
             name="image_type"

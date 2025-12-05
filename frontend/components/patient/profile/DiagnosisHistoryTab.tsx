@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import patientService from "@/services/patientService";
 import { TimelineStage, Patient } from "@/types/patient";
 import { App } from "antd";
+import { DiagnosisDetailModal } from "./DiagnosisDetailModal";
 
 const getTypeColor = (type: string) => {
   const colors: Record<string, string> = {
@@ -26,6 +27,8 @@ export function DiagnosisHistoryTab() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [timelines, setTimelines] = useState<TimelineStage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedTimelineId, setSelectedTimelineId] = useState<number | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -84,12 +87,13 @@ export function DiagnosisHistoryTab() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="text-sm text-gray-600 mb-4">
-        共 {timelines.length} 条诊断记录
-      </div>
+    <>
+      <div className="space-y-4">
+        <div className="text-sm text-gray-600 mb-4">
+          共 {timelines.length} 条诊断记录
+        </div>
 
-      {timelines.map((timeline) => (
+        {timelines.map((timeline) => (
         <Card key={timeline.timeline_id} className="bg-white border-gray-200 hover:shadow-md transition-shadow">
           <CardContent className="p-6 space-y-4">
             <div className="flex items-start justify-between">
@@ -132,19 +136,30 @@ export function DiagnosisHistoryTab() {
                 size="sm"
                 className="text-[#10B981] border-[#10B981] hover:bg-[#10B981] hover:text-white"
                 onClick={() => {
-                  // Navigate to detail page or open modal
-                  message.info("查看详细功能即将上线");
+                  setSelectedTimelineId(timeline.timeline_id);
+                  setDetailModalOpen(true);
                 }}
               >
                 查看详细
-              </Button>
-              <Button variant="outline" size="sm" className="text-gray-600 hover:bg-gray-100">
-                向AI提问
               </Button>
             </div>
           </CardContent>
         </Card>
       ))}
-    </div>
+      </div>
+
+      {/* Detail Modal */}
+      {patient && (
+        <DiagnosisDetailModal
+          open={detailModalOpen}
+          onClose={() => {
+            setDetailModalOpen(false);
+            setSelectedTimelineId(null);
+          }}
+          timelineId={selectedTimelineId}
+          patientId={patient.patient_id}
+        />
+      )}
+    </>
   );
 }

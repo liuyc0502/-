@@ -163,9 +163,9 @@ export function CarePlanView() {
   const todayCompletionRate = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
   return (
-    <div className="h-full flex flex-col bg-[#F4FBF7] overflow-hidden">
+    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
       {/* Header */}
-      <div className="bg-[#F4FBF7] border-b border-gray-200 flex-shrink-0">
+      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center ">
           <h1 className="text-3xl font-bold text-gray-900">康复计划</h1>
         </div>

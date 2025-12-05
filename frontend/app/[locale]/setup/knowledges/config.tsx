@@ -155,6 +155,7 @@ function DataConfig({ isActive }: DataConfigProps) {
   const [hasClickedUpload, setHasClickedUpload] = useState(false);
   const [showEmbeddingWarning, setShowEmbeddingWarning] = useState(false);
   const [showAutoDeselectModal, setShowAutoDeselectModal] = useState(false);
+  const [isSavingSelection, setIsSavingSelection] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   // Open warning modal when single Embedding model is not configured (ignore multi-embedding)
@@ -695,8 +696,8 @@ function DataConfig({ isActive }: DataConfigProps) {
   const handleSelectKnowledgeBase = (id: string) => {
     hasUserInteractedRef.current = true; // Mark user interaction
     selectKnowledgeBase(id);
-    // Persist selection immediately after reducer updates state
-    shouldPersistSelectionRef.current = true;
+    // Don't auto-save, let user click save button
+    // shouldPersistSelectionRef.current = true;
 
     // When selecting knowledge base also get latest data (low priority background operation)
     setTimeout(async () => {
@@ -710,14 +711,34 @@ function DataConfig({ isActive }: DataConfigProps) {
     }, 500); // Delay execution, lower priority
   };
 
+  // Handle manual save button click
+  const handleSaveSelection = async () => {
+    setIsSavingSelection(true);
+    try {
+      const success = await saveUserSelectedKnowledgeBases();
+      if (success) {
+        message.success("知识库选择已保存");
+      } else {
+        message.error("保存失败，请重试");
+      }
+    } catch (error) {
+      log.error("保存知识库选择失败:", error);
+      message.error("保存失败，请重试");
+    } finally {
+      setIsSavingSelection(false);
+    }
+  };
+
   // Persist user selection changes immediately when flagged
   useEffect(() => {
-    if (!isActive) return;
+    // Remove isActive check - allow saving even when page is not active
+    // This ensures selections are persisted when user navigates away
     if (!shouldPersistSelectionRef.current) return;
     let cancelled = false;
     (async () => {
       try {
         await saveUserSelectedKnowledgeBases();
+        console.log('[KnowledgeConfig] Saved user selections:', kbState.selectedIds);
       } catch (error) {
         log.error("保存用户选择的知识库失败:", error);
       } finally {
@@ -729,7 +750,7 @@ function DataConfig({ isActive }: DataConfigProps) {
     return () => {
       cancelled = true;
     };
-  }, [kbState.selectedIds, isActive, saveUserSelectedKnowledgeBases]);
+  }, [kbState.selectedIds, saveUserSelectedKnowledgeBases]);
 
   // Update active knowledge base ID in polling service when component initializes or active knowledge base changes
   useEffect(() => {
@@ -831,10 +852,12 @@ function DataConfig({ isActive }: DataConfigProps) {
             activeKnowledgeBase={kbState.activeKnowledgeBase}
             currentEmbeddingModel={kbState.currentEmbeddingModel}
             isLoading={kbState.isLoading}
+            isSaving={isSavingSelection}
             onSelect={handleSelectKnowledgeBase}
             onClick={handleKnowledgeBaseClick}
             onDelete={handleDelete}
             onSync={handleSync}
+            onSave={handleSaveSelection}
             onCreateNew={handleCreateNew}
             isSelectable={isKnowledgeBaseSelectable}
             getModelDisplayName={(modelId) => modelId}

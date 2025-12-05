@@ -60,16 +60,16 @@ function CaseCard({
           {caseItem.gender} · {caseItem.age}岁
         </div>
 
-        {caseItem.symptoms && caseItem.symptoms.length > 0 && (
+        {caseItem.tags && caseItem.tags.length > 0 && (
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-gray-500">关键症状:</span>
+            <span className="text-xs font-semibold text-gray-500">标签:</span>
             <div className="flex flex-wrap gap-1">
-              {caseItem.symptoms.slice(0, 3).map((symptom, index) => (
+              {caseItem.tags.slice(0, 3).map((tag, index) => (
                 <span
                   key={index}
                   className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
                 >
-                  {symptom}
+                  {tag}
                 </span>
               ))}
             </div>

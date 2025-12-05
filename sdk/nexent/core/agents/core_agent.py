@@ -229,8 +229,10 @@ class CoreAgent(CodeAgent):
         """
         max_steps = max_steps or self.max_steps
         self.task = task
+        self.logger.log(f"[CoreAgent.run] additional_args received: {additional_args}", level=LogLevel.INFO)
         if additional_args is not None:
             self.state.update(additional_args)
+            self.logger.log(f"[CoreAgent.run] state after update: {self.state}", level=LogLevel.INFO)
             self.task += f"""
 You have been provided with these additional arguments, that you can access using the keys as variables in your python code:
 {str(additional_args)}."""
@@ -253,6 +255,7 @@ You have been provided with these additional arguments, that you can access usin
         self.memory.steps.append(TaskStep(task=self.task, task_images=images))
 
         if getattr(self, "python_executor", None):
+            self.logger.log(f"[CoreAgent.run] Sending variables to python_executor: {self.state}", level=LogLevel.INFO)
             self.python_executor.send_variables(variables=self.state)
             self.python_executor.send_tools(
                 {**self.tools, **self.managed_agents})

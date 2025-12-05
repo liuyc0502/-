@@ -91,24 +91,50 @@ def list_medical_cases(
     offset: int = 0
 ) -> List[dict]:
     """
-    List medical cases with optional filters
+    List medical cases with optional filters.
+    
+    Search is performed across multiple fields:
+    - case_title, diagnosis, disease_type, case_no, chief_complaint
+    - Also searches in related symptoms table
     """
     with get_db_session() as session:
+        search_pattern = f"%{search_query}%" if search_query else None
+        
+        # First, find case_ids that have matching symptoms
+        matching_symptom_case_ids = set()
+        if search_query:
+            symptom_matches = session.query(MedicalCaseSymptom.case_id).filter(
+                MedicalCaseSymptom.tenant_id == tenant_id,
+                MedicalCaseSymptom.delete_flag != 'Y',
+                or_(
+                    MedicalCaseSymptom.symptom_name.ilike(search_pattern),
+                    MedicalCaseSymptom.symptom_description.ilike(search_pattern)
+                )
+            ).distinct().all()
+            matching_symptom_case_ids = {row[0] for row in symptom_matches}
+        
         query = session.query(MedicalCase).filter(
             MedicalCase.tenant_id == tenant_id,
             MedicalCase.delete_flag != 'Y'
         )
 
-        # Apply search query (search in diagnosis, symptoms, case_no)
+        # Apply search query (search in multiple fields + symptom matches)
         if search_query:
-            search_pattern = f"%{search_query}%"
-            query = query.filter(
-                or_(
-                    MedicalCase.diagnosis.ilike(search_pattern),
-                    MedicalCase.case_no.ilike(search_pattern),
-                    MedicalCase.chief_complaint.ilike(search_pattern)
-                )
-            )
+            # Build conditions for text fields
+            text_conditions = [
+                MedicalCase.case_title.ilike(search_pattern),
+                MedicalCase.diagnosis.ilike(search_pattern),
+                MedicalCase.disease_type.ilike(search_pattern),
+                MedicalCase.case_no.ilike(search_pattern),
+                MedicalCase.chief_complaint.ilike(search_pattern),
+                MedicalCase.category.ilike(search_pattern),
+            ]
+            
+            # Add condition for symptom matches
+            if matching_symptom_case_ids:
+                text_conditions.append(MedicalCase.case_id.in_(matching_symptom_case_ids))
+            
+            query = query.filter(or_(*text_conditions))
 
         # Filter by disease types
         if disease_types and len(disease_types) > 0:
@@ -147,21 +173,46 @@ def search_cases_with_symptoms(
     limit: int = 10
 ) -> List[dict]:
     """
-    Search cases by symptoms (natural language query)
-    Returns cases with their symptoms
+    Search cases by symptoms (natural language query).
+    Returns cases with their symptoms.
+    
+    Searches across multiple fields:
+    - case_title, diagnosis, disease_type, chief_complaint
+    - Also searches in symptoms table (symptom_name, symptom_description)
     """
     with get_db_session() as session:
-        # Search in case details and symptoms
         search_pattern = f"%{search_query}%"
+
+        # Find case_ids that have matching symptoms
+        symptom_matches = session.query(MedicalCaseSymptom.case_id).filter(
+            MedicalCaseSymptom.tenant_id == tenant_id,
+            MedicalCaseSymptom.delete_flag != 'Y',
+            or_(
+                MedicalCaseSymptom.symptom_name.ilike(search_pattern),
+                MedicalCaseSymptom.symptom_description.ilike(search_pattern)
+            )
+        ).distinct().all()
+        matching_symptom_case_ids = {row[0] for row in symptom_matches}
+
+        # Build query conditions
+        text_conditions = [
+            MedicalCase.case_title.ilike(search_pattern),
+            MedicalCase.diagnosis.ilike(search_pattern),
+            MedicalCase.disease_type.ilike(search_pattern),
+            MedicalCase.chief_complaint.ilike(search_pattern),
+            MedicalCase.category.ilike(search_pattern),
+        ]
+        
+        # Add condition for symptom matches
+        if matching_symptom_case_ids:
+            text_conditions.append(MedicalCase.case_id.in_(matching_symptom_case_ids))
 
         cases = session.query(MedicalCase).filter(
             MedicalCase.tenant_id == tenant_id,
             MedicalCase.delete_flag != 'Y',
-            or_(
-                MedicalCase.diagnosis.ilike(search_pattern),
-                MedicalCase.chief_complaint.ilike(search_pattern)
-            )
+            or_(*text_conditions)
         ).order_by(
+            MedicalCase.is_classic.desc(),
             MedicalCase.view_count.desc()
         ).limit(limit).all()
 

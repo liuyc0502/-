@@ -28,6 +28,21 @@ class CreatePatientRequest(BaseModel):
     past_medical_history: Optional[List[str]] = Field(default_factory=list, description="Past medical history")
 
 
+class UpdatePatientRequest(BaseModel):
+    name: Optional[str] = Field(None, description="Patient name")
+    gender: Optional[str] = Field(None, description="Gender")
+    age: Optional[int] = Field(None, description="Age")
+    medical_record_no: Optional[str] = Field(None, description="Medical record number")
+    email: Optional[str] = Field(None, description="Patient email address")
+    phone: Optional[str] = Field(None, description="Phone number")
+    address: Optional[str] = Field(None, description="Address")
+    date_of_birth: Optional[str] = Field(None, description="Date of birth (YYYY-MM-DD)")
+    allergies: Optional[List[str]] = Field(None, description="Allergies list")
+    family_history: Optional[str] = Field(None, description="Family medical history")
+    past_medical_history: Optional[List[str]] = Field(None, description="Past medical history")
+    diagnosis: Optional[str] = Field(None, description="Current primary diagnosis")
+
+
 class CreateAnnotationRequest(BaseModel):
     image_id: int = Field(..., description="Image ID")
     annotation_type: str = Field(..., description="Annotation type: lesion/control/shadow/hemorrhage/artifact/other")
@@ -112,77 +127,6 @@ class CreateAttachmentRequest(BaseModel):
     file_type: str = Field(..., description="File type: pdf/excel/dicom/zip")
     file_url: str = Field(..., description="File URL (MinIO path)")
     file_size: int = Field(..., description="File size in bytes")
-
-
-class OcrParseRequest(BaseModel):
-    image_url: str = Field(..., description="Image URL to parse with OCR")
-
-
-# ============================================================================
-# OCR Document Parsing Endpoints
-# ============================================================================
-@router.post("/patient/ocr/parse_patient")
-async def parse_patient_document(
-    request: OcrParseRequest,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Parse patient document image using OCR and extract structured patient information.
-    """
-    try:
-        user_id, tenant_id = get_current_user_id(authorization)
-        
-        from tool_collection.mcp.document_parsing_tools import parse_patient_document_impl
-        result = await parse_patient_document_impl(request.image_url)
-        
-        return JSONResponse(
-            status_code=HTTPStatus.OK,
-            content=result
-        )
-    except AgentRunException as e:
-        logger.error(f"Parse patient document failed: {str(e)}")
-        raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-    except Exception as e:
-        logger.error(f"Parse patient document failed: {str(e)}")
-        raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=f"Failed to parse patient document: {str(e)}"
-        )
-
-
-@router.post("/patient/ocr/parse_case")
-async def parse_case_document(
-    request: OcrParseRequest,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Parse medical case document image using OCR and extract structured case information.
-    """
-    try:
-        user_id, tenant_id = get_current_user_id(authorization)
-        
-        from tool_collection.mcp.document_parsing_tools import parse_case_document_impl
-        result = await parse_case_document_impl(request.image_url)
-        
-        return JSONResponse(
-            status_code=HTTPStatus.OK,
-            content=result
-        )
-    except AgentRunException as e:
-        logger.error(f"Parse case document failed: {str(e)}")
-        raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-    except Exception as e:
-        logger.error(f"Parse case document failed: {str(e)}")
-        raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail=f"Failed to parse case document: {str(e)}"
-        )
 
 
 # ============================================================================
@@ -373,7 +317,7 @@ async def get_patient_by_email(
 @router.put("/patient/{patient_id}")
 async def update_patient(
     patient_id: int,
-    request: CreatePatientRequest,
+    request: UpdatePatientRequest,
     authorization: Optional[str] = Header(None)
 ):
     """
@@ -386,9 +330,16 @@ async def update_patient(
                 status_code=HTTPStatus.UNAUTHORIZED,
                 detail="Unauthorized"
             )
+        # Convert to dict and exclude unset fields and None values
+        update_data = request.dict(exclude_unset=True, exclude_none=True)
+        if not update_data:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="No fields to update"
+            )
         result = await patient_service.update_patient_info(
             patient_id,
-            request.dict(exclude_unset=True),
+            update_data,
             tenant_id,
             user_id
         )
@@ -396,6 +347,8 @@ async def update_patient(
             status_code=HTTPStatus.OK,
             content=result
         )
+    except HTTPException:
+        raise
     except AgentRunException as e:
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,

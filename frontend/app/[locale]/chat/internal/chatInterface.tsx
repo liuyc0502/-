@@ -39,11 +39,6 @@ import { PatientDetailView } from "@/components/doctor/patients/PatientDetailVie
 import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
 import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
 import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
-import { ConfirmLabReportModal } from "@/components/doctor/chat/ConfirmLabReportModal";
-import { ConfirmImagingReportModal } from "@/components/doctor/chat/ConfirmImagingReportModal";
-import { ConfirmPatientArchiveModal } from "@/components/doctor/chat/ConfirmPatientArchiveModal";
-import { ConfirmCaseDocumentModal } from "@/components/doctor/chat/ConfirmCaseDocumentModal";
-import { ConfirmMedicalOrderModal } from "@/components/doctor/chat/ConfirmMedicalOrderModal";
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
@@ -120,23 +115,11 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
   const [caseLibraryTab, setCaseLibraryTab] = useState("search");
 
-  // Report confirmation modals state
-  const [labReportModalOpen, setLabReportModalOpen] = useState(false);
-  const [imagingReportModalOpen, setImagingReportModalOpen] = useState(false);
-  const [parsedLabReport, setParsedLabReport] = useState<any>(null);
-  const [parsedImagingReport, setParsedImagingReport] = useState<any>(null);
-  const [reportTimelineId, setReportTimelineId] = useState<number | null>(null);
-  const [reportPatientId, setReportPatientId] = useState<number | null>(null);
-
-  // Patient archive and case document modals state
-  const [patientArchiveModalOpen, setPatientArchiveModalOpen] = useState(false);
-  const [caseDocumentModalOpen, setCaseDocumentModalOpen] = useState(false);
-  const [parsedPatientArchive, setParsedPatientArchive] = useState<any>(null);
-  const [parsedCaseDocument, setParsedCaseDocument] = useState<any>(null);
-
-  // Medical order modal state
-  const [medicalOrderModalOpen, setMedicalOrderModalOpen] = useState(false);
-  const [parsedMedicalOrder, setParsedMedicalOrder] = useState<any>(null);
+  // Linked patient/timeline state for current conversation (used when conversation not yet created)
+  const [linkedPatientId, setLinkedPatientId] = useState<number | null>(null);
+  const [linkedPatientName, setLinkedPatientName] = useState<string | null>(null);
+  const [linkedTimelineId, setLinkedTimelineId] = useState<number | null>(null);
+  const [linkedTimelineName, setLinkedTimelineName] = useState<string | null>(null);
 
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
@@ -165,6 +148,21 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     (c) => c.conversation_id === conversationManagement.selectedConversationId
   )
 : null;
+
+  // Sync linked patient/timeline state with current conversation when it changes
+  useEffect(() => {
+    if (currentConversation) {
+      // If currentConversation has patient/timeline info, use it (unless locally overridden)
+      if (currentConversation.patient_id && linkedPatientId === null) {
+        setLinkedPatientId(currentConversation.patient_id);
+        setLinkedPatientName(currentConversation.patient_name ?? null);
+      }
+      if (currentConversation.linked_timeline_id && linkedTimelineId === null) {
+        setLinkedTimelineId(currentConversation.linked_timeline_id);
+        setLinkedTimelineName(currentConversation.linked_timeline_name ?? null);
+      }
+    }
+  }, [currentConversation, linkedPatientId, linkedTimelineId]);
   // Monitor changes in currentMessages
   // Calculate if the current conversation is streaming
   const isCurrentConversationStreaming =
@@ -347,6 +345,13 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     // Ensure right sidebar is reset to closed state whenever conversation ID changes
     setSelectedMessageId(undefined);
     setShowRightPanel(false);
+    
+    // Reset linked patient/timeline state when conversation changes
+    // They will be repopulated from currentConversation if available
+    setLinkedPatientId(null);
+    setLinkedPatientName(null);
+    setLinkedTimelineId(null);
+    setLinkedTimelineName(null);
   }, [conversationManagement.conversationId]);
 
 
@@ -370,283 +375,8 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   }, []);
 
   // Monitor messages for MCP tool responses and trigger report modals
-  useEffect(() => {
-    if (variant !== "doctor" || currentMessages.length === 0) return;
-
-    // Get the last assistant message
-    const lastMessage = currentMessages[currentMessages.length - 1];
-    if (lastMessage.role !== "assistant") return;
-
-    // Skip if message is not complete yet (still streaming)
-    if (!lastMessage.isComplete) return;
-
-    // DEBUG: Log when checking for tool results
-    console.log('[DEBUG] Checking message for tool results, isComplete:', lastMessage.isComplete);
-    console.log('[DEBUG] Message steps count:', lastMessage.steps?.length || 0);
-
-    try {
-      // Collect all possible content sources for tool result detection
-      const contentSources: string[] = [];
-
-      // Add message content
-      if (lastMessage.content) {
-        contentSources.push(
-          typeof lastMessage.content === 'string'
-            ? lastMessage.content
-            : JSON.stringify(lastMessage.content)
-        );
-      }
-
-      // Add final answer
-      if (lastMessage.finalAnswer) {
-        contentSources.push(lastMessage.finalAnswer);
-        console.log('[DEBUG] finalAnswer found:', lastMessage.finalAnswer.substring(0, 100));
-      }
-
-      // Add step contents (where tool execution results are stored)
-      if (lastMessage.steps && lastMessage.steps.length > 0) {
-        for (const step of lastMessage.steps) {
-          if (step.contents && step.contents.length > 0) {
-            for (const stepContent of step.contents) {
-              if (stepContent.content) {
-                contentSources.push(stepContent.content);
-              }
-            }
-          }
-          // Also check parsingContent which may contain tool call info
-          if (step.parsingContent) {
-            contentSources.push(step.parsingContent);
-            console.log('[DEBUG] parsingContent found:', step.parsingContent.substring(0, 100));
-          }
-          // Check executionLogs which contains MCP tool results
-          if (step.executionLogs) {
-            contentSources.push(step.executionLogs);
-            console.log('[DEBUG] executionLogs found:', step.executionLogs.substring(0, 200));
-          }
-        }
-      }
-
-      // Combine all content sources for searching
-      const combinedContent = contentSources.join('\n');
-      console.log('[DEBUG] Combined content length:', combinedContent.length);
-      console.log('[DEBUG] Contains parse_patient_archive:', combinedContent.includes('parse_patient_archive'));
-      console.log('[DEBUG] Contains parse_imaging_report:', combinedContent.includes('parse_imaging_report'));
-      console.log('[DEBUG] Contains parse_lab_report:', combinedContent.includes('parse_lab_report'));
-
-      // If no content to search, return early
-      if (!combinedContent.trim()) return;
-
-      // Helper function to extract JSON from combined content
-      const extractJsonFromContent = (searchContent: string): any | null => {
-        // Try to find a complete JSON object with success:true
-        // Use a more robust regex that handles nested structures
-        const jsonRegex = /\{[^{}]*"success"\s*:\s*true[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
-        const matches = searchContent.match(jsonRegex);
-
-        if (!matches) return null;
-
-        // Try each match to find a valid JSON
-        for (const match of matches) {
-          try {
-            // Try to parse directly first
-            const parsed = JSON.parse(match);
-            if (parsed.success === true) {
-              return parsed;
-            }
-          } catch {
-            // If direct parse fails, try to find the largest valid JSON containing this match
-            const startIdx = searchContent.indexOf(match);
-            if (startIdx === -1) continue;
-
-            // Find the start of the JSON object
-            let braceCount = 0;
-            let jsonStart = -1;
-            for (let i = startIdx; i >= 0; i--) {
-              if (searchContent[i] === '}') braceCount++;
-              if (searchContent[i] === '{') {
-                braceCount--;
-                if (braceCount < 0) {
-                  jsonStart = i;
-                  break;
-                }
-              }
-            }
-
-            if (jsonStart === -1) jsonStart = startIdx;
-
-            // Find the end of the JSON object
-            braceCount = 0;
-            let jsonEnd = -1;
-            for (let i = jsonStart; i < searchContent.length; i++) {
-              if (searchContent[i] === '{') braceCount++;
-              if (searchContent[i] === '}') {
-                braceCount--;
-                if (braceCount === 0) {
-                  jsonEnd = i + 1;
-                  break;
-                }
-              }
-            }
-
-            if (jsonEnd > jsonStart) {
-              try {
-                const jsonStr = searchContent.substring(jsonStart, jsonEnd);
-                const parsed = JSON.parse(jsonStr);
-                if (parsed.success === true) {
-                  return parsed;
-                }
-              } catch {
-                continue;
-              }
-            }
-          }
-        }
-
-        return null;
-      };
-
-      // Helper function to extract JSON with success:true validation
-      const extractToolResult = (toolName: string, requiredFields: string[]) => {
-        // Only match parse_* tools, not analyze_* tools
-        if (!toolName.startsWith('parse_')) return null;
-
-        // Check if tool name appears in combined content
-        if (!combinedContent.includes(toolName)) return null;
-
-        // Extract JSON from the content
-        const parsed = extractJsonFromContent(combinedContent);
-
-        if (!parsed) {
-          log.info(`Tool ${toolName} JSON not found in content`);
-          return null;
-        }
-
-        // Validate success field
-        if (parsed.success !== true) {
-          log.info(`Tool ${toolName} did not return success:true, skipping modal`);
-          return null;
-        }
-
-        // Validate required fields exist
-        const hasRequiredFields = requiredFields.every(field => field in parsed);
-        if (!hasRequiredFields) {
-          log.warn(`Tool ${toolName} missing required fields:`, requiredFields);
-          return null;
-        }
-
-        return parsed;
-      };
-
-      // Check for parse_lab_report tool result (NOT analyze_lab_report)
-      if (combinedContent.includes('parse_lab_report') && !combinedContent.includes('analyze_lab_report')) {
-        const parsedData = extractToolResult('parse_lab_report', ['test_items']);
-
-        if (parsedData) {
-          setParsedLabReport(parsedData);
-          // Set patient/timeline IDs if available, otherwise modal will prompt user to select
-          if (currentConversation?.linked_patient_id) {
-            setReportPatientId(currentConversation.linked_patient_id);
-          }
-          if (currentConversation?.linked_timeline_id) {
-            setReportTimelineId(currentConversation.linked_timeline_id);
-          }
-          setLabReportModalOpen(true);
-        }
-      }
-
-      // Check for parse_imaging_report tool result (NOT analyze_imaging_report)
-      if (combinedContent.includes('parse_imaging_report') && !combinedContent.includes('analyze_imaging_report')) {
-        console.log('[DEBUG] Detected parse_imaging_report, extracting data...');
-        const parsedData = extractToolResult('parse_imaging_report', ['imaging_findings']);
-        console.log('[DEBUG] parse_imaging_report parsedData:', parsedData);
-
-        if (parsedData) {
-          console.log('[DEBUG] Opening imaging report modal...');
-          setParsedImagingReport(parsedData);
-          // Set patient/timeline IDs if available, otherwise modal will prompt user to select
-          if (currentConversation?.linked_patient_id) {
-            setReportPatientId(currentConversation.linked_patient_id);
-          }
-          if (currentConversation?.linked_timeline_id) {
-            setReportTimelineId(currentConversation.linked_timeline_id);
-          }
-          setImagingReportModalOpen(true);
-        } else {
-          console.log('[DEBUG] parse_imaging_report: parsedData is null, modal not opened');
-        }
-      }
-
-      // Check for parse_patient_archive tool result (NOT analyze_patient_info)
-      if (combinedContent.includes('parse_patient_archive') && !combinedContent.includes('analyze_patient_info')) {
-        const parsedData = extractToolResult('parse_patient_archive', ['name', 'medical_record_no']);
-
-        if (parsedData) {
-          (async () => {
-            try {
-              // Check if patient already exists before showing modal
-              if (parsedData.name) {
-                try {
-                  const duplicateCheck = await patientService.checkDuplicatePatient(parsedData.name, true);
-
-                  if (duplicateCheck.found && duplicateCheck.count > 0) {
-                    // Patient already exists - show confirmation dialog
-                    const existingPatient = duplicateCheck.patients[0];
-                    const shouldView = window.confirm(
-                      `患者"${parsedData.name}"已存在（病历号：${existingPatient.medical_record_no}）。\n\n是否查看该患者档案？`
-                    );
-
-                    if (shouldView) {
-                      // Navigate to patient detail page
-                      setActiveView("patients");
-                      setSelectedPatientId(existingPatient.patient_id.toString());
-                    }
-                    // Don't show create modal if patient exists
-                    return;
-                  }
-                } catch (duplicateCheckError) {
-                  // If duplicate check fails, still show the modal to allow patient creation
-                  log.warn('Failed to check duplicate patient, proceeding with modal:', duplicateCheckError);
-                }
-              }
-
-              // Patient doesn't exist or duplicate check failed - show create modal
-              setParsedPatientArchive(parsedData);
-              setPatientArchiveModalOpen(true);
-            } catch (e) {
-              log.error('Failed to parse patient archive data:', e);
-            }
-          })();
-        }
-      }
-
-      // Check for parse_case_document tool result (NOT analyze_case_info)
-      if (combinedContent.includes('parse_case_document') && !combinedContent.includes('analyze_case_info')) {
-        const parsedData = extractToolResult('parse_case_document', ['case_title', 'diagnosis']);
-
-        if (parsedData) {
-          setParsedCaseDocument(parsedData);
-          setCaseDocumentModalOpen(true);
-        }
-      }
-
-      // Check for parse_medical_order tool result
-      if (combinedContent.includes('parse_medical_order')) {
-        const parsedData = extractToolResult('parse_medical_order', ['medications']);
-
-        if (parsedData) {
-          // Check if patient is already linked to conversation
-          if (currentConversation?.patient_id) {
-            parsedData.patient_id = currentConversation.patient_id;
-            parsedData.patient_name = currentConversation.patient_name;
-          }
-          setParsedMedicalOrder(parsedData);
-          setMedicalOrderModalOpen(true);
-        }
-      }
-    } catch (error) {
-      log.error('Error processing tool results:', error);
-    }
-  }, [currentMessages, variant, currentConversation]);
+  // Removed: Modal detection logic for parse_* tools (parse_lab_report, parse_imaging_report, etc.)
+  // These tools have been deleted. Now using analyze_* tools which auto-save to database.
 
   const handleSend = async () => {
     if (!input.trim() && attachments.length === 0) return; // Allow sending attachments only, without text content
@@ -1087,6 +817,22 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       // Only add agent_id if it's not null
       if (selectedAgentId !== null) {
         runAgentParams.agent_id = selectedAgentId;
+      }
+
+      // Add portal context (so agent knows which portal user is from)
+      runAgentParams.portal_type = variant;
+
+      // Add user email for patient lookup (patient portal)
+      if (user?.email) {
+        runAgentParams.user_email = user.email;
+      }
+
+      // Add patient/timeline context for doctor portal (so agent knows which patient to save reports to)
+      if (linkedPatientId !== null) {
+        runAgentParams.patient_id = linkedPatientId;
+      }
+      if (linkedTimelineId !== null) {
+        runAgentParams.timeline_id = linkedTimelineId;
       }
 
       const reader = await conversationService.runAgent(
@@ -2001,7 +1747,10 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     <>
       <div
         className="flex h-screen text-[#1A1A1A]"
-        style={{ backgroundColor: portalConfig.backgroundColor }}
+        style={{
+          backgroundColor: portalConfig.backgroundColor,
+          backgroundImage: portalConfig.backgroundGradient || 'none'
+        }}
       >
         <ChatSidebar
           conversationList={conversationManagement.conversationList}
@@ -2042,20 +1791,29 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   // Conversation-patient linking props (doctor portal only)
                   showPatientLinking={variant === "doctor"}
                   conversationId={conversationManagement.selectedConversationId}
-                  patientId={currentConversation?.patient_id}
-                  patientName={currentConversation?.patient_name}
-                  timelineId={currentConversation?.linked_timeline_id}
-                  timelineName={currentConversation?.linked_timeline_name}
+                  patientId={linkedPatientId ?? currentConversation?.patient_id ?? null}
+                  patientName={linkedPatientName ?? currentConversation?.patient_name ?? null}
+                  timelineId={linkedTimelineId ?? currentConversation?.linked_timeline_id ?? null}
+                  timelineName={linkedTimelineName ?? currentConversation?.linked_timeline_name ?? null}
                   conversationStatus={currentConversation?.conversation_status}
                   conversationTags={currentConversation?.tags}
                   conversationSummary={currentConversation?.summary || undefined}
-                  onPatientChange={(patientId, patientName) => {
-                    // Refresh conversation list to get updated data
-                    conversationManagement.fetchConversationList(variant);
+                  onPatientChange={async (patientId, patientName) => {
+                    // Update local state immediately for UI responsiveness
+                    setLinkedPatientId(patientId);
+                    setLinkedPatientName(patientName);
+                    // Clear timeline when patient changes (since timelines are patient-specific)
+                    setLinkedTimelineId(null);
+                    setLinkedTimelineName(null);
+                    // Refresh conversation list to get updated data (including current conversation)
+                    await conversationManagement.fetchConversationList(variant);
                   }}
-                  onTimelineChange={(timelineId, timelineName) => {
-                    // Refresh conversation list to get updated data
-                    conversationManagement.fetchConversationList(variant);
+                  onTimelineChange={async (timelineId, timelineName) => {
+                    // Update local state immediately for UI responsiveness
+                    setLinkedTimelineId(timelineId);
+                    setLinkedTimelineName(timelineName);
+                    // Refresh conversation list to get updated data (including current conversation)
+                    await conversationManagement.fetchConversationList(variant);
                   }}
                   onStatusChange={(status) => {
                     conversationManagement.fetchConversationList(variant);
@@ -2127,6 +1885,17 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                     <PatientDetailView
                       patientId={selectedPatientId}
                       onBack={() => setSelectedPatientId(null)}
+                      onConversationClick={(conversationId: number) => {
+                        // Switch to chats view
+                        setActiveView("chats");
+                        // Load the conversation
+                        const conversation = conversationManagement.conversationList.find(
+                          c => c.conversation_id === conversationId
+                        );
+                        if (conversation) {
+                          conversationManagement.handleConversationSelect(conversation);
+                        }
+                      }}
                     />
                   ) : (
                     <PatientListView onSelectPatient={setSelectedPatientId} />
@@ -2214,94 +1983,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Report Confirmation Modals - Only for doctor variant */}
-      {/* Note: Modal components handle missing patient/timeline IDs internally by showing selection dialog */}
-      {variant === "doctor" && (
-        <>
-          <ConfirmLabReportModal
-            open={labReportModalOpen}
-            onClose={() => {
-              setLabReportModalOpen(false);
-              setParsedLabReport(null);
-            }}
-            parsedData={parsedLabReport}
-            timelineId={reportTimelineId}
-            patientId={reportPatientId}
-            onSuccess={() => {
-              // Refresh patient timeline if viewing patient detail
-              if (selectedPatientId) {
-                // TODO: Trigger patient detail refresh
-              }
-            }}
-          />
-
-          <ConfirmImagingReportModal
-            open={imagingReportModalOpen}
-            onClose={() => {
-              setImagingReportModalOpen(false);
-              setParsedImagingReport(null);
-            }}
-            parsedData={parsedImagingReport}
-            timelineId={reportTimelineId}
-            patientId={reportPatientId}
-            onSuccess={() => {
-              // Refresh patient timeline if viewing patient detail
-              if (selectedPatientId) {
-                // TODO: Trigger patient detail refresh
-              }
-            }}
-          />
-        </>
-      )}
-
-      {/* Patient Archive and Case Document Modals - Only for doctor variant */}
-      {variant === "doctor" && (
-        <>
-          <ConfirmPatientArchiveModal
-            open={patientArchiveModalOpen}
-            onClose={() => {
-              setPatientArchiveModalOpen(false);
-              setParsedPatientArchive(null);
-            }}
-            parsedData={parsedPatientArchive}
-            onSuccess={(patientId) => {
-              // Navigate to patient detail after creation
-              setActiveView("patients");
-              setSelectedPatientId(patientId.toString());
-            }}
-          />
-
-          <ConfirmCaseDocumentModal
-            open={caseDocumentModalOpen}
-            onClose={() => {
-              setCaseDocumentModalOpen(false);
-              setParsedCaseDocument(null);
-            }}
-            parsedData={parsedCaseDocument}
-            onSuccess={(caseId) => {
-              // Navigate to case detail after creation
-              setActiveView("cases");
-              setSelectedCaseId(caseId.toString());
-            }}
-          />
-
-          <ConfirmMedicalOrderModal
-            open={medicalOrderModalOpen}
-            onClose={() => {
-              setMedicalOrderModalOpen(false);
-              setParsedMedicalOrder(null);
-            }}
-            parsedData={parsedMedicalOrder}
-            patientId={currentConversation?.patient_id}
-            patientName={currentConversation?.patient_name}
-            onSuccess={(planId) => {
-              // Show success message - plan is created
-              console.log("Care plan created with ID:", planId);
-            }}
-          />
-        </>
       )}
 
     </>

@@ -173,13 +173,13 @@ class NexentAgent:
             elif msg.role == 'assistant':
                 self.agent.memory.steps.append(ActionStep(action_output=msg.content, model_output=msg.content))
 
-    def agent_run_with_observer(self, query: str, reset=True):
+    def agent_run_with_observer(self, query: str, reset=True, additional_args=None):
         if not isinstance(self.agent, CoreAgent):
             raise TypeError(f"agent must be a CoreAgent object, not {type(self.agent)}")
 
         observer = self.agent.observer
         try:
-            for step_log in self.agent.run(query, stream=True, reset=reset):
+            for step_log in self.agent.run(query, stream=True, reset=reset, additional_args=additional_args):
                 # Add content to observer
                 if not isinstance(step_log, ActionStep):
                     continue

@@ -2,7 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button, Checkbox, ConfigProvider } from 'antd'
-import { SyncOutlined, PlusOutlined } from '@ant-design/icons'
+import { SyncOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons'
 
 import { KnowledgeBase } from '@/types/knowledgeBase'
 
@@ -43,10 +43,12 @@ interface KnowledgeBaseListProps {
   activeKnowledgeBase: KnowledgeBase | null
   currentEmbeddingModel: string | null
   isLoading?: boolean
+  isSaving?: boolean
   onSelect: (id: string) => void
   onClick: (kb: KnowledgeBase) => void
   onDelete: (id: string) => void
   onSync: () => void
+  onSave: () => void
   onCreateNew: () => void
   isSelectable: (kb: KnowledgeBase) => boolean
   getModelDisplayName: (modelId: string) => string
@@ -60,10 +62,12 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
   activeKnowledgeBase,
   currentEmbeddingModel,
   isLoading = false,
+  isSaving = false,
   onSelect,
   onClick,
   onDelete,
   onSync,
+  onSave,
   onCreateNew,
   isSelectable,
   getModelDisplayName,
@@ -145,10 +149,30 @@ const KnowledgeBaseList: React.FC<KnowledgeBaseListProps> = ({
       {/* Fixed selection status area */}
       <div className="border-b border-gray-200 shrink-0 relative z-10 shadow-md">
         <div className="px-5 py-2 bg-blue-50">
-          <div className="flex items-center">
-            <span className="font-medium text-blue-700">{t('knowledgeBase.selected.prefix')} </span>
-            <span className="mx-1 text-blue-600 font-bold text-lg">{selectedIds.length}</span>
-            <span className="font-medium text-blue-700">{t('knowledgeBase.selected.suffix')}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="font-medium text-blue-700">{t('knowledgeBase.selected.prefix')} </span>
+              <span className="mx-1 text-blue-600 font-bold text-lg">{selectedIds.length}</span>
+              <span className="font-medium text-blue-700">{t('knowledgeBase.selected.suffix')}</span>
+            </div>
+            {selectedIds.length > 0 && (
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                loading={isSaving}
+                onClick={onSave}
+                style={{
+                  padding: "4px 12px",
+                  height: "28px",
+                  fontSize: "13px",
+                  backgroundColor: "#52c41a",
+                  borderColor: "#52c41a"
+                }}
+                className="hover:!bg-green-600 hover:!border-green-600"
+              >
+                保存选择
+              </Button>
+            )}
           </div>
 
           {selectedIds.length > 0 && (

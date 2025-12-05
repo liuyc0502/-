@@ -1,0 +1,670 @@
+医生主智能体使用示例
+
+重要说明：
+1. 主智能体必须通过子智能体调用工具，不能直接调用工具！
+2. 子智能体列表：pubmed_analysis_assistant、patient_management_assistant、case_library_assistant、care_plan_assistant、document_parsing_assistant
+3. 患者管理工具使用 medical_record_no（病历号）而不是 patient_id
+4. 病例库工具需要 tenant_id 参数
+5. 康复计划工具需要 medical_record_no、tenant_id、user_id
+6. PubMed日期格式必须用斜杠 YYYY/MM/DD，康复计划日期用横杠 YYYY-MM-DD
+7. 代码必须使用 ```<RUN> 开头，```<END_CODE> 结尾，否则不会被执行！
+
+
+====================
+一、PubMed 文献检索（通过 pubmed_analysis_assistant）
+====================
+
+用户：检索近3个月前列腺癌免疫治疗的研究热点
+
+思考：用户需要检索近3个月的前列腺癌免疫治疗文献。当前日期是2024/12/03，所以开始日期是2024/09/03。日期格式必须用斜杠。我需要通过 pubmed_analysis_assistant 来执行文献检索任务。
+
+代码：
+```<RUN>
+result = pubmed_analysis_assistant(task="search_pubmed(advanced_search='prostate cancer AND immunotherapy', start_date='2024/09/03', end_date='2024/12/03', max_results=100, output_filename='prostate_immuno_3m.json')")
+print(result)
+```<END_CODE>
+
+观察结果：检索成功，找到99篇文献，已保存到 prostate_immuno_3m.json
+
+思考：检索成功，现在需要分析关键词热点。继续通过 pubmed_analysis_assistant 进行分析。
+
+代码：
+```<RUN>
+analysis = pubmed_analysis_assistant(task="analyze_research_keywords(filename='prostate_immuno_3m.json', top_n=15, include_trends=True)")
+print(analysis)
+```<END_CODE>
+
+观察结果：{"success":true,"top_keywords":[...]}
+
+最终回答：近3个月前列腺癌免疫治疗研究共找到99篇文献，主要研究热点包括...
+
+--------------------
+
+用户：帮我分析一下过去一年癌症免疫治疗的综合趋势
+
+思考：用户需要过去一年的综合分析。当前日期是2024/12/03，所以开始日期是2023/12/03。我需要先检索文献，再进行综合分析。
+
+代码：
+```<RUN>
+result = pubmed_analysis_assistant(task="search_pubmed(advanced_search='cancer AND immunotherapy', start_date='2023/12/03', end_date='2024/12/03', max_results=1000, output_filename='cancer_immuno_1y.json')")
+print(result)
+```<END_CODE>
+
+观察结果：检索成功，找到856篇文献
+
+思考：检索成功，现在进行综合分析。
+
+代码：
+```<RUN>
+analysis = pubmed_analysis_assistant(task="generate_comprehensive_analysis(filename='cancer_immuno_1y.json', top_keywords=25, months_per_period=3)")
+print(analysis)
+```<END_CODE>
+
+观察结果：{"success":true,"keywords_analysis":{...},"publication_trends":{...}}
+
+
+====================
+二、患者管理（通过 patient_management_assistant）
+====================
+
+用户：查一下病历号P00000123的患者基本信息
+
+思考：用户需要查询患者基本信息，我需要通过 patient_management_assistant 来执行查询。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_get_patient_basic_info(medical_record_no='P00000123', include_summary=True)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"patient":{"name":"张三","age":65,"gender":"男","diagnosis":"肺腺癌"}}
+
+--------------------
+
+用户：这个患者的诊疗时间线是什么
+
+思考：查询患者时间线，通过 patient_management_assistant 执行。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_get_patient_timeline(medical_record_no='P00000123', include_details=True)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"timeline":[{"date":"2024-10-01","event":"首诊"},{"date":"2024-10-15","event":"手术"}]}
+
+--------------------
+
+用户：查看这个患者的检查报告
+
+思考：查询患者检查报告，通过 patient_management_assistant 执行。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_get_patient_examination_reports(medical_record_no='P00000123', limit=10)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"reports":[...]}
+
+--------------------
+
+用户：分析患者的炎症指标变化趋势
+
+思考：分析患者指标趋势，通过 patient_management_assistant 执行。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_analyze_patient_metrics(medical_record_no='P00000123', metric_names=['CRP', 'ESR', 'WBC'])")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"metrics":[...]}
+
+--------------------
+
+用户：这个患者还有什么待办事项
+
+思考：查询患者待办事项，通过 patient_management_assistant 执行。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_get_patient_todos(medical_record_no='P00000123', status='pending')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"todos":[{"task":"复查CT","due_date":"2024-12-15"}]}
+
+--------------------
+
+用户：查看患者的影像资料
+
+思考：查询患者影像资料，通过 patient_management_assistant 执行。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_get_patient_medical_images(medical_record_no='P00000123', image_type='CT', limit=10)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"images":[...]}
+
+--------------------
+
+用户：列出所有患者
+
+思考：列出所有患者，通过 patient_management_assistant 执行。
+
+代码：
+```<RUN>
+result = patient_management_assistant(task="patient_management_list_all_patients(limit=50)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"patients":[...]}
+
+
+====================
+三、病例库检索（通过 case_library_assistant）
+====================
+
+用户：帮我找一下肺腺癌的相关病例
+
+思考：搜索肺腺癌病例，通过 case_library_assistant 执行，需要传入 tenant_id 参数。
+
+代码：
+```<RUN>
+result = case_library_assistant(task="case_library_search_medical_cases(tenant_id='default', query='肺腺癌', limit=10)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"cases":[{"case_no":"CASE001","diagnosis":"肺腺癌IIIA期"},...]}
+
+--------------------
+
+用户：查看病例CASE001的详细信息
+
+思考：查询病例详情，通过 case_library_assistant 执行。
+
+代码：
+```<RUN>
+result = case_library_assistant(task="case_library_get_case_detail(case_no='CASE001', tenant_id='default')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"case":{"case_no":"CASE001","diagnosis":"肺腺癌IIIA期","symptoms":[...],"treatment":"..."}}
+
+--------------------
+
+用户：患者出现咳嗽、胸痛、呼吸困难，帮我找相关病例
+
+思考：根据症状搜索病例，通过 case_library_assistant 执行。
+
+代码：
+```<RUN>
+result = case_library_assistant(task="case_library_search_cases_by_symptoms(tenant_id='default', symptoms=['咳嗽','胸痛','呼吸困难'], match_all=False, limit=10)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"cases":[...]}
+
+--------------------
+
+用户：找一下和肺腺癌诊断相似的病例
+
+思考：查找相似病例，通过 case_library_assistant 执行。
+
+代码：
+```<RUN>
+result = case_library_assistant(task="case_library_get_similar_cases(tenant_id='default', diagnosis='肺腺癌', symptoms=['咳嗽','胸痛'], limit=5)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"similar_cases":[{"case_no":"CASE005","similarity":0.92},...]}
+
+--------------------
+
+用户：给我找几个糖尿病的经典教学病例
+
+思考：查找经典病例，通过 case_library_assistant 执行。
+
+代码：
+```<RUN>
+result = case_library_assistant(task="case_library_get_classic_cases_by_disease(tenant_id='default', disease_type='糖尿病', limit=5)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"classic_cases":[...]}
+
+
+====================
+四、康复计划管理（通过 care_plan_assistant）
+====================
+
+用户：给病历号P00000123的患者创建一个术后康复计划
+
+思考：创建康复计划，通过 care_plan_assistant 执行。康复计划日期格式用横杠。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_create_care_plan(medical_record_no='P00000123', tenant_id='default', user_id='doctor001', plan_name='肺癌术后康复计划', plan_description='右肺上叶切除术后康复', start_date='2024-12-01', end_date='2025-03-01')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"plan_id":456}
+
+思考：计划创建成功，plan_id是456。现在添加用药。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_add_medication_to_plan(medical_record_no='P00000123', plan_id=456, tenant_id='default', user_id='doctor001', medication_name='头孢克洛', dosage='250mg', frequency='每日3次', duration='7天', notes='饭后服用')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"medication_id":1}
+
+思考：用药添加成功，现在添加任务。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_add_task_to_plan(medical_record_no='P00000123', plan_id=456, tenant_id='default', user_id='doctor001', task_name='术后2周复查', task_type='复诊', due_date='2024-12-15', description='检查切口愈合')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"task_id":1}
+
+思考：任务添加成功，现在添加注意事项。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_add_precaution_to_plan(medical_record_no='P00000123', plan_id=456, tenant_id='default', user_id='doctor001', precaution='禁止剧烈运动', priority='高')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"precaution_id":1}
+
+--------------------
+
+用户：查看患者的康复计划
+
+思考：查询患者康复计划，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_get_patient_care_plans(medical_record_no='P00000123', tenant_id='default', status='active')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"plans":[{"plan_id":456,"plan_name":"肺癌术后康复计划","status":"进行中"}]}
+
+--------------------
+
+用户：更新康复计划进度
+
+思考：更新康复计划进度，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_update_care_plan_progress(medical_record_no='P00000123', plan_id=456, tenant_id='default', user_id='doctor001', progress=50)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：查看康复计划的完成情况统计
+
+思考：查询康复计划完成统计，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_get_care_plan_completion_stats(medical_record_no='P00000123', plan_id=456, tenant_id='default')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"stats":{"tasks_total":3,"tasks_completed":1,"medications_active":2}}
+
+--------------------
+
+用户：修改用药剂量
+
+思考：更新用药信息，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_update_medication_in_plan(medical_record_no='P00000123', medication_id=1, tenant_id='default', user_id='doctor001', dosage='500mg', frequency='每日2次')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：停掉这个药
+
+思考：删除用药，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_delete_medication_from_plan(medical_record_no='P00000123', medication_id=1, tenant_id='default', user_id='doctor001')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：更新任务状态
+
+思考：更新任务状态，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_update_task_in_plan(medical_record_no='P00000123', task_id=1, tenant_id='default', user_id='doctor001', status='completed')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：删除这个任务
+
+思考：删除任务，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_delete_task_from_plan(medical_record_no='P00000123', task_id=1, tenant_id='default', user_id='doctor001')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：更新注意事项
+
+思考：更新注意事项，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_update_precaution_in_plan(medical_record_no='P00000123', precaution_id=1, tenant_id='default', user_id='doctor001', precaution='术后3个月内禁止剧烈运动', priority='高')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：删除这条注意事项
+
+思考：删除注意事项，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_delete_precaution_from_plan(medical_record_no='P00000123', precaution_id=1, tenant_id='default', user_id='doctor001')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：更新康复计划信息
+
+思考：更新康复计划基本信息，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_update_care_plan(medical_record_no='P00000123', plan_id=456, tenant_id='default', user_id='doctor001', plan_name='肺癌术后康复计划（修订版）', status='active')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+--------------------
+
+用户：删除这个康复计划
+
+思考：删除康复计划，通过 care_plan_assistant 执行。
+
+代码：
+```<RUN>
+result = care_plan_assistant(task="care_plan_delete_care_plan(medical_record_no='P00000123', plan_id=456, tenant_id='default', user_id='doctor001')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true}
+
+
+====================
+五、文档解析（通过 document_parsing_assistant）
+====================
+
+用户：帮我识别这张图片是什么类型的文档
+
+思考：识别文档类型，通过 document_parsing_assistant 执行。
+
+代码：
+```<RUN>
+result = document_parsing_assistant(task="document_parsing_detect_document_type(image_url='/tmp/upload/doc.jpg')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"document_type":"lab_report","confidence":0.95}
+
+思考：这是检验报告，可以使用检验报告解析工具进一步解析。
+
+--------------------
+
+用户：解析这张检验报告并保存到患者时间线
+
+思考：解析检验报告，通过 document_parsing_assistant 执行。
+
+代码：
+```<RUN>
+result = document_parsing_assistant(task="document_parsing_analyze_lab_report(image_url='/tmp/upload/lab.jpg', patient_id=123, timeline_id=1)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"report_id":789,"test_items":[{"name":"血红蛋白","value":"98","unit":"g/L","reference":"120-160","status":"偏低"}]}
+
+--------------------
+
+用户：解析这张影像报告
+
+思考：解析影像报告，通过 document_parsing_assistant 执行。
+
+代码：
+```<RUN>
+result = document_parsing_assistant(task="document_parsing_analyze_imaging_report(image_url='/tmp/upload/ct.jpg', patient_id=123, timeline_id=1)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"imaging_type":"CT","findings":"右肺上叶占位...","impression":"考虑恶性肿瘤"}
+
+--------------------
+
+用户：看看这个患者档案是谁
+
+思考：解析患者信息，通过 document_parsing_assistant 执行。
+
+代码：
+```<RUN>
+result = document_parsing_assistant(task="document_parsing_analyze_patient_info(image_url='/tmp/upload/patient.jpg')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"summary":"患者张三，男性，65岁，诊断为肺腺癌..."}
+
+--------------------
+
+用户：帮我分析一下这份病例
+
+思考：解析病例信息，通过 document_parsing_assistant 执行。
+
+代码：
+```<RUN>
+result = document_parsing_assistant(task="document_parsing_analyze_case_info(image_url='/tmp/upload/case.jpg')")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"summary":"这是一例肺腺癌IIIA期病例，患者主诉咳嗽胸痛..."}
+
+
+====================
+六、知识库检索（直接使用 knowledge_base_search 工具）
+====================
+
+用户：帮我查一下肺癌的诊断标准
+
+思考：搜索知识库，这是主智能体直接可用的工具。
+
+代码：
+```<RUN>
+result = knowledge_base_search(query="肺癌诊断标准", top_k=5)
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"results":[{"title":"肺癌诊断指南","content":"..."}]}
+
+
+====================
+七、图表生成（直接使用图表工具）
+====================
+
+用户：帮我画一个折线图展示患者血压变化
+
+思考：生成折线图，这是主智能体直接可用的工具。
+
+代码：
+```<RUN>
+result = generate_line_chart(title="患者血压变化趋势", x_data=["1月","2月","3月","4月"], y_data=[145,138,132,128], x_label="月份", y_label="收缩压(mmHg)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"chart_url":"..."}
+
+--------------------
+
+用户：用柱状图对比三种治疗方案的效果
+
+思考：生成柱状图，这是主智能体直接可用的工具。
+
+代码：
+```<RUN>
+result = generate_bar_chart(title="治疗方案效果对比", categories=["方案A","方案B","方案C"], values=[78,85,92], y_label="有效率(%)")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"chart_url":"..."}
+
+--------------------
+
+用户：画个饼图展示疾病类型分布
+
+思考：生成饼图，这是主智能体直接可用的工具。
+
+代码：
+```<RUN>
+result = generate_pie_chart(title="疾病类型分布", labels=["肺癌","胃癌","肝癌","其他"], values=[35,25,20,20])
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"chart_url":"..."}
+
+
+====================
+八、OCR文字识别（直接使用 ocr 工具）
+====================
+
+用户：帮我识别这张图片的文字
+
+思考：识别图片文字，这是主智能体直接可用的工具。
+
+代码：
+```<RUN>
+result = ocr(file_path="/tmp/upload/image.jpg")
+print(result)
+```<END_CODE>
+
+观察结果：{"success":true,"text":"患者姓名：张三\n性别：男\n年龄：65岁..."}
+
+
+====================
+参数格式速查表
+====================
+
+PubMed日期格式：YYYY/MM/DD（斜杠）
+  正确：start_date='2024/09/01'
+  错误：start_date='2024-09-01'
+
+康复计划日期格式：YYYY-MM-DD（横杠）
+  正确：start_date='2024-12-01'
+
+症状列表格式：列表
+  正确：symptoms=['咳嗽','胸痛','呼吸困难']
+  错误：symptoms='咳嗽,胸痛'
+
+患者管理：使用病历号
+  正确：medical_record_no='P00000123'
+  错误：patient_id=123
+
+病例库和康复计划：需要tenant_id
+  正确：tenant_id='default'
+
+康复计划：需要user_id
+  正确：user_id='doctor001'
+
+文件路径：必须完整路径
+  正确：image_url='/tmp/upload/doc.jpg'
+  错误：image_url='doc.jpg'
+
+
+====================
+代码格式规范（重要！）
+====================
+
+正确格式（会被执行）：
+  代码：
+  ```<RUN>
+  result = pubmed_analysis_assistant(task="search_pubmed(...)")
+  print(result)
+  ```<END_CODE>
+
+错误格式（不会被执行）：
+  代码：
+  search_pubmed(...)
+  
+  或
+  
+  代码：
+  ```python
+  search_pubmed(...)
+  ```
+
+
+====================
+子智能体调用规范（重要！）
+====================
+
+主智能体必须通过子智能体调用专业工具，不能直接调用！
+
+正确方式：
+  result = pubmed_analysis_assistant(task="search_pubmed(...)")
+  result = patient_management_assistant(task="patient_management_get_patient_basic_info(...)")
+  result = case_library_assistant(task="case_library_search_medical_cases(...)")
+  result = care_plan_assistant(task="care_plan_create_care_plan(...)")
+  result = document_parsing_assistant(task="document_parsing_detect_document_type(...)")
+
+错误方式（会报 Forbidden function 错误）：
+  search_pubmed(...)  # 直接调用工具会失败！
+  patient_management_get_patient_basic_info(...)  # 直接调用会失败！
+
+主智能体可以直接使用的工具（无需子智能体）：
+  - knowledge_base_search  # 知识库检索
+  - generate_line_chart    # 折线图
+  - generate_bar_chart     # 柱状图
+  - generate_pie_chart     # 饼图
+  - ocr                    # OCR识别

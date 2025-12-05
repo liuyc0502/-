@@ -350,6 +350,33 @@ const convertLatexDelimiters = (content: string): string => {
   );
 };
 
+/**
+ * Remove unsupported HTML tags that React cannot render
+ * This prevents errors like "The tag <run> is unrecognized"
+ */
+const removeUnsupportedHtmlTags = (content: string): string => {
+  // List of unsupported HTML tags that React cannot render
+  // These are not standard HTML tags and will cause React errors
+  const unsupportedTags = ['run', 'think', 'reasoning'];
+  
+  let cleanedContent = content;
+  
+  unsupportedTags.forEach(tag => {
+    // Remove opening tags: <tag> or <tag attr="value">
+    cleanedContent = cleanedContent.replace(
+      new RegExp(`<${tag}(\\s[^>]*)?>`, 'gi'),
+      ''
+    );
+    // Remove closing tags: </tag>
+    cleanedContent = cleanedContent.replace(
+      new RegExp(`</${tag}>`, 'gi'),
+      ''
+    );
+  });
+  
+  return cleanedContent;
+};
+
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className,
@@ -359,7 +386,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   const { t } = useTranslation("common");
 
   // Convert LaTeX delimiters to markdown math delimiters
-  const processedContent = convertLatexDelimiters(content);
+  let processedContent = convertLatexDelimiters(content);
+  
+  // Remove unsupported HTML tags that React cannot render
+  processedContent = removeUnsupportedHtmlTags(processedContent);
 
   // Customize code block style with light gray background
   const customStyle = {

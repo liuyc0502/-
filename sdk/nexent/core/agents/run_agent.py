@@ -27,7 +27,7 @@ def agent_run_thread(agent_run_info: AgentRunInfo):
             nexent.set_agent(agent)
             nexent.add_history_to_agent(agent_run_info.history)
             nexent.agent_run_with_observer(
-                query=agent_run_info.query, reset=False)
+                query=agent_run_info.query, reset=False, additional_args=agent_run_info.additional_args)
         else:
             agent_run_info.observer.add_message(
                 "", ProcessType.AGENT_NEW_RUN, "<MCP_START>")
@@ -44,7 +44,7 @@ def agent_run_thread(agent_run_info: AgentRunInfo):
                 nexent.set_agent(agent)
                 nexent.add_history_to_agent(agent_run_info.history)
                 nexent.agent_run_with_observer(
-                    query=agent_run_info.query, reset=False)
+                    query=agent_run_info.query, reset=False, additional_args=agent_run_info.additional_args)
 
     except Exception as e:
         if "Couldn't connect to the MCP server" in str(e):

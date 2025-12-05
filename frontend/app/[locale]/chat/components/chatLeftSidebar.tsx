@@ -571,42 +571,44 @@ export function ChatSidebar({
                       )}
                     </div>
 
-                    {/* Filter Pills - inline style */}
-                    <div className="flex items-center gap-1.5 mt-2 flex-nowrap overflow-x-auto">
-                      <button
-                        onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                          statusFilter === 'active'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                        }`}
-                      >
-                        进行中
-                      </button>
- 
-                      <button
-                        onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                          statusFilter === 'pending_followup'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                        }`}
-                      >
-                        待跟进
-                      </button>
- 
-                      <button
-                        onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                          statusFilter === 'difficult_case'
-                            ? 'bg-rose-100 text-rose-700'
-                            : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                        }`}
-                      >
-                        疑难
-                      </button>
- 
-                    </div>
+                    {/* Filter Pills - inline style - only show for doctor portal */}
+                    {variant === "doctor" && (
+                      <div className="flex items-center gap-1.5 mt-2 flex-nowrap overflow-x-auto">
+                        <button
+                          onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
+                          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                            statusFilter === 'active'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                          }`}
+                        >
+                          进行中
+                        </button>
+
+                        <button
+                          onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
+                          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                            statusFilter === 'pending_followup'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                          }`}
+                        >
+                          待跟进
+                        </button>
+
+                        <button
+                          onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
+                          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                            statusFilter === 'difficult_case'
+                              ? 'bg-rose-100 text-rose-700'
+                              : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
+                          }`}
+                        >
+                          疑难
+                        </button>
+
+                      </div>
+                    )}
                   </div>
                 )}
 

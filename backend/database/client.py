@@ -2,6 +2,7 @@ import logging
 import os
 from contextlib import contextmanager
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 import boto3
@@ -303,7 +304,7 @@ def get_db_session(db_session=None):
 
 def as_dict(obj):
     """
-    Convert SQLAlchemy model object to dictionary, handling datetime and date serialization
+    Convert SQLAlchemy model object to dictionary, handling datetime, date, and Decimal serialization
     """
     if isinstance(obj, TableBase):
         result = {}
@@ -312,16 +313,21 @@ def as_dict(obj):
             # Convert datetime and date objects to ISO format strings
             if isinstance(value, (datetime, date)):
                 result[c.key] = value.isoformat() if value else None
+            # Convert Decimal objects to float for JSON serialization
+            elif isinstance(value, Decimal):
+                result[c.key] = float(value) if value is not None else None
             else:
                 result[c.key] = value
         return result
 
     # noinspection PyProtectedMember
     result = dict(obj._mapping)
-    # Handle datetime and date fields in mapping results
+    # Handle datetime, date, and Decimal fields in mapping results
     for key, value in result.items():
         if isinstance(value, (datetime, date)):
             result[key] = value.isoformat() if value else None
+        elif isinstance(value, Decimal):
+            result[key] = float(value) if value is not None else None
     return result
 
 

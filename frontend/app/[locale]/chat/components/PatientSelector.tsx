@@ -44,13 +44,52 @@ export function PatientSelector({
 }: PatientSelectorProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(
-    currentPatientId || null
-  );
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(() => {
+    // First check if we have currentPatientId from props
+    if (currentPatientId) return currentPatientId;
 
- // Track pending selection when no conversationId
- const pendingSelectionRef = useRef<PendingSelection | null>(null);
- const prevConversationIdRef = useRef<number | null>(null);
+    // If not, check if we have a pending selection in localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('pendingPatientSelection');
+        if (stored) {
+          const pending = JSON.parse(stored);
+          return pending.patientId;
+        }
+      } catch (error) {
+        console.error('Failed to parse pending patient selection:', error);
+      }
+    }
+
+    return null;
+  });
+
+  // Track pending selection when no conversationId - use localStorage for persistence
+  const getPendingSelection = (): PendingSelection | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('pendingPatientSelection');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Failed to parse pending patient selection from localStorage:', error);
+      return null;
+    }
+  };
+
+  const setPendingSelection = (selection: PendingSelection | null) => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (selection) {
+        localStorage.setItem('pendingPatientSelection', JSON.stringify(selection));
+      } else {
+        localStorage.removeItem('pendingPatientSelection');
+      }
+    } catch (error) {
+      console.error('Failed to save pending patient selection to localStorage:', error);
+    }
+  };
+
+  const prevConversationIdRef = useRef<number | null>(null);
 
   // Load patient list on mount
   useEffect(() => {
@@ -69,6 +108,21 @@ export function PatientSelector({
     loadPatients();
   }, []);
 
+  // Initialize from pending selection on mount if no conversationId
+  useEffect(() => {
+    if (!conversationId && !currentPatientId) {
+      const pendingSelection = getPendingSelection();
+      if (pendingSelection) {
+        console.log('[PatientSelector] Restoring pending selection on mount:', pendingSelection);
+        setSelectedPatientId(pendingSelection.patientId);
+        // Notify parent to update UI
+        if (onPatientChange) {
+          onPatientChange(pendingSelection.patientId, pendingSelection.patientName);
+        }
+      }
+    }
+  }, []); // Run only on mount
+
   // Update selected patient when prop changes
   useEffect(() => {
     setSelectedPatientId(currentPatientId || null);
@@ -79,29 +133,36 @@ export function PatientSelector({
       // Only save if conversationId just became available and we have a pending selection
       if (
         conversationId &&
-        !prevConversationIdRef.current &&
-        pendingSelectionRef.current
+        !prevConversationIdRef.current
       ) {
-        const { patientId, patientName } = pendingSelectionRef.current;
-        try {
-          await conversationService.linkPatient({
-            conversation_id: conversationId,
-            patient_id: patientId,
-            patient_name: patientName,
-          });
- 
-          // Notify parent component
-          if (onPatientChange) {
-            onPatientChange(patientId, patientName);
+        const pendingSelection = getPendingSelection();
+        if (pendingSelection) {
+          const { patientId, patientName } = pendingSelection;
+          console.log('[PatientSelector] Saving pending patient selection:', { conversationId, patientId, patientName });
+          try {
+            await conversationService.linkPatient({
+              conversation_id: conversationId,
+              patient_id: patientId,
+              patient_name: patientName,
+            });
+
+            console.log('[PatientSelector] Successfully saved pending patient selection');
+
+            // Notify parent component
+            if (onPatientChange) {
+              onPatientChange(patientId, patientName);
+            }
+
+            // Clear pending selection after successfully saving
+            setPendingSelection(null);
+          } catch (error) {
+            console.error("Failed to save pending patient selection:", error);
           }
-        } catch (error) {
-          console.error("Failed to save pending patient selection:", error);
         }
-        pendingSelectionRef.current = null;
       }
       prevConversationIdRef.current = conversationId;
     };
- 
+
     savePendingSelection();
   }, [conversationId, onPatientChange]);
 
@@ -113,28 +174,37 @@ export function PatientSelector({
       ? patients.find((p) => p.patient_id === patientId)
       : null;
     const patientName = selectedPatient?.name || null;
- 
+
     // Update local state immediately
     setSelectedPatientId(patientId);
- 
+
+    console.log('[PatientSelector] Patient selection changed:', { conversationId, patientId, patientName });
+
     // If no conversationId, store as pending selection
     if (!conversationId) {
-      pendingSelectionRef.current = { patientId, patientName };
+      console.log('[PatientSelector] No conversationId yet, storing as pending selection');
+      setPendingSelection({ patientId, patientName });
       // Still notify parent for UI update
       if (onPatientChange) {
         onPatientChange(patientId, patientName);
       }
       return;
     }
- 
+
     // If we have conversationId, save immediately
+    console.log('[PatientSelector] ConversationId exists, saving immediately');
     try {
       await conversationService.linkPatient({
         conversation_id: conversationId,
         patient_id: patientId,
         patient_name: patientName,
       });
- 
+
+      console.log('[PatientSelector] Successfully linked patient to conversation');
+
+      // Clear any pending selection since we just saved
+      setPendingSelection(null);
+
       // Notify parent component
       if (onPatientChange) {
         onPatientChange(patientId, patientName);

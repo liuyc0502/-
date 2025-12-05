@@ -118,6 +118,12 @@ class AgentRequest(BaseModel):
     minio_files: Optional[List[Dict[str, Any]]] = None
     agent_id: Optional[int] = None
     is_debug: Optional[bool] = False
+    # Portal context
+    portal_type: Optional[str] = None
+    user_email: Optional[str] = None  # User email for patient lookup (patient portal)
+    # Doctor portal context: linked patient and timeline
+    patient_id: Optional[int] = None
+    timeline_id: Optional[int] = None
 
 
 class MessageUnit(BaseModel):

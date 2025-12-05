@@ -44,12 +44,12 @@ import { ChatAgentSelector } from "./chatAgentSelector";
 const getTimeGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) {
-    return "Good morning";
+    return "早上好";
   }
   if (hour < 18) {
-    return "Good afternoon";
+    return "下午好";
   }
-  return "Good evening";
+  return "晚上好";
 };
 
 // Image viewer component
@@ -383,11 +383,10 @@ export function ChatInput({
     t("chatInput.sendMessageTo", {
       appName: appConfig.appName,
     });
-  const heroIcon = portalConfig?.heroIcon || "✺";
+  const heroIcon = portalConfig?.heroIcon || "🍊";
   const greetingText = portalConfig?.heroGreeting || getTimeGreeting();
   const heroSubheading =
     portalConfig?.heroSubheading || t("chatInput.introMessage");
-  const quickActions = portalConfig?.quickActions || [];
   const displayName =
     userDisplayName ||
     portalConfig?.defaultUserName ||
@@ -1047,11 +1046,6 @@ export function ChatInput({
     );
   };
 
-  const handleQuickAction = (prefill: string) => {
-    onInputChange(prefill);
-    setTimeout(() => textareaRef.current?.focus(), 50);
-  };
-
   const renderInputArea = () => {
     const fileInputId = isInitialMode ? "file-upload-initial" : "file-upload-regular";
     return (
@@ -1314,26 +1308,6 @@ export function ChatInput({
             <p className="text-base text-[#6B6B6B]">{heroSubheading}</p>
           </div>
           <div className="w-full">{renderInputArea()}</div>
-          {quickActions.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-3">
-              {quickActions.map((action) => {
-                const ActionIcon = action.icon;
-                return (
-                  <button
-                    key={action.id}
-                    type="button"
-                    onClick={() =>
-                      handleQuickAction(action.prefill || action.label)
-                    }
-                    className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-[#E8E2D6] bg-white text-sm text-[#6B6B6B] hover:border-[#D9CFC0] transition"
-                  >
-                    <ActionIcon className="h-4 w-4" />
-                    {action.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
       ) : (
         <div className="w-full max-w-3xl mx-auto">{renderInputArea()}</div>

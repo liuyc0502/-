@@ -38,6 +38,7 @@ export interface PortalQuickActionConfig {
 export interface PortalChatConfig {
   accentColor: string;
   backgroundColor: string;
+  backgroundGradient?: string; // Optional gradient background
   brandName: string;
   heroIcon?: string;
   heroGreeting?: string;
@@ -111,8 +112,8 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     accentColor: "#D94527",
     backgroundColor: "#FAFAFA",
     brandName: "安语",
-    heroSubheading: "How can I help you today?",
-    inputPlaceholder: "How can I help you today?",
+    heroSubheading: "今天我能如何帮助您？",
+    inputPlaceholder: "我今天想咨询的问题是...",
     newChatDescription: "快速开始一次病例讨论",
     navItems: [
       { id: "chats", label: "对话", icon: MessageSquare },
@@ -128,9 +129,9 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   },
   patient: {
     accentColor: "#10B981",
-    backgroundColor: "#F4FBF7",
+    backgroundColor: "#FAFAFA",
     brandName: "安语",
-    heroSubheading: "How can I support your care today?",
+    heroSubheading: "今天我能如何帮助您的健康？",
     inputPlaceholder: "我今天想了解的健康问题是...",
     newChatDescription: "获取贴心的健康建议",
     navItems: [

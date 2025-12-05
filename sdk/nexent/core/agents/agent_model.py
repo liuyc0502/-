@@ -52,6 +52,7 @@ class AgentRunInfo(BaseModel):
     mcp_host: Optional[List[str]] = Field(description="MCP server address", default=None)
     history: Optional[List[AgentHistory]] = Field(description="Historical conversation information", default=None)
     stop_event: Event = Field(description="Stop event control")
+    additional_args: Optional[Dict[str, Any]] = Field(description="Additional variables to inject into agent execution context", default=None)
 
     class Config:
         arbitrary_types_allowed = True

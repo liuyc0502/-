@@ -939,6 +939,10 @@ export const conversationService = {
     }>; // Update to complete attachment information object array
     agent_id?: number; // Add agent_id parameter
     is_debug?: boolean; // Add debug mode parameter
+    patient_id?: number | null; // Linked patient ID for context
+    timeline_id?: number | null; // Linked timeline ID for context
+    portal_type?: string; // Portal type for patient/doctor context injection
+    user_email?: string; // User email for patient lookup (patient portal)
   }, signal?: AbortSignal) {
     try {
       // Construct request parameters
@@ -954,6 +958,24 @@ export const conversationService = {
       // Only include agent_id if it has a value
       if (params.agent_id !== undefined && params.agent_id !== null) {
         requestParams.agent_id = params.agent_id;
+      }
+
+      // Include patient_id and timeline_id if provided (for doctor portal context)
+      if (params.patient_id !== undefined && params.patient_id !== null) {
+        requestParams.patient_id = params.patient_id;
+      }
+      if (params.timeline_id !== undefined && params.timeline_id !== null) {
+        requestParams.timeline_id = params.timeline_id;
+      }
+
+      // Include portal_type for context injection (patient_id auto-injection for patient portal)
+      if (params.portal_type) {
+        requestParams.portal_type = params.portal_type;
+      }
+
+      // Include user_email for patient lookup (patient portal)
+      if (params.user_email) {
+        requestParams.user_email = params.user_email;
       }
 
       const response = await fetch(API_ENDPOINTS.agent.run, {

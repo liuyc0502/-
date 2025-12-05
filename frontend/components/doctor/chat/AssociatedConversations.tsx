@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, List, Empty, Tag, Spin, App } from "antd";
+import { Card, Empty, Tag, Spin, App } from "antd";
 import { MessageSquare, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { conversationService } from "@/services/conversationService";
@@ -13,6 +13,7 @@ interface AssociatedConversationsProps {
   timelineId?: number | null;
   maxHeight?: string;
   showTitle?: boolean;
+  onConversationClick?: (conversationId: number) => void;
 }
 
 
@@ -22,6 +23,7 @@ export function AssociatedConversations({
   timelineId,
   maxHeight = "400px",
   showTitle = true,
+  onConversationClick,
 }: AssociatedConversationsProps) {
   const router = useRouter();
   const { message } = App.useApp();
@@ -63,8 +65,13 @@ export function AssociatedConversations({
   };
 
   const handleConversationClick = (conversationId: number) => {
-    // 导航到聊天页面并选中该对话
-    router.push(`/doctor?conversation_id=${conversationId}`);
+    // If parent provided a callback, use it; otherwise use default navigation
+    if (onConversationClick) {
+      onConversationClick(conversationId);
+    } else {
+      // Fallback: navigate to chat page with conversation ID
+      router.push(`/doctor?conversation_id=${conversationId}`);
+    }
   };
 
   const formatTimestamp = (timestamp: number) => {
@@ -129,10 +136,15 @@ export function AssociatedConversations({
                 - {patientName}
               </span>
             )}
+            {conversations.length > 0 && (
+              <span className="text-xs text-gray-400 font-normal">
+                (共{conversations.length}条)
+              </span>
+            )}
           </div>
         ) : undefined
       }
-      className="h-full"
+      className="w-full"
       bodyStyle={{ padding: 0 }}
     >
       <div
@@ -158,65 +170,59 @@ export function AssociatedConversations({
             className="py-8"
           />
         ) : (
-          <List
-            dataSource={conversations}
-            renderItem={(conversation) => (
-              <List.Item
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {conversations.map((conversation) => (
+              <div
                 key={conversation.conversation_id}
-                className="cursor-pointer hover:bg-gray-50 transition-colors px-2 rounded"
+                className="cursor-pointer hover:shadow-md transition-all p-3 rounded-lg border border-gray-200 bg-white hover:border-[#D94527] group"
                 onClick={() => handleConversationClick(conversation.conversation_id)}
-                style={{ borderBottom: "1px solid #f0f0f0" }}
               >
-                <div className="w-full">
-                  {/* 标题和状态 */}
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="flex-1 font-medium text-sm text-gray-900 line-clamp-1">
-                      {conversation.conversation_title || "未命名对话"}
-                    </div>
-                    {conversation.conversation_status && (
-                      <Tag
-                        color={getStatusColor(conversation.conversation_status)}
-                        className="flex-shrink-0"
-                      >
-                        {getStatusText(conversation.conversation_status)}
+                {/* 标题和状态 */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex-1 font-medium text-sm text-gray-900 line-clamp-1 group-hover:text-[#D94527]">
+                    {conversation.conversation_title || "未命名对话"}
+                  </div>
+                  {conversation.conversation_status && (
+                    <Tag
+                      color={getStatusColor(conversation.conversation_status)}
+                      className="flex-shrink-0 text-xs"
+                    >
+                      {getStatusText(conversation.conversation_status)}
+                    </Tag>
+                  )}
+                </div>
+
+                {/* 摘要 */}
+                {conversation.summary && (
+                  <div className="text-xs text-gray-500 mb-2 line-clamp-2 min-h-[2.5rem]">
+                    {conversation.summary}
+                  </div>
+                )}
+
+                {/* 标签 */}
+                {conversation.tags && conversation.tags.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap mb-2">
+                    {conversation.tags.slice(0, 2).map((tag, index) => (
+                      <Tag key={index} className="text-xs m-0">
+                        {tag}
                       </Tag>
+                    ))}
+                    {conversation.tags.length > 2 && (
+                      <span className="text-xs text-gray-400">
+                        +{conversation.tags.length - 2}
+                      </span>
                     )}
                   </div>
+                )}
 
-                  {/* 摘要 */}
-                  {conversation.summary && (
-                    <div className="text-xs text-gray-500 mb-2 line-clamp-2">
-                      {conversation.summary}
-                    </div>
-                  )}
-
-                  {/* 标签和时间戳 */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {conversation.tags && conversation.tags.length > 0 && (
-                        <>
-                          {conversation.tags.slice(0, 3).map((tag, index) => (
-                            <Tag key={index} className="text-xs m-0">
-                              {tag}
-                            </Tag>
-                          ))}
-                          {conversation.tags.length > 3 && (
-                            <span className="text-xs text-gray-400">
-                              +{conversation.tags.length - 3}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-                      <Clock className="h-3 w-3" />
-                      {formatTimestamp(conversation.update_time || conversation.create_time)}
-                    </div>
-                  </div>
+                {/* 时间戳 */}
+                <div className="flex items-center gap-1 text-xs text-gray-400 mt-auto pt-2 border-t border-gray-100">
+                  <Clock className="h-3 w-3" />
+                  {formatTimestamp(conversation.update_time || conversation.create_time)}
                 </div>
-              </List.Item>
-            )}
-          />
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </Card>

@@ -14,6 +14,7 @@ const { TextArea } = Input;
 // ==================== Types ====================
 interface PatientOverviewProps {
   patientId: string;
+  onConversationClick?: (conversationId: number) => void;
 }
 
 interface EditableFieldProps {
@@ -149,7 +150,7 @@ const EditableField = ({
 };
 
 // ==================== Main Component ====================
-export function PatientOverview({ patientId }: PatientOverviewProps) {
+export function PatientOverview({ patientId, onConversationClick }: PatientOverviewProps) {
   const { message } = App.useApp();
 
   // ==================== State ====================
@@ -273,15 +274,46 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
 
   // ==================== Render ====================
   return (
-    <div className="grid grid-cols-12 gap-6">
-      {/* Left Column - 40% width */}
-      <div className="col-span-12 lg:col-span-5 space-y-4">
-        {/* Basic Info Card */}
-        <Card className="bg-white border-gray-200">
+    <div className="space-y-6">
+      {/* Treatment Summary - Full Width at Top */}
+      {timelines.length > 0 && (
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">基本信息</CardTitle>
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <span className="text-blue-600">诊疗摘要</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 text-sm">
+            <p className="text-gray-700 leading-relaxed">
+              患者{patient.name}，{patient.age}岁{patient.gender}性，共有{visitCount}次就诊记录。
+              {pendingTodosCount > 0 && (
+                <span>
+                  {" "}
+                  当前有<span className="bg-yellow-200 px-1 rounded">{pendingTodosCount}项待办事项</span>
+                  需要处理。
+                </span>
+              )}
+            </p>
+            {latestTimeline && (
+              <p className="text-gray-700 leading-relaxed">
+                最近就诊：{latestTimeline.stage_title}
+                {latestTimeline.diagnosis && <span> - {latestTimeline.diagnosis}</span>}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left Column - 40% width */}
+        <div className="col-span-12 lg:col-span-5 space-y-4">
+          {/* Basic Info Card */}
+          <Card className="bg-white border-gray-200 h-full">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold">基本信息</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pb-6">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500 block mb-1">姓名:</span>
@@ -469,48 +501,29 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
               />
               <p className="text-xs text-gray-400 mt-1">多项病史请用顿号（、）或逗号分隔</p>
             </div>
+
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-sm font-semibold text-gray-700 mb-1">当前诊断:</p>
+              <EditableField
+                field="diagnosis"
+                value={patient.diagnosis || ""}
+                label="诊断"
+                type="textarea"
+                rows={3}
+                editingField={editingField}
+                editValues={editValues}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onEditValueChange={handleEditValueChange}
+              />
+            </div>
           </CardContent>
         </Card>
+        </div>
 
-        {/* Treatment Summary Card */}
-        {timelines.length > 0 && (
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <span className="text-blue-600">诊疗摘要</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <p className="text-gray-700 leading-relaxed">
-                患者{patient.name}，{patient.age}岁{patient.gender}性，共有{visitCount}次就诊记录。
-                {pendingTodosCount > 0 && (
-                  <span>
-                    {" "}
-                    当前有<span className="bg-yellow-200 px-1 rounded">{pendingTodosCount}项待办事项</span>
-                    需要处理。
-                  </span>
-                )}
-              </p>
-              {latestTimeline && (
-                <p className="text-gray-700 leading-relaxed">
-                  最近就诊：{latestTimeline.stage_title}
-                  {latestTimeline.diagnosis && <span> - {latestTimeline.diagnosis}</span>}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Associated Conversations Card */}
-        <AssociatedConversations
-          patientId={patient.patient_id}
-          patientName={patient.name}
-          maxHeight="500px"
-        />
-      </div>
-
-      {/* Right Column - 60% width */}
-      <div className="col-span-12 lg:col-span-7 space-y-4">
+        {/* Right Column - 60% width */}
+        <div className="col-span-12 lg:col-span-7 space-y-4">
         {/* Quick Access Cards */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-white border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
@@ -636,7 +649,16 @@ export function PatientOverview({ patientId }: PatientOverviewProps) {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
+
+      {/* Full Width Associated Conversations */}
+      <AssociatedConversations
+        patientId={patient.patient_id}
+        patientName={patient.name}
+        maxHeight="300px"
+        onConversationClick={onConversationClick}
+      />
     </div>
   );
 }

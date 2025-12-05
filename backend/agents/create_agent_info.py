@@ -19,6 +19,8 @@ from database.model_management_db import get_model_records, get_model_by_model_i
 from utils.model_name_utils import add_repo_to_name
 from utils.prompt_template_utils import get_agent_prompt_template
 from utils.config_utils import tenant_config_manager, get_model_name_from_config
+from utils.patient_auth_utils import get_patient_id_from_user_id, get_patient_medical_record_no_from_user_id
+from database.patient_db import get_patient_by_id, get_patient_by_email
 from consts.const import LOCAL_MCP_SERVER, MODEL_CONFIG_MAPPING, LANGUAGE
 
 logger = logging.getLogger("create_agent_info")
@@ -63,6 +65,8 @@ async def create_agent_config(
     language: str = LANGUAGE["ZH"],
     last_user_query: str = None,
     allow_memory_search: bool = True,
+    portal_type: str = None,
+    user_email: str = None,
 ):
     agent_info = search_agent_info_by_agent_id(
         agent_id=agent_id, tenant_id=tenant_id)
@@ -79,6 +83,8 @@ async def create_agent_config(
             language=language,
             last_user_query=last_user_query,
             allow_memory_search=allow_memory_search,
+            portal_type=portal_type,
+            user_email=user_email,
         )
         managed_agents.append(sub_agent_config)
 
@@ -152,9 +158,43 @@ async def create_agent_config(
     except Exception as e:
         logger.error(f"Failed to build knowledge base summary: {e}")
 
+    # Patient identity injection for patient portal
+    patient_context = {}
+    if portal_type == "patient":
+        try:
+            logger.info(f"Patient portal detected - injecting patient identity for user {user_id}")
+            # Priority: 1. Use user_email directly (most reliable, no external API call)
+            #           2. Fallback to user_id mapping (requires Supabase or TEST_PATIENT_EMAIL)
+            patient_id = None
+            if user_email:
+                patient = get_patient_by_email(user_email, tenant_id)
+                if patient:
+                    patient_id = str(patient.get("patient_id"))
+                    logger.info(f"Found patient_id={patient_id} via user_email={user_email}")
+            if not patient_id:
+                patient_id = get_patient_id_from_user_id(user_id, tenant_id)
+            if patient_id:
+                patient_data = get_patient_by_id(patient_id, tenant_id)
+                if patient_data:
+                    patient_context = {
+                        "patient_id": patient_id,
+                        "patient_name": patient_data.get("name"),
+                        "patient_medical_record_no": patient_data.get("medical_record_no"),
+                        "patient_email": patient_data.get("email"),
+                        "patient_age": patient_data.get("age"),
+                        "patient_gender": patient_data.get("gender"),
+                    }
+                    logger.info(f"Patient identity injected: {patient_context.get('patient_name')} (ID: {patient_id}, MRN: {patient_context.get('patient_medical_record_no')})")
+                else:
+                    logger.warning(f"Patient data not found for patient_id {patient_id}")
+            else:
+                logger.warning(f"Could not map user_id {user_id} to patient_id")
+        except Exception as e:
+            logger.error(f"Failed to inject patient identity: {e}")
+
     # Assemble system_prompt
     if duty_prompt or constraint_prompt or few_shots_prompt:
-        system_prompt = Template(prompt_template["system_prompt"], undefined=StrictUndefined).render({
+        template_vars = {
             "duty": duty_prompt,
             "constraint": constraint_prompt,
             "few_shots": few_shots_prompt,
@@ -165,8 +205,10 @@ async def create_agent_config(
             "APP_DESCRIPTION": app_description,
             "memory_list": memory_list,
             "knowledge_base_summary": knowledge_base_summary,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            **patient_context  # Inject patient context variables
+        }
+        system_prompt = Template(prompt_template["system_prompt"], undefined=StrictUndefined).render(template_vars)
     else:
         system_prompt = agent_info.get("prompt", "")
 
@@ -288,14 +330,27 @@ async def prepare_prompt_templates(is_manager: bool, system_prompt: str, languag
     return prompt_templates
 
 
-async def join_minio_file_description_to_query(minio_files, query):
+async def join_minio_file_description_to_query(minio_files, query, patient_id=None, timeline_id=None):
     """
-    Join minio file information to query for agent processing.
+    Join minio file information and context to query for agent processing.
     Includes file URL for image files so OCR tool can be called with the URL.
+    Also includes patient/timeline context for doctor portal.
     """
     from consts.const import MAIN_SERVICE_URL
     
-    final_query = query
+    context_parts = []
+    
+    # Add patient/timeline context if provided (for doctor portal)
+    if patient_id is not None or timeline_id is not None:
+        context_parts.append("[Current Context]")
+        if patient_id is not None:
+            context_parts.append(f"  - Linked Patient ID: {patient_id}")
+        if timeline_id is not None:
+            context_parts.append(f"  - Linked Timeline ID: {timeline_id}")
+        context_parts.append("  - IMPORTANT: When saving reports or data, use these IDs directly without asking the user.")
+        context_parts.append("")
+    
+    # Process file attachments
     if minio_files and isinstance(minio_files, list):
         file_info_list = []
         # Get backend API base URL for internal API calls
@@ -331,9 +386,16 @@ async def join_minio_file_description_to_query(minio_files, query):
                     file_info_list.append(file_info)
 
         if file_info_list:
-            final_query = "User provided the following files:\n"
-            final_query += "\n".join(file_info_list) + "\n"
-            final_query += f"User query: {query}"
+            context_parts.append("User provided the following files:")
+            context_parts.extend(file_info_list)
+    
+    # Build final query
+    if context_parts:
+        final_query = "\n".join(context_parts) + "\n"
+        final_query += f"User query: {query}"
+    else:
+        final_query = query
+        
     return final_query
 
 
@@ -371,8 +433,17 @@ async def create_agent_run_info(
     user_id: str,
     language: str = "zh",
     allow_memory_search: bool = True,
+    patient_id: int = None,
+    timeline_id: int = None,
+    portal_type: str = None,
+    user_email: str = None,
 ):
-    final_query = await join_minio_file_description_to_query(minio_files=minio_files, query=query)
+    final_query = await join_minio_file_description_to_query(
+        minio_files=minio_files, 
+        query=query,
+        patient_id=patient_id,
+        timeline_id=timeline_id
+    )
     model_list = await create_model_config_list(tenant_id)
     agent_config = await create_agent_config(
         agent_id=agent_id,
@@ -381,6 +452,8 @@ async def create_agent_run_info(
         language=language,
         last_user_query=final_query,
         allow_memory_search=allow_memory_search,
+        portal_type=portal_type,
+        user_email=user_email,
     )
 
     remote_mcp_list = await get_remote_mcp_server_list(tenant_id=tenant_id)
@@ -395,6 +468,31 @@ async def create_agent_run_info(
     # Filter MCP servers and tools
     mcp_host = filter_mcp_servers_and_tools(agent_config, remote_mcp_dict)
 
+    # Build additional_args for code execution context
+    additional_args = {}
+    logger.info(f"[DEBUG] create_agent_run_info: portal_type={portal_type}, user_id={user_id}, patient_id={patient_id}, user_email={user_email}")
+    if portal_type == "patient":
+        # Get patient_id - priority: direct patient_id > lookup by email > lookup by user_id
+        effective_patient_id = patient_id
+        if effective_patient_id is None and user_email:
+            # Try to find patient by email first (most reliable method)
+            patient = get_patient_by_email(user_email, tenant_id)
+            if patient:
+                effective_patient_id = patient.get("patient_id")
+                logger.info(f"[DEBUG] Found patient_id={effective_patient_id} via user_email={user_email}")
+        
+        if effective_patient_id is None:
+            try:
+                effective_patient_id = get_patient_id_from_user_id(user_id, tenant_id)
+                logger.info(f"[DEBUG] Got patient_id from user_id: {effective_patient_id}")
+            except Exception as e:
+                logger.warning(f"Failed to get patient_id from user_id for execution context: {e}")
+        
+        if effective_patient_id is not None:
+            # Inject patient_id into execution context so agent can use it as a variable
+            additional_args["patient_id"] = str(effective_patient_id)
+            logger.info(f"[DEBUG] Injected patient_id into additional_args: {additional_args}")
+
     agent_run_info = AgentRunInfo(
         query=final_query,
         model_config_list=model_list,
@@ -402,6 +500,7 @@ async def create_agent_run_info(
         agent_config=agent_config,
         mcp_host=mcp_host,
         history=history,
-        stop_event=threading.Event()
+        stop_event=threading.Event(),
+        additional_args=additional_args if additional_args else None
     )
     return agent_run_info

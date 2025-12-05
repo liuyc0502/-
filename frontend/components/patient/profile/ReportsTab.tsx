@@ -297,10 +297,6 @@ export function ReportsTab() {
         <div className="text-sm text-gray-600">
           共 {filteredReports.length} 份报告
         </div>
-        <Button className="bg-[#10B981] hover:bg-[#059669] text-white">
-          <Upload className="h-4 w-4 mr-2" />
-          上传新报告
-        </Button>
       </div>
 
       {/* Search */}

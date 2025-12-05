@@ -1,73 +1,226 @@
-# 更新日志
+2025-12-05 | backend/agents/create_agent_info.py | 修复 patient portal 下找不到 patient_id 的问题：添加 user_email 参数传递到 create_agent_config，优先使用 email 直接查找 patient，避免依赖 Supabase API
 
-## 2025-12-01: 代码备份到新分支
+---
 
-### 操作内容
-- 🌿 **创建新分支**: `backup/20251201-023743`
-- 📦 **提交更改**: 54 个文件，4468 行新增，657 行删除
-- 🚀 **推送到远程仓库**: 成功推送到 `origin/backup/20251201-023743`
+方案2: 原子化数据库操作(让智能体决策)
+async def get_patient_basic_info(patient_id: str):
+    """Get patient basic information only"""
 
-### 主要更新文件
-包括但不限于：
-- `Update.md` (更新)
-- `backend/apps/care_plan_app.py` (更新)
-- `backend/apps/conversation_management_app.py` (更新)
-- `backend/apps/patient_app.py` (更新)
-- `backend/consts/model.py` (更新)
-- `backend/database/care_plan_db.py` (更新)
-- `backend/database/conversation_db.py` (更新)
-- `backend/database/db_models.py` (更新)
-- `backend/database/patient_db.py` (更新)
-- `backend/services/care_plan_service.py` (更新)
-- `backend/services/conversation_management_service.py` (更新)
-- `backend/services/patient_service.py` (更新)
-- `backend/tool_collection/mcp/document_parsing_tools.py` (更新)
-- `frontend/app/[locale]/chat/components/PatientSelector.tsx` (更新)
-- `frontend/app/[locale]/chat/components/chatHeader.tsx` (更新)
-- `frontend/app/[locale]/chat/internal/chatInterface.tsx` (更新)
-- `frontend/app/[locale]/chat/streaming/chatStreamHandler.tsx` (更新)
-- `frontend/components/doctor/cases/CaseDetailView.tsx` (更新)
-- `frontend/components/doctor/cases/CaseLibraryView.tsx` (更新)
-- `frontend/components/doctor/chat/ConfirmCaseDocumentModal.tsx` (更新)
-- `frontend/components/doctor/chat/ConfirmImagingReportModal.tsx` (更新)
-- `frontend/components/doctor/chat/ConfirmLabReportModal.tsx` (更新)
-- `frontend/components/doctor/chat/ConfirmPatientArchiveModal.tsx` (更新)
-- `frontend/components/doctor/patients/CreateCarePlanModal.tsx` (更新)
-- `frontend/components/doctor/patients/CreatePatientDialog.tsx` (更新)
-- `frontend/components/doctor/patients/CreateTimelineModal.tsx` (更新)
-- `frontend/components/doctor/patients/PatientListView.tsx` (更新)
-- `frontend/components/doctor/patients/PatientOverview.tsx` (更新)
-- `frontend/components/doctor/patients/PatientTimeline.tsx` (更新)
-- `frontend/components/patient/care-plan/CarePlanView.tsx` (更新)
-- `frontend/services/api.ts` (更新)
-- `frontend/services/carePlanService.ts` (更新)
-- `frontend/services/conversationService.ts` (更新)
-- `frontend/services/medicalCaseService.ts` (更新)
-- `frontend/services/patientService.ts` (更新)
-- `frontend/types/carePlan.ts` (更新)
-- `frontend/types/chat.ts` (更新)
-- `frontend/types/conversation.ts` (更新)
-- `sdk/nexent/core/tools/__init__.py` (更新)
-- `start_all.sh` (更新)
-- `stop_all.sh` (更新)
+async def get_patient_diagnoses(patient_id: str):
+    """Get patient diagnosis history"""
 
-### 新增文件
-- `backend/database/migrations/add_timeline_linking_to_conversations.sql` (新建)
-- `backend/database/migrations/run_timeline_linking_migration.py` (新建)
-- `backend/prompts/doctor_portal_main_agent_config.md` (新建)
-- `frontend/app/[locale]/chat/components/TimelineSelector.tsx` (新建)
-- `frontend/components/doctor/chat/AssociatedConversations.tsx` (新建)
-- `frontend/components/doctor/chat/ConfirmMedicalOrderModal.tsx` (新建)
-- `frontend/components/doctor/chat/PatientTimelineMatchModal.tsx` (新建)
-- `frontend/types/medicalcase.ts` (新建)
-- `sdk/nexent/core/tools/analyze_image_tool.py` (新建)
-- `sdk/nexent/core/tools/analyze_text_file_tool.py` (新建)
+async def get_patient_lab_reports(patient_id: str):
+    """Get patient lab reports"""
+优点:
+✅ 极大的灵活性 - 智能体可以根据问题精确决定需要哪些数据
+✅ 避免过度查询 - 只查询真正需要的数据
+✅ 扩展性强 - 添加新表时只需添加原子查询函数
+✅ 智能体自主性 - 充分利用 LLM 的推理能力
+缺点:
+智能体可能做出低效的查询决策
+需要多次函数调用(但现代 LLM 支持并行调用)
+需要智能体理解数据关系
 
-### 分支信息
-- 分支名称: `backup/20251201-023743`
-- 远程仓库: `origin/backup/20251201-023743`
-- 提交 ID: `b2ba76cd`
-- 提交信息: 备份代码: 2025-12-01 02:37:56
+---
+
+## 2025-12-05: 修复患者端 patient_id 变量未定义问题
+
+**修改文件**:
+- `sdk/nexent/core/agents/agent_model.py` - AgentRunInfo 添加 additional_args 字段
+- `backend/agents/create_agent_info.py` - 患者端注入 patient_id 到执行上下文，支持 user_email 查找
+- `sdk/nexent/core/agents/nexent_agent.py` - agent_run_with_observer 传递 additional_args
+- `sdk/nexent/core/agents/run_agent.py` - 传递 additional_args 到 agent
+- `backend/services/agent_service.py` - prepare_agent_run 传递 portal_type 和 user_email
+- `backend/consts/model.py` - AgentRequest 添加 user_email 字段
+- `backend/utils/patient_auth_utils.py` - 支持从 JWT 提取邮箱、环境变量指定测试患者、Speed Mode fallback
+- `backend/database/patient_db.py` - 新增 get_first_patient 函数
+- `frontend/services/conversationService.ts` - runAgent 添加 user_email 参数
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` - 传递用户邮箱到后端
+
+**问题**: 患者端 Agent 执行代码 `patient_info_get_patient_basic_info(patient_id=patient_id)` 时报错 `patient_id is not defined`
+
+**修复**: 
+1. 前端传递登录用户的邮箱 `user_email` 到后端
+2. 后端根据邮箱查找对应的患者记录，获取 patient_id
+3. 将 patient_id 注入到代码执行环境的 additional_args 中
+4. Speed Mode 支持环境变量 `TEST_PATIENT_EMAIL` 指定测试患者
+
+---
+
+## 2025-12-05: 患者档案页面优化与关联对话功能改进
+
+### 修改文件
+- `frontend/const/portalChatConfig.ts` - 统一患者端和医生端对话背景色
+- `frontend/components/doctor/patients/PatientOverview.tsx` - 优化布局，关联对话横向展示
+- `frontend/components/doctor/patients/PatientTimeline.tsx` - 添加对话跳转回调
+- `frontend/components/doctor/patients/PatientDetailView.tsx` - 传递对话跳转回调
+- `frontend/components/doctor/chat/AssociatedConversations.tsx` - 支持回调跳转，横向卡片布局
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` - 实现对话跳转逻辑
+
+### 1. 统一背景颜色
+**修改内容：**
+- 将患者端对话背景色从 `#F4FBF7` (浅绿色) 改为 `#FAFAFA` (中性灰)
+- 与医生端对话背景色保持一致，提供统一的视觉体验
+
+**文件：** `portalChatConfig.ts:132`
+
+### 2. 患者概览布局优化
+**问题：**
+- 原布局中"关联对话"卡片高度过高(500px)、宽度窄，垂直列表展示
+- 右侧"总任务数"和"下次复查"卡片与左侧"诊疗摘要"底部不对齐
+
+**优化方案：**
+- 将整体布局改为两层结构：
+  - 上层：左右两栏布局（基本信息+诊疗摘要 | 快速访问卡片+关键指标）
+  - 下层：全宽关联对话区域
+- 关联对话改为横向网格布局（响应式：1-4列）
+- 降低高度至300px，更适合横板展示
+- 左右两栏高度自然对齐
+
+**布局结构：**
+```
+┌─────────────────────────────────────────────────┐
+│  基本信息 (40%)  │  快速访问卡片 (60%)          │
+│  诊疗摘要        │  关键指标                    │
+└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│            关联对话（全宽横向卡片）              │
+└─────────────────────────────────────────────────┘
+```
+
+**文件：** `PatientOverview.tsx:276-648`
+
+### 3. 关联对话组件重构
+**修改前：** 垂直列表布局，每个对话占一行
+**修改后：** 横向网格卡片布局
+
+**新特性：**
+- 响应式网格：
+  - 小屏(sm): 1列
+  - 中屏(md): 2列
+  - 大屏(lg): 3列
+  - 超大屏(xl): 4列
+- 卡片式设计：
+  - 每个对话独立卡片
+  - 悬停效果（阴影+品牌色边框）
+  - 标题悬停变色
+- 内容优化：
+  - 摘要限制2行显示
+  - 标签最多显示2个
+  - 时间戳底部分隔线
+  - 标题显示对话总数
+
+**文件：** `AssociatedConversations.tsx:161-218`
+
+### 4. 关联对话跳转功能
+**问题：**
+- 点击关联对话卡片后，URL改变但页面不跳转
+- 原因：医生端所有视图(对话、患者档案、病例库等)都在同一路由 `/doctor` 下，通过内部状态 `activeView` 切换，没有真正的页面路由
+
+**解决方案：**
+通过回调函数传递对话切换逻辑：
+
+**实现链路：**
+```
+AssociatedConversations (点击对话)
+    ↓ onConversationClick(conversationId)
+PatientOverview (传递回调)
+    ↓
+PatientDetailView (传递回调)
+    ↓
+ChatInterface (实现跳转逻辑)
+    ↓
+    1. setActiveView("chats") - 切换到对话视图
+    2. 从 conversationList 找到对话对象
+    3. handleConversationSelect(conversation) - 加载对话
+```
+
+**核心代码：**
+```typescript
+// ChatInterface.tsx
+onConversationClick={(conversationId: number) => {
+  // Switch to chats view
+  setActiveView("chats");
+  // Load the conversation
+  const conversation = conversationManagement.conversationList.find(
+    c => c.conversation_id === conversationId
+  );
+  if (conversation) {
+    conversationManagement.handleConversationSelect(conversation);
+  }
+}}
+```
+
+**支持场景：**
+- ✅ 患者概览 → 关联对话 → 跳转到对话
+- ✅ 诊疗时间线 → 关联对话 → 跳转到对话
+- ✅ 保持在同一路由 `/doctor` 下
+- ✅ 无需页面刷新，SPA体验流畅
+
+**修改文件：**
+- `AssociatedConversations.tsx` - 添加可选回调prop，优先使用回调
+- `PatientOverview.tsx` - 接收并传递回调
+- `PatientTimeline.tsx` - 接收并传递回调
+- `PatientDetailView.tsx` - 接收并传递回调到子组件
+- `chatInterface.tsx` - 实现对话切换逻辑
+
+**技术细节：**
+- 回调参数设计为可选 `onConversationClick?: (conversationId: number) => void`
+- 组件支持降级：无回调时使用默认的 `router.push()` 行为
+- 跨3层组件传递回调，保持接口一致性
+
+### 视觉优化总结
+✅ 统一背景颜色，视觉一致性更好
+✅ 布局更加紧凑合理，信息密度适中
+✅ 关联对话横向展示，充分利用空间
+✅ 响应式网格布局，适配不同屏幕
+✅ 对话跳转流畅，无需刷新页面
+
+---
+
+## 2025-12-04: 医生端工具与上下文传递
+
+### 新增/修改文件
+- `backend/tool_collection/mcp/doctor_report_management_tools.py` - 检验/影像报告CRUD工具
+- `backend/prompts/doctor_portal_main_agent.yaml` - 医生端智能体Prompt
+- `backend/consts/model.py` - AgentRequest添加patient_id/timeline_id
+- `backend/agents/create_agent_info.py` - 注入患者/时间线上下文到query
+- `backend/services/agent_service.py` - 传递patient_id/timeline_id
+- `frontend/services/conversationService.ts` - runAgent添加patient_id/timeline_id参数
+- `frontend/app/[locale]/chat/internal/chatInterface.tsx` - 传递linkedPatientId/linkedTimelineId
+
+### 核心修改：上下文自动传递
+问题：前端选择了患者和时间线，但智能体不知道
+修复：把patient_id和timeline_id从前端传到后端，注入到智能体的query上下文中
+
+**传递链路：**
+```
+ChatHeader选择患者/时间线
+↓
+chatInterface.tsx 传递 linkedPatientId/linkedTimelineId
+↓
+conversationService.runAgent({ patient_id, timeline_id })
+↓
+AgentRequest.patient_id / timeline_id
+↓
+create_agent_run_info() 注入到 final_query
+↓
+智能体收到: "[Current Context] Linked Patient ID: 123, Linked Timeline ID: 456"
+```
+
+**智能体收到的query格式：**
+```
+[Current Context]
+  - Linked Patient ID: 123
+  - Linked Timeline ID: 456
+  - IMPORTANT: When saving reports or data, use these IDs directly without asking the user.
+
+User provided the following files:
+[Image File: report.jpg]
+  - Access URL: http://...
+  
+User query: 这张检验报告帮我录入一下
+```
 
 ---
 

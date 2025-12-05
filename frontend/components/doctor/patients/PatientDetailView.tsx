@@ -15,9 +15,10 @@ import { PatientCarePlans } from "./PatientCarePlans";
 interface PatientDetailViewProps {
   patientId: string;
   onBack: () => void;
+  onConversationClick?: (conversationId: number) => void;
 }
 
-export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps) {
+export function PatientDetailView({ patientId, onBack, onConversationClick }: PatientDetailViewProps) {
   const { message } = App.useApp();
   const [activeTab, setActiveTab] = useState("overview");
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -104,10 +105,10 @@ export function PatientDetailView({ patientId, onBack }: PatientDetailViewProps)
         <div className="px-8 py-5">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="overview" className="mt-0">
-              <PatientOverview patientId={patientId} />
+              <PatientOverview patientId={patientId} onConversationClick={onConversationClick} />
             </TabsContent>
             <TabsContent value="timeline" className="mt-0">
-              <PatientTimeline patientId={patientId} />
+              <PatientTimeline patientId={patientId} onConversationClick={onConversationClick} />
             </TabsContent>
             <TabsContent value="todos" className="mt-0">
               <PatientTodos patientId={patientId} />

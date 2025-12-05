@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Card, App, Button, Modal } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
@@ -31,6 +31,7 @@ const PRIMARY_COLOR = "#D94527";
 // ============================================================================
 interface PatientTimelineProps {
   patientId: string;
+  onConversationClick?: (conversationId: number) => void;
 }
 
 // ============================================================================
@@ -69,7 +70,7 @@ const ensureFileUrl = async (raw?: string) => {
 // ============================================================================
 // Main Component
 // ============================================================================
-export function PatientTimeline({ patientId }: PatientTimelineProps) {
+export function PatientTimeline({ patientId, onConversationClick }: PatientTimelineProps) {
   const { message, modal } = App.useApp();
   
   // ============================================================================
@@ -369,46 +370,48 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
           </div>
         </div>
 
-        <div className="relative flex items-center justify-between">
+        <div className="relative flex items-center justify-between gap-4">
           {timelines.map((timeline, index) => {
             const isSelected = selectedTimeline?.timeline_id === timeline.timeline_id;
             const status = getStageStatus(timeline);
             const isClickable = status !== "pending";
 
             return (
-              <div key={timeline.timeline_id} className="flex flex-col items-center relative z-10">
-                <button
-                  onClick={() => handleStageClick(timeline.timeline_id)}
-                  disabled={!isClickable}
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                    isSelected
-                      ? "bg-[#D94527] text-white ring-4 ring-[#D94527]/30 scale-110"
-                      : status === "completed"
-                      ? "bg-green-500 text-white hover:scale-105 cursor-pointer"
-                      : status === "current"
-                      ? "bg-blue-500 text-white hover:scale-105 cursor-pointer"
-                      : "bg-gray-200 text-gray-500 border-2 border-gray-300 cursor-not-allowed"
-                  }`}
-                >
-                  {status === "completed" ? "✓" : timeline.display_order || index + 1}
-                </button>
-                <div className="mt-3 text-center">
-                  <div
-                    className={`text-sm font-semibold ${isSelected ? "text-[#D94527]" : "text-gray-900"}`}
+              <Fragment key={timeline.timeline_id}>
+                <div className="flex flex-col items-center relative z-10">
+                  <button
+                    onClick={() => handleStageClick(timeline.timeline_id)}
+                    disabled={!isClickable}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                      isSelected
+                        ? "bg-[#D94527] text-white ring-4 ring-[#D94527]/30 scale-110"
+                        : status === "completed"
+                        ? "bg-green-500 text-white hover:scale-105 cursor-pointer"
+                        : status === "current"
+                        ? "bg-blue-500 text-white hover:scale-105 cursor-pointer"
+                        : "bg-gray-200 text-gray-500 border-2 border-gray-300 cursor-not-allowed"
+                    }`}
                   >
-                    {timeline.stage_title}
+                    {status === "completed" ? "✓" : timeline.display_order || index + 1}
+                  </button>
+                  <div className="mt-3 text-center">
+                    <div
+                      className={`text-sm font-semibold ${isSelected ? "text-[#D94527]" : "text-gray-900"}`}
+                    >
+                      {timeline.stage_title}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{formatDate(timeline.stage_date)}</div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{formatDate(timeline.stage_date)}</div>
                 </div>
                 {index < timelines.length - 1 && (
                   <div
-                    className={`absolute top-6 left-1/2 w-full h-0.5 ${
+                    className={`flex-1 h-0.5 ${
                       status === "completed" ? "bg-green-500" : "bg-gray-200"
                     }`}
-                    style={{ transform: "translateX(50%)" }}
+                    style={{ marginTop: "-60px" }}
                   />
                 )}
-              </div>
+              </Fragment>
             );
           })}
         </div>
@@ -560,7 +563,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
         </div>
 
         {/* Metrics Cards */}
-        {selectedTimeline.metrics && selectedTimeline.metrics.length > 0 && (
+        {selectedTimeline.metrics && selectedTimeline.metrics.length >= 0 && (
           <Card
             className="bg-white border-gray-200"
             title={
@@ -907,6 +910,7 @@ export function PatientTimeline({ patientId }: PatientTimelineProps) {
             patientName={patient.name}
             timelineId={selectedTimeline.timeline_id}
             maxHeight="400px"
+            onConversationClick={onConversationClick}
           />
         )}
       </div>

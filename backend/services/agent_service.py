@@ -820,6 +820,10 @@ async def prepare_agent_run(
         user_id=user_id,
         language=language,
         allow_memory_search=allow_memory_search,
+        patient_id=agent_request.patient_id,
+        timeline_id=agent_request.timeline_id,
+        portal_type=agent_request.portal_type,
+        user_email=agent_request.user_email,
     )
     agent_run_manager.register_agent_run(
         agent_request.conversation_id, agent_run_info, user_id)

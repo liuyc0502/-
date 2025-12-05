@@ -19,6 +19,21 @@ const config = {
       },
     },
     extend: {
+      fontSize: {
+        xs: ['0.8125rem', { lineHeight: '1.125rem' }],    // 13px (was 12px, +8%)
+        sm: ['0.9375rem', { lineHeight: '1.375rem' }],    // 15px (was 14px, +7%)
+        base: ['1.0625rem', { lineHeight: '1.625rem' }],  // 17px (was 16px, +6%)
+        lg: ['1.1875rem', { lineHeight: '1.75rem' }],     // 19px (was 18px, +6%)
+        xl: ['1.3125rem', { lineHeight: '1.875rem' }],    // 21px (was 20px, +5%)
+        '2xl': ['1.5625rem', { lineHeight: '2.125rem' }], // 25px (was 24px, +4%)
+        '3xl': ['1.9375rem', { lineHeight: '2.375rem' }], // 31px (was 30px, +3%)
+        '4xl': ['2.3125rem', { lineHeight: '2.625rem' }], // 37px (was 36px, +3%)
+        '5xl': ['3.0625rem', { lineHeight: '1' }],        // 49px (was 48px, +2%)
+        '6xl': ['3.8125rem', { lineHeight: '1' }],        // 61px (was 60px, +2%)
+        '7xl': ['4.5625rem', { lineHeight: '1' }],        // 73px (was 72px, +1%)
+        '8xl': ['6.0625rem', { lineHeight: '1' }],        // 97px (was 96px, +1%)
+        '9xl': ['8.0625rem', { lineHeight: '1' }],        // 129px (was 128px, +1%)
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

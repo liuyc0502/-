@@ -181,7 +181,22 @@ export async function updatePatient(
     });
  
     if (!response.ok) {
-      throw new Error(`Failed to update patient: ${response.statusText}`);
+      let errorMessage = `Failed to update patient: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.detail) {
+          errorMessage = `Failed to update patient (${response.status}): ${errorData.detail}`;
+        } else if (errorData.message) {
+          errorMessage = `Failed to update patient (${response.status}): ${errorData.message}`;
+        }
+      } catch (e) {
+        // If response is not JSON, use status text
+        const text = await response.text().catch(() => "");
+        if (text) {
+          errorMessage = `Failed to update patient (${response.status}): ${text}`;
+        }
+      }
+      throw new Error(errorMessage);
     }
  
     const data = await response.json();
