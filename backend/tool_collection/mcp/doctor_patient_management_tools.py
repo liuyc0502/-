@@ -35,46 +35,7 @@ async def create_new_patient(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Create a new patient record.
-
-    Use this tool when:
-    - Doctor wants to create a new patient file
-    - Registering a new patient in the system
-
-    Args:
-        name: Patient full name (required)
-        gender: Patient gender - "male" or "female" (required)
-        age: Patient age in years (required)
-        medical_record_no: Medical record number/ID (required, must be unique)
-        diagnosis: Current primary diagnosis, optional
-        email: Email address, optional
-        phone: Phone number, optional
-        address: Home address, optional
-        date_of_birth: Date of birth (YYYY-MM-DD), optional
-        allergies: List of known allergies, optional
-        past_medical_history: List of past medical conditions, optional
-        family_history: Family medical history description, optional
-        tenant_id: Tenant identifier (optional, uses default if not provided)
-        user_id: Doctor/user creating the record (optional, uses default)
-
-    Returns:
-        - success: Whether creation was successful
-        - patient_id: New patient identifier (use this for other operations)
-        - medical_record_no: Medical record number
-
-    Example:
-        result = create_new_patient(
-            name="Zhang San",
-            gender="male",
-            age=45,
-            medical_record_no="MRN12345",
-            diagnosis="Lung adenocarcinoma",
-            allergies=["Penicillin"],
-            past_medical_history=["Hypertension"]
-        )
-        patient_id = result['patient_id']
-    """
+    """Create a new patient record. Returns patient_id for other operations."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         creator = user_id or "system"
@@ -129,41 +90,7 @@ async def update_patient_info(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Update patient information.
-
-    Use this tool when:
-    - Need to update patient demographic info
-    - Add/update diagnosis
-    - Update contact information
-    - Update medical history
-
-    Args:
-        patient_id: Patient identifier (required)
-        name: Updated full name, optional
-        gender: Updated gender, optional
-        age: Updated age, optional
-        diagnosis: Updated diagnosis, optional
-        email: Updated email, optional
-        phone: Updated phone, optional
-        address: Updated address, optional
-        allergies: Updated allergy list, optional
-        past_medical_history: Updated medical history, optional
-        family_history: Updated family history, optional
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor/user making the update (optional)
-
-    Returns:
-        - success: Whether update was successful
-        - patient_id: Patient identifier
-
-    Example:
-        result = update_patient_info(
-            patient_id="123",
-            diagnosis="Lung adenocarcinoma Stage IIB",
-            allergies=["Penicillin", "Sulfa drugs"]
-        )
-    """
+    """Update patient information. Only provided fields are updated."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         updater = user_id or "system"
@@ -220,27 +147,7 @@ async def delete_patient_record(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Delete a patient record (hard delete).
-
-    Use this tool when:
-    - Need to remove a patient record permanently
-    - Deleting duplicate or test records
-
-    WARNING: This is a hard delete operation. Use with caution.
-
-    Args:
-        patient_id: Patient identifier (required)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor/user performing deletion (optional)
-
-    Returns:
-        - success: Whether deletion was successful
-        - patient_id: Deleted patient identifier
-
-    Example:
-        result = delete_patient_record(patient_id="123")
-    """
+    """Delete a patient record (hard delete). Use with caution."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         deleter = user_id or "system"
@@ -275,31 +182,7 @@ async def search_patients(
     offset: int = 0,
     tenant_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Search patients by name or medical record number.
-
-    Use this tool when:
-    - Doctor wants to find patients by name
-    - Looking up patient by medical record number
-    - Getting patient list for review
-
-    Args:
-        search_query: Search text (matches name or medical_record_no), optional
-        limit: Maximum number of results (default 100)
-        offset: Number of results to skip for pagination (default 0)
-        tenant_id: Tenant identifier (optional)
-
-    Returns:
-        - total_patients: Number of patients found
-        - patients: List of patient records
-
-    Example:
-        # Search by name
-        result = search_patients(search_query="Zhang")
-
-        # Get all patients (no filter)
-        result = search_patients(limit=50)
-    """
+    """Search patients by name or medical record number."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
 
@@ -335,34 +218,7 @@ async def check_duplicate_patients(
     exact_match: bool = False,
     tenant_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Find patients with similar names to check for duplicates.
-
-    Use this tool when:
-    - Before creating a new patient (duplicate detection)
-    - Doctor suspects there might be duplicate records
-    - Checking if patient already exists
-
-    Args:
-        name: Patient name to search for (required)
-        exact_match: If True, only exact matches; if False, fuzzy match (default False)
-        tenant_id: Tenant identifier (optional)
-
-    Returns:
-        - total_matches: Number of matching patients found
-        - patients: List of matching patient records
-        - has_duplicates: Boolean flag
-
-    Example:
-        # Fuzzy search
-        result = check_duplicate_patients(name="Zhang San")
-
-        # Exact match only
-        result = check_duplicate_patients(name="Zhang San", exact_match=True)
-
-        if result['has_duplicates']:
-            print(f"Found {result['total_matches']} potential duplicates")
-    """
+    """Find patients with similar names to check for duplicates before creating new patient."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
 

@@ -42,52 +42,7 @@ async def create_medical_case(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Create a new medical case in the case library.
-
-    Use this tool when:
-    - Adding a new case to the teaching library
-    - Documenting an interesting case
-    - Creating a case for reference
-
-    Args:
-        case_title: Case title (required)
-        diagnosis: Primary diagnosis (required)
-        disease_type: Disease category (required) - e.g., "肿瘤", "感染", "代谢性疾病"
-        chief_complaint: Main presenting complaint (required)
-        age: Patient age (required, anonymized)
-        gender: Patient gender (required) - "male" or "female"
-        case_no: Case number/ID, optional
-        category: Case category, optional
-        tags: List of tags for categorization, optional
-        is_classic: Whether this is a classic teaching case (default False)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor creating the case (optional)
-
-    Returns:
-        - success: Whether creation was successful
-        - case_id: New case identifier (use for adding details)
-        - case_title: Case title
-
-    Next steps:
-    - Call save_case_detail() to add detailed information
-    - Call save_case_symptoms() to add symptoms
-    - Call save_case_lab_results() to add lab results
-    - Call upload_case_images() to add images
-
-    Example:
-        result = create_medical_case(
-            case_title="45岁男性肺腺癌典型病例",
-            diagnosis="肺腺癌",
-            disease_type="肿瘤",
-            chief_complaint="咳嗽2月,痰中带血1周",
-            age=45,
-            gender="male",
-            is_classic=True,
-            tags=["肺癌", "早期", "手术"]
-        )
-        case_id = result['case_id']
-    """
+    """Create a new medical case. Returns case_id for adding details."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         creator = user_id or "system"
@@ -136,36 +91,7 @@ async def update_medical_case_info(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Update medical case basic information.
-
-    Use this tool when:
-    - Correcting case information
-    - Updating diagnosis
-    - Modifying tags or classification
-
-    Args:
-        case_id: Case identifier (required)
-        case_title: Updated title, optional
-        diagnosis: Updated diagnosis, optional
-        disease_type: Updated disease type, optional
-        chief_complaint: Updated chief complaint, optional
-        tags: Updated tags list, optional
-        is_classic: Updated classic status, optional
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor making the update (optional)
-
-    Returns:
-        - success: Whether update was successful
-        - case_id: Case identifier
-
-    Example:
-        result = update_medical_case_info(
-            case_id="789",
-            is_classic=True,
-            tags=["肺癌", "早期", "手术", "典型病例"]
-        )
-    """
+    """Update medical case basic information. Only provided fields are updated."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         updater = user_id or "system"
@@ -213,27 +139,7 @@ async def delete_medical_case_record(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Delete a medical case (hard delete).
-
-    Use this tool when:
-    - Removing incorrect or duplicate cases
-    - Deleting test data
-
-    WARNING: This is a hard delete operation. Use with caution.
-
-    Args:
-        case_id: Case identifier (required)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor performing deletion (optional)
-
-    Returns:
-        - success: Whether deletion was successful
-        - case_id: Deleted case identifier
-
-    Example:
-        result = delete_medical_case_record(case_id="789")
-    """
+    """Delete a medical case (hard delete). Use with caution."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         deleter = user_id or "system"
@@ -277,42 +183,7 @@ async def save_case_detail(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Save or update detailed information for a medical case.
-
-    Use this tool when:
-    - Adding comprehensive case details
-    - Recording treatment plans
-    - Documenting clinical findings
-
-    Args:
-        case_id: Case identifier (required)
-        present_illness_history: Current illness history, optional
-        past_medical_history: Past medical history, optional
-        family_history: Family medical history, optional
-        physical_examination: Physical exam findings (dict), optional
-        imaging_results: Imaging results (dict), optional
-        diagnosis_basis: Basis for diagnosis, optional
-        treatment_plan: Treatment plan description, optional
-        medications: List of medications, optional
-        prognosis: Prognosis description, optional
-        clinical_notes: Additional clinical notes, optional
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor saving the detail (optional)
-
-    Returns:
-        - success: Whether save was successful
-        - detail_id: Detail record identifier
-        - case_id: Case identifier
-
-    Example:
-        result = save_case_detail(
-            case_id="789",
-            treatment_plan="手术切除+辅助化疗",
-            prognosis="预后良好,5年生存率约70%",
-            medications=["顺铂", "培美曲塞"]
-        )
-    """
+    """Save or update detailed information for a medical case."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         saver = user_id or "system"
@@ -366,37 +237,7 @@ async def save_case_symptoms(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Batch save symptoms for a medical case.
-
-    Use this tool when:
-    - Recording all case symptoms at once
-    - Documenting symptom profile
-
-    Args:
-        case_id: Case identifier (required)
-        symptoms: List of symptom dictionaries (required), each containing:
-          - symptom_name: Symptom name (required)
-          - symptom_description: Detailed description, optional
-          - is_key_symptom: Whether this is a key symptom (default False)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor saving the symptoms (optional)
-
-    Returns:
-        - success: Whether save was successful
-        - created_count: Number of symptoms saved
-        - case_id: Case identifier
-
-    Example:
-        result = save_case_symptoms(
-            case_id="789",
-            symptoms=[
-                {"symptom_name": "咳嗽", "is_key_symptom": True},
-                {"symptom_name": "痰中带血", "is_key_symptom": True},
-                {"symptom_name": "胸痛", "is_key_symptom": False}
-            ]
-        )
-    """
+    """Batch save symptoms for a case. Each symptom: {symptom_name, symptom_description?, is_key_symptom?}"""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         saver = user_id or "system"
@@ -435,55 +276,7 @@ async def save_case_lab_results(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Batch save lab test results for a medical case.
-
-    Use this tool when:
-    - Recording all lab results for a case
-    - Documenting diagnostic test values
-
-    Args:
-        case_id: Case identifier (required)
-        lab_results: List of lab result dictionaries (required), each containing:
-          - test_name: Test name (required)
-          - test_full_name: Full test name, optional
-          - test_value: Test value (required)
-          - test_unit: Unit of measurement, optional
-          - normal_range: Normal range description, optional
-          - is_abnormal: Whether value is abnormal (default False)
-          - abnormal_indicator: "high" or "low", optional
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor saving the results (optional)
-
-    Returns:
-        - success: Whether save was successful
-        - created_count: Number of lab results saved
-        - case_id: Case identifier
-
-    Example:
-        result = save_case_lab_results(
-            case_id="789",
-            lab_results=[
-                {
-                    "test_name": "WBC",
-                    "test_full_name": "白细胞计数",
-                    "test_value": "6.2",
-                    "test_unit": "×10⁹/L",
-                    "normal_range": "4.0-10.0",
-                    "is_abnormal": False
-                },
-                {
-                    "test_name": "CEA",
-                    "test_full_name": "癌胚抗原",
-                    "test_value": "12.5",
-                    "test_unit": "ng/mL",
-                    "normal_range": "<5.0",
-                    "is_abnormal": True,
-                    "abnormal_indicator": "high"
-                }
-            ]
-        )
-    """
+    """Batch save lab results. Each: {test_name, test_value, test_unit?, normal_range?, is_abnormal?}"""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         saver = user_id or "system"
@@ -522,46 +315,7 @@ async def upload_case_images(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Batch upload images for a medical case.
-
-    Use this tool when:
-    - Adding medical images to a case
-    - Uploading multiple case images at once
-
-    Args:
-        case_id: Case identifier (required)
-        images: List of image dictionaries (required), each containing:
-          - image_url: URL of the image (required)
-          - image_type: Type of image (required) - e.g., "CT", "病理切片", "X-ray"
-          - image_description: Description, optional
-          - thumbnail_url: Thumbnail URL, optional
-          - display_order: Display order (default 0)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor uploading the images (optional)
-
-    Returns:
-        - success: Whether upload was successful
-        - created_count: Number of images uploaded
-        - case_id: Case identifier
-
-    Example:
-        result = upload_case_images(
-            case_id="789",
-            images=[
-                {
-                    "image_url": "https://storage.example.com/images/ct_001.jpg",
-                    "image_type": "CT",
-                    "image_description": "胸部CT显示左肺上叶肿块"
-                },
-                {
-                    "image_url": "https://storage.example.com/images/path_001.jpg",
-                    "image_type": "病理切片",
-                    "image_description": "腺癌病理表现"
-                }
-            ]
-        )
-    """
+    """Batch upload images. Each: {image_url, image_type, image_description?, display_order?}"""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         uploader = user_id or "system"
@@ -599,26 +353,7 @@ async def add_case_to_favorites(
     user_id: str,
     tenant_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Add a case to doctor's favorites.
-
-    Use this tool when:
-    - Doctor wants to bookmark interesting cases
-    - Saving cases for teaching purposes
-
-    Args:
-        case_id: Case identifier (required)
-        user_id: Doctor's user identifier (required)
-        tenant_id: Tenant identifier (optional)
-
-    Returns:
-        - success: Whether operation was successful
-        - favorite_id: Favorite record identifier
-        - already_favorited: Whether case was already in favorites
-
-    Example:
-        result = add_case_to_favorites(case_id="789", user_id="doctor123")
-    """
+    """Add a case to doctor's favorites/bookmarks."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
 
@@ -648,24 +383,7 @@ async def remove_case_from_favorites(
     user_id: str,
     tenant_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Remove a case from doctor's favorites.
-
-    Use this tool when:
-    - Doctor wants to un-bookmark a case
-
-    Args:
-        case_id: Case identifier (required)
-        user_id: Doctor's user identifier (required)
-        tenant_id: Tenant identifier (optional)
-
-    Returns:
-        - success: Whether operation was successful
-        - case_id: Case identifier
-
-    Example:
-        result = remove_case_from_favorites(case_id="789", user_id="doctor123")
-    """
+    """Remove a case from doctor's favorites."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
 
@@ -698,26 +416,7 @@ async def record_case_view(
     user_id: str,
     tenant_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Record that a doctor viewed a case (for history tracking).
-
-    Use this tool when:
-    - Doctor opens/views a case
-    - Tracking case view analytics
-
-    Args:
-        case_id: Case identifier (required)
-        user_id: Doctor's user identifier (required)
-        tenant_id: Tenant identifier (optional)
-
-    Returns:
-        - success: Whether recording was successful
-        - history_id: View history record identifier
-        - case_id: Case identifier
-
-    Example:
-        result = record_case_view(case_id="789", user_id="doctor123")
-    """
+    """Record that a doctor viewed a case (for history tracking)."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
 

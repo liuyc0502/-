@@ -14,6 +14,34 @@ from ..utils.observer import MessageObserver, ProcessType
 logger = logging.getLogger("openai_llm")
 
 
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Check if the error is a rate limit error (429)."""
+    error_str = str(error)
+    # Check for common rate limit indicators
+    return (
+        "429" in error_str
+        or "rate limit" in error_str.lower()
+        or "tpm limit" in error_str.lower()
+        or "rpm limit" in error_str.lower()
+        or "rate limiting" in error_str.lower()
+        or (hasattr(error, "status_code") and error.status_code == 429)
+        or (hasattr(error, "code") and error.code == 429)
+    )
+
+
+def _extract_retry_after(error: Exception) -> Optional[float]:
+    """Extract retry_after value from error if available."""
+    if hasattr(error, "response") and error.response is not None:
+        headers = getattr(error.response, "headers", {})
+        retry_after = headers.get("retry-after")
+        if retry_after:
+            try:
+                return float(retry_after)
+            except (ValueError, TypeError):
+                pass
+    return None
+
+
 class OpenAIModel(OpenAIServerModel):
     def __init__(self, observer: MessageObserver, temperature=0.2, top_p=0.95, *args, **kwargs):
         self.observer = observer

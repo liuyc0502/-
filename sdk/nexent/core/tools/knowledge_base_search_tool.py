@@ -57,17 +57,31 @@ class KnowledgeBaseSearchTool(Tool):
         self.record_ops = 1  # To record serial number
         self.running_prompt_zh = "知识库检索中..."
         self.running_prompt_en = "Searching the knowledge base..."
+        
+        # Session-level cache to prevent duplicate queries
+        self._query_cache = {}
 
     def forward(self, query: str, search_mode: str = "hybrid", index_names: List[str] = None) -> str:
+        # Use provided index_names if available, otherwise use default
+        search_index_names = index_names if index_names is not None else self.index_names
+        
+        # Create cache key from query parameters
+        cache_key = (query, search_mode, tuple(sorted(search_index_names)) if search_index_names else ())
+        
+        # Debug: log cache state
+        logger.info(f"[CACHE DEBUG] Tool instance id: {id(self)}, cache size: {len(self._query_cache)}, cache_key: {cache_key}")
+        
+        # Check cache first to prevent duplicate queries in same session
+        if cache_key in self._query_cache:
+            logger.info(f"KnowledgeBaseSearchTool returning cached result for query: '{query}'")
+            return self._query_cache[cache_key]
+        
         # Send tool run message
         if self.observer:
             running_prompt = self.running_prompt_zh if self.observer.lang == "zh" else self.running_prompt_en
             self.observer.add_message("", ProcessType.TOOL, running_prompt)
             card_content = [{"icon": "search", "text": query}]
             self.observer.add_message("", ProcessType.CARD, json.dumps(card_content, ensure_ascii=False))
-
-        # Use provided index_names if available, otherwise use default
-        search_index_names = index_names if index_names is not None else self.index_names
         
         # Log the index_names being used for this search
         logger.info(f"KnowledgeBaseSearchTool called with query: '{query}', search_mode: '{search_mode}', index_names: {search_index_names}")
@@ -114,7 +128,13 @@ class KnowledgeBaseSearchTool(Tool):
         if self.observer:
             search_results_data = json.dumps(search_results_json, ensure_ascii=False)
             self.observer.add_message("", ProcessType.SEARCH_CONTENT, search_results_data)
-        return json.dumps(search_results_return, ensure_ascii=False)
+        
+        result = json.dumps(search_results_return, ensure_ascii=False)
+        
+        # Cache the result for this session
+        self._query_cache[cache_key] = result
+        
+        return result
 
 
     def es_search_hybrid(self, query, index_names):

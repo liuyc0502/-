@@ -29,41 +29,7 @@ async def create_patient_todo(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Create a TODO/task for a patient.
-
-    Use this tool when:
-    - Doctor needs to create a follow-up task
-    - Scheduling a reminder for patient care
-    - Assigning a task to another doctor
-
-    Args:
-        patient_id: Patient identifier (required)
-        todo_title: TODO title (required)
-        todo_description: Detailed description (required)
-        todo_type: Type of TODO (required) - e.g., "follow_up", "lab_test", "medication_review", "consultation"
-        due_date: Due date (format: YYYY-MM-DD), optional
-        priority: Priority level (default "medium") - "low", "medium", "high", "urgent"
-        status: Initial status (default "pending") - "pending", "in_progress", "completed", "cancelled"
-        assigned_doctor: Doctor assigned to this task, optional (defaults to creator)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor creating the TODO (optional)
-
-    Returns:
-        - success: Whether creation was successful
-        - todo_id: New TODO identifier
-        - patient_id: Patient identifier
-
-    Example:
-        result = create_patient_todo(
-            patient_id="123",
-            todo_title="随访检查",
-            todo_description="术后3个月复查胸部CT",
-            todo_type="follow_up",
-            due_date="2025-04-15",
-            priority="high"
-        )
-    """
+    """Create a TODO/task for a patient. Types: follow_up, lab_test, medication_review, consultation."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         creator = user_id or "system"
@@ -92,10 +58,7 @@ async def create_patient_todo(
 
     except Exception as e:
         logger.error(f"Error creating patient TODO: {str(e)}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @doctor_todo_tools.tool()
@@ -105,31 +68,7 @@ async def update_patient_todo_status(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Update TODO status.
-
-    Use this tool when:
-    - Marking a TODO as completed
-    - Changing TODO status
-    - Cancelling a TODO
-
-    Args:
-        todo_id: TODO identifier (required)
-        status: New status (required) - "pending", "in_progress", "completed", "cancelled"
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor updating the status (optional)
-
-    Returns:
-        - success: Whether update was successful
-        - todo_id: TODO identifier
-        - new_status: Updated status
-
-    Example:
-        result = update_patient_todo_status(
-            todo_id="456",
-            status="completed"
-        )
-    """
+    """Update TODO status. Status: pending, in_progress, completed, cancelled."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         updater = user_id or "system"
@@ -138,24 +77,13 @@ async def update_patient_todo_status(
 
         if success:
             logger.info(f"Updated TODO {todo_id} status to {status}")
-            return {
-                "success": True,
-                "todo_id": todo_id,
-                "new_status": status,
-                "message": f"TODO status updated to {status}"
-            }
+            return {"success": True, "todo_id": todo_id, "new_status": status, "message": f"TODO status updated to {status}"}
         else:
-            return {
-                "success": False,
-                "error": "TODO not found or update failed"
-            }
+            return {"success": False, "error": "TODO not found or update failed"}
 
     except Exception as e:
         logger.error(f"Error updating TODO status: {str(e)}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @doctor_todo_tools.tool()
@@ -164,27 +92,7 @@ async def delete_patient_todo(
     tenant_id: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Delete a patient TODO (hard delete).
-
-    Use this tool when:
-    - Removing incorrect or duplicate TODOs
-    - Cleaning up completed TODOs
-
-    WARNING: This is a hard delete operation. Use with caution.
-
-    Args:
-        todo_id: TODO identifier (required)
-        tenant_id: Tenant identifier (optional)
-        user_id: Doctor performing deletion (optional)
-
-    Returns:
-        - success: Whether deletion was successful
-        - todo_id: Deleted TODO identifier
-
-    Example:
-        result = delete_patient_todo(todo_id="456")
-    """
+    """Delete a patient TODO (hard delete). Use with caution."""
     try:
         tenant = tenant_id or DEFAULT_TENANT_ID
         deleter = user_id or "system"
@@ -193,20 +101,10 @@ async def delete_patient_todo(
 
         if success:
             logger.info(f"Deleted TODO {todo_id}")
-            return {
-                "success": True,
-                "todo_id": todo_id,
-                "message": "TODO deleted successfully"
-            }
+            return {"success": True, "todo_id": todo_id, "message": "TODO deleted successfully"}
         else:
-            return {
-                "success": False,
-                "error": "TODO not found or deletion failed"
-            }
+            return {"success": False, "error": "TODO not found or deletion failed"}
 
     except Exception as e:
         logger.error(f"Error deleting TODO: {str(e)}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}

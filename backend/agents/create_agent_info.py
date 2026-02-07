@@ -5,6 +5,9 @@ from datetime import datetime
 
 from jinja2 import Template, StrictUndefined
 from smolagents.utils import BASE_BUILTIN_MODULES
+
+# Extend base modules with json for parsing MCP tool returns
+AUTHORIZED_IMPORTS = list(BASE_BUILTIN_MODULES) + ["json"]
 from nexent.core.utils.observer import MessageObserver
 from nexent.core.agents.agent_model import AgentRunInfo, ModelConfig, AgentConfig, ToolConfig
 from nexent.memory.memory_service import search_memory_in_levels
@@ -200,7 +203,7 @@ async def create_agent_config(
             "few_shots": few_shots_prompt,
             "tools": {tool.name: tool for tool in tool_list},
             "managed_agents": {agent.name: agent for agent in managed_agents},
-            "authorized_imports": str(BASE_BUILTIN_MODULES),
+            "authorized_imports": str(AUTHORIZED_IMPORTS),
             "APP_NAME": app_name,
             "APP_DESCRIPTION": app_description,
             "memory_list": memory_list,
@@ -373,12 +376,12 @@ async def join_minio_file_description_to_query(minio_files, query, patient_id=No
                 
                 # Build file information string
                 if file_type == "image" and full_url:
-                    # For images, include URL so OCR tool can process them
+                    # For images, include URL so OCR tool can process them if needed
                     file_info = f"[Image File: {file_name}]\n"
                     file_info += f"  - Access URL: {full_url}\n"
                     if description:
                         file_info += f"  - Description: {description}\n"
-                    file_info += "  - IMPORTANT: If you need to extract text from this image, call the OCR tool with the Access URL above.\n"
+                    # Note: OCR tool is available if user explicitly asks to extract text from the image
                 elif description:
                     file_info = f"[File: {file_name}]\n  - {description}\n"
                 

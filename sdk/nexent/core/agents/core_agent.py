@@ -1,6 +1,7 @@
 import re
 import ast
 import time
+import logging
 import threading
 from textwrap import dedent
 from typing import Any, Optional, List, Dict
@@ -18,6 +19,9 @@ from smolagents.utils import AgentExecutionError, AgentGenerationError, truncate
 
 from ..utils.observer import MessageObserver, ProcessType
 from jinja2 import Template, StrictUndefined
+
+logger = logging.getLogger("core_agent")
+logger.setLevel(logging.DEBUG)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -105,7 +109,15 @@ class FinalAnswerError(Exception):
 
 
 class CoreAgent(CodeAgent):
+    # Default additional imports for MCP JSON parsing
+    DEFAULT_ADDITIONAL_IMPORTS = ["json"]
+    
     def __init__(self, observer: MessageObserver, prompt_templates: Dict[str, Any] | None = None, *args, **kwargs):
+        # Merge default imports with any additional ones passed in
+        existing_imports = kwargs.get("additional_authorized_imports", [])
+        merged_imports = list(set(self.DEFAULT_ADDITIONAL_IMPORTS + list(existing_imports)))
+        kwargs["additional_authorized_imports"] = merged_imports
+        
         super().__init__(prompt_templates=prompt_templates, *args, **kwargs)
         self.observer = observer
         self.stop_event = threading.Event()
@@ -229,13 +241,17 @@ class CoreAgent(CodeAgent):
         """
         max_steps = max_steps or self.max_steps
         self.task = task
-        self.logger.log(f"[CoreAgent.run] additional_args received: {additional_args}", level=LogLevel.INFO)
+        print(f"[CoreAgent.run] ========== DEBUG START ==========")
+        print(f"[CoreAgent.run] additional_args received: {additional_args}")
+        print(f"[CoreAgent.run] additional_args type: {type(additional_args)}")
         if additional_args is not None:
             self.state.update(additional_args)
-            self.logger.log(f"[CoreAgent.run] state after update: {self.state}", level=LogLevel.INFO)
+            print(f"[CoreAgent.run] state after update: {self.state}")
             self.task += f"""
 You have been provided with these additional arguments, that you can access using the keys as variables in your python code:
 {str(additional_args)}."""
+        else:
+            print(f"[CoreAgent.run] WARNING: additional_args is None!")
 
         self.system_prompt = self.initialize_system_prompt()
         self.memory.system_prompt = SystemPromptStep(
@@ -255,10 +271,32 @@ You have been provided with these additional arguments, that you can access usin
         self.memory.steps.append(TaskStep(task=self.task, task_images=images))
 
         if getattr(self, "python_executor", None):
-            self.logger.log(f"[CoreAgent.run] Sending variables to python_executor: {self.state}", level=LogLevel.INFO)
+            print(f"[CoreAgent.run] Sending variables to python_executor: {self.state}")
+            print(f"[CoreAgent.run] python_executor type: {type(self.python_executor)}")
+            
+            # Check executor state before send_variables
+            if hasattr(self.python_executor, "state"):
+                executor_state_keys = list(self.python_executor.state.keys()) if isinstance(self.python_executor.state, dict) else "not a dict"
+                print(f"[CoreAgent.run] python_executor.state keys BEFORE send_variables: {executor_state_keys}")
+            
             self.python_executor.send_variables(variables=self.state)
+            
+            # Check executor state after send_variables
+            if hasattr(self.python_executor, "state"):
+                executor_state_keys = list(self.python_executor.state.keys()) if isinstance(self.python_executor.state, dict) else "not a dict"
+                print(f"[CoreAgent.run] python_executor.state keys AFTER send_variables: {executor_state_keys}")
+                # Check specifically for patient_id
+                if isinstance(self.python_executor.state, dict):
+                    if "patient_id" in self.python_executor.state:
+                        print(f"[CoreAgent.run] SUCCESS: patient_id in executor state: {self.python_executor.state['patient_id']}")
+                    else:
+                        print(f"[CoreAgent.run] FAILED: patient_id NOT in executor state after send_variables!")
+            
+            print(f"[CoreAgent.run] ========== DEBUG END ==========")
             self.python_executor.send_tools(
                 {**self.tools, **self.managed_agents})
+        else:
+            print(f"[CoreAgent.run] WARNING: python_executor is None, variables not sent!")
 
         if stream:
             # The steps are returned as they are executed through a generator to iterate on.
