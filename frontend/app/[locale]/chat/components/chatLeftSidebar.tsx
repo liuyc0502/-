@@ -493,15 +493,15 @@ export function ChatSidebar({
           <div className="flex flex-col pt-20 pb-2 gap-4 items-center">
             {/* New Chat Button */}
             {!isAdminView && (
-              <div className="flex items-center w-full px-3">
+              <div className="flex items-center w-full px-5">
                 <button
-                  className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
-                  style={{ backgroundColor: accentColor }}
+                  className="h-13 w-13 rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
+                  style={{ backgroundColor: accentColor, width: "52px", height: "52px" }}
                   onClick={onNewConversation}
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-6 w-6" />
                 </button>
-                <span className={`ml-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
+                <span className={`ml-3 text-base font-bold text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
                   showText ? "opacity-100" : "opacity-0"
                 }`}>
                   {t("chatLeftSidebar.newConversation")}

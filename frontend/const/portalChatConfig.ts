@@ -88,7 +88,7 @@ const sharedQuickActions: PortalQuickActionConfig[] = [
 
 export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   general: {
-    accentColor: "#D94527",
+    accentColor: "#DA7756",
     backgroundColor: "#FAFAFA",
     brandName: "安语",
     heroSubheading: "How can I help you today?",
@@ -109,7 +109,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     defaultUserName: "沅宸",
   },
   doctor: {
-    accentColor: "#D94527",
+    accentColor: "#DA7756",
     backgroundColor: "#FAFAFA",
     brandName: "安语",
     heroSubheading: "今天我能如何帮助您？",
@@ -128,7 +128,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     defaultUserName: "沅宸",
   },
   patient: {
-    accentColor: "#10B981",
+    accentColor: "#4A8F82",
     backgroundColor: "#FAFAFA",
     brandName: "安语",
     heroSubheading: "今天我能如何帮助您的健康？",
@@ -146,8 +146,8 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
     defaultUserName: "沅宸",
   },
   admin: {
-    accentColor: "#7C3AED",
-    backgroundColor: "#F7F3FF",
+    accentColor: "#7C6494",
+    backgroundColor: "#F5F2F8",
     brandName: "安语",
     heroSubheading: "System configuration and management",
     inputPlaceholder: "What would you like to configure?",

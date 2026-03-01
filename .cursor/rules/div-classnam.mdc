@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+<div className="flex-1 flex flex-col justify-center pb-12">
