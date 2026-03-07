@@ -289,7 +289,7 @@ export function ChatSidebar({
     return (
       <div className={`mt-4 ${slidingContentClass}`}>
         <p
-          className={`text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-2 ${fadingContentClass}`}
+          className={`text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-2 font-alihealth ${fadingContentClass}`}
         >
           {title}
         </p>
@@ -331,7 +331,7 @@ export function ChatSidebar({
                                 dialog.conversation_id
                               )}
                             />
-                            <span className="text-sm font-medium text-[#1A1A1A] truncate">
+                            <span className="text-sm font-medium text-[#1A1A1A] truncate font-alihealth">
                               {dialog.conversation_title}
                             </span>
                           </div>
@@ -449,7 +449,7 @@ export function ChatSidebar({
               showText ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
-            <p className="text-sm font-semibold text-[#1A1A1A] truncate">
+            <p className="text-sm font-semibold text-[#1A1A1A] truncate font-alihealth">
               {userName || userEmail || "用户"}
             </p>
             <p className="text-xs text-[#6B6B6B]">Pro plan</p>
@@ -493,15 +493,15 @@ export function ChatSidebar({
           <div className="flex flex-col pt-20 pb-2 gap-4 items-center">
             {/* New Chat Button */}
             {!isAdminView && (
-              <div className="flex items-center w-full px-5">
+              <div className="flex items-center w-full px-3">
                 <button
-                  className="h-13 w-13 rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
-                  style={{ backgroundColor: accentColor, width: "52px", height: "52px" }}
+                  className="rounded-full bg-white shadow-sm flex items-center justify-center text-white flex-shrink-0"
+                  style={{ backgroundColor: accentColor, width: "40px", height: "40px" }}
                   onClick={onNewConversation}
                 >
-                  <Plus className="h-6 w-6" />
+                  <Plus className="h-5 w-5" strokeWidth={3} />
                 </button>
-                <span className={`ml-3 text-base font-bold text-[#1A1A1A] whitespace-nowrap transition-opacity duration-150 ease-out ${
+                <span className={`ml-5 text-base font-bold text-[#1A1A1A] whitespace-nowrap font-alihealth transition-opacity duration-150 ease-out ${
                   showText ? "opacity-100" : "opacity-0"
                 }`}>
                   {t("chatLeftSidebar.newConversation")}
@@ -616,7 +616,7 @@ export function ChatSidebar({
                 <div className="flex-1 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
                   {conversationList.length > 0 ? (
                     <>
-                      <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4">
+                      <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4 font-alihealth">
                         {portalConfig.recentLabel}
                       </p>
                       {renderDialogList(today, t("chatLeftSidebar.today"))}

@@ -1023,7 +1023,7 @@ export function ChatInput({
               <AiOutlineUpload className="h-5 w-5 text-[#B87345]" />
             </div>
           </div>
-          <h3 className="text-base font-semibold mb-1 text-[#B87345]">
+          <h3 className="text-base font-semibold mb-1 text-[#B87345] font-alihealth">
             {t("chatInput.dragAndDropFilesHere")}
           </h3>
           <p className="text-xs text-[#7A6A58]">
@@ -1298,14 +1298,14 @@ export function ChatInput({
       {isInitialMode ? (
         <div className="flex flex-col items-center text-center gap-8 w-full max-w-4xl mx-auto">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-[#B1997B]">
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-[#B1997B] font-alihealth">
               <span className="text-2xl">{heroIcon}</span>
               <span>{portalConfig?.brandName || appConfig.appName}</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-serif text-[#1A1A1A]">
+            <h1 className="text-4xl md:text-5xl font-alihealth text-[#1A1A1A]">
               {`${greetingText}, ${displayName}`}
             </h1>
-            <p className="text-base text-[#6B6B6B]">{heroSubheading}</p>
+            <p className="text-base text-[#6B6B6B] font-alihealth">{heroSubheading}</p>
           </div>
           <div className="w-full">{renderInputArea()}</div>
         </div>

@@ -30,7 +30,7 @@ interface Portal {
 const portals: Portal[] = [
   {
     id: "doctor",
-    title: "病理医生端",
+    title: "病理医生",
     subtitle: "智能洞察，辅佐诊断",
     description: "AI 驱动的病理分析工具，助力精准诊断与高效工作流",
     loginTitle: "病理医生端",
@@ -40,7 +40,7 @@ const portals: Portal[] = [
   },
   {
     id: "patient",
-    title: "患者端",
+    title: "患者",
     subtitle: "医学知识，触手可及",
     description: "通俗易懂的医学解读，帮助您更好地了解自身健康状况",
     loginTitle: "患者端",
@@ -50,7 +50,7 @@ const portals: Portal[] = [
   },
   {
     id: "admin",
-    title: "管理员端",
+    title: "管理员",
     subtitle: "全面管理，实时监控",
     description: "智能体配置与系统管理，掌控全局运行状态",
     loginTitle: "管理员端",
@@ -147,15 +147,15 @@ export default function Home() {
 
   return (
     <div
-      className="relative w-screen h-screen overflow-hidden flex"
-      style={{ backgroundColor: "#F5F5F0" }}
+      className="relative w-screen h-screen overflow-hidden flex antialiased"
+      style={{ backgroundColor: "#FDF8F2" }}
     >
       {/* ======= LEFT: Welcome area ======= */}
       <div className="flex-[55] flex flex-col justify-center px-16 xl:px-24 relative">
         {/* Nexent logo top-left */}
         <p
-          className="absolute top-10 left-10 font-semibold tracking-[0.25em] uppercase"
-          style={{ fontSize: "15px", color: "#aaa" }}
+          className="absolute top-10 left-10 font-medium uppercase"
+          style={{ fontFamily: "'AliHealth', 'PingFang SC', sans-serif", fontSize: "11px", color: "#b5b0a8", letterSpacing: "0.3em" }}
         >
           Nexent
         </p>
@@ -164,42 +164,45 @@ export default function Home() {
         <div className="ml-8 xl:ml-16">
           <h1
             style={{
-              fontFamily: "system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+              fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
               fontWeight: 400,
-              fontSize: "clamp(40px, 5vw, 72px)",
-              lineHeight: 1.15,
-              color: "#1a1a1a",
-              letterSpacing: "0.08em",
+              fontSize: "clamp(28px, 3.5vw, 44px)",
+              lineHeight: 1.2,
+              color: "#6b6460",
+              letterSpacing: "0.06em",
             }}
           >
             欢迎来到
           </h1>
           <h2
             style={{
-              fontFamily: "system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif",
-              fontWeight: 600,
-              fontSize: "clamp(48px, 6vw, 84px)",
-              lineHeight: 1.1,
+              fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
+              fontWeight: 700,
+              fontSize: "clamp(72px, 9vw, 120px)",
+              lineHeight: 0.9,
               color: "#1a1a1a",
-              marginTop: "4px",
-              marginLeft: "clamp(24px, 3vw, 48px)",
-              letterSpacing: "0.06em",
+              marginTop: "2px",
+              marginLeft: "clamp(80px, 10vw, 160px)",
+              letterSpacing: "-0.02em",
             }}
           >
-            安语智能体
+            安语
           </h2>
 
           <p
-            className="mt-8"
+            className="mt-10"
             style={{
-              fontSize: "16px",
-              color: "#999",
-              lineHeight: 1.8,
-              maxWidth: "420px",
-              letterSpacing: "0.02em",
+              fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
+              fontWeight: 700,
+              fontSize: "15px",
+              color: "#8a847c",
+              lineHeight: 1.75,
+              maxWidth: "400px",
+              letterSpacing: "0.06em",
+              marginLeft: "clamp(16px, 2vw, 32px)",
             }}
           >
-            基于大语言模型的病理知识问答智能体
+            一个基于大语言模型的病理知识问答智能体
             <br />
             为医生、患者和管理者提供专业、可靠的智能服务
           </p>
@@ -207,7 +210,7 @@ export default function Home() {
       </div>
 
       {/* ======= RIGHT: Three vertical color strips ======= */}
-      <div className="flex-[45] flex py-6 pr-6">
+      <div className="flex-[45] flex py-8 pr-12 gap-0">
         {portals.map((portal) => {
           const isExpanded = expandedPortal === portal.id;
           const isCollapsed = expandedPortal !== null && !isExpanded;
@@ -218,7 +221,7 @@ export default function Home() {
               key={portal.id}
               className="relative overflow-hidden cursor-pointer"
               style={{
-                borderRadius: "24px",
+                borderRadius: "20px",
                 backgroundColor: portal.accentColor,
               }}
               animate={{
@@ -258,16 +261,16 @@ export default function Home() {
                     {/* Title top-left, form centered */}
                     <div className="absolute inset-0 flex flex-col">
                       {/* Top-left: title */}
-                      <div className="px-10 pt-12">
+                      <div className="px-8 pt-10">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/20">
-                            <Icon className="w-7 h-7 text-white" />
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/20">
+                            <Icon className="w-6 h-6 text-white" />
                           </div>
                           <div className="whitespace-nowrap">
-                            <h2 className="text-4xl font-extrabold text-white">
+                            <h2 className="text-xl font-bold text-white tracking-wide" style={{ fontFamily: "'AliHealth', 'PingFang SC', sans-serif" }}>
                               {portal.loginTitle}
                             </h2>
-                            <p className="text-lg text-white/50 mt-1 font-semibold">
+                            <p className="text-sm text-white/50 mt-0.5 font-medium tracking-wider">
                               {portal.subtitle}
                             </p>
                           </div>
@@ -275,14 +278,14 @@ export default function Home() {
                       </div>
 
                       {/* Center: form */}
-                      <div className="flex-1 flex items-center justify-center -mt-8">
-                        <div className="w-full max-w-md px-10">
+                      <div className="flex-1 flex items-center justify-center -mt-4">
+                        <div className="w-full max-w-sm px-8">
                           <form
                             onSubmit={showRegisterForm ? handleRegisterSubmit : handleLogin}
-                            className="space-y-6"
+                            className="space-y-5"
                           >
                             <div>
-                              <Label htmlFor="email" className="text-lg font-bold text-white/80 mb-2 block">
+                              <Label htmlFor="email" className="text-base font-semibold text-white/70 mb-2 block tracking-wide">
                                 邮箱地址
                               </Label>
                               <Input
@@ -291,13 +294,13 @@ export default function Home() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="请输入您的邮箱"
-                                className="w-full px-5 py-3 border-0 rounded-xl text-xl font-semibold bg-white/15 text-white placeholder:text-white/40 focus:bg-white/25 focus:ring-1 focus:ring-white/40"
-                                style={{ height: "60px" }}
+                                className="w-full px-5 py-3 border-0 rounded-xl text-lg font-medium bg-white/15 text-white placeholder:text-white/35 focus:bg-white/25 focus:ring-2 focus:ring-white/50"
+                                style={{ height: "56px" }}
                                 required
                               />
                             </div>
                             <div>
-                              <Label htmlFor="password" className="text-lg font-bold text-white/80 mb-2 block">
+                              <Label htmlFor="password" className="text-base font-semibold text-white/70 mb-2 block tracking-wide">
                                 密码
                               </Label>
                               <Input
@@ -306,14 +309,14 @@ export default function Home() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder={showRegisterForm ? "请输入密码（至少6位）" : "请输入您的密码"}
-                                className="w-full px-5 py-3 border-0 rounded-xl text-xl font-semibold bg-white/15 text-white placeholder:text-white/40 focus:bg-white/25 focus:ring-1 focus:ring-white/40"
-                                style={{ height: "60px" }}
+                                className="w-full px-5 py-3 border-0 rounded-xl text-lg font-medium bg-white/15 text-white placeholder:text-white/35 focus:bg-white/25 focus:ring-2 focus:ring-white/50"
+                                style={{ height: "56px" }}
                                 required
                               />
                             </div>
                             {showRegisterForm && (
                               <div>
-                                <Label htmlFor="confirmPassword" className="text-lg font-bold text-white/80 mb-2 block">
+                                <Label htmlFor="confirmPassword" className="text-base font-semibold text-white/70 mb-2 block tracking-wide">
                                   确认密码
                                 </Label>
                                 <Input
@@ -322,8 +325,8 @@ export default function Home() {
                                   value={confirmPassword}
                                   onChange={(e) => setConfirmPassword(e.target.value)}
                                   placeholder="请再次输入密码"
-                                  className="w-full px-5 py-3 border-0 rounded-xl text-xl font-semibold bg-white/15 text-white placeholder:text-white/40 focus:bg-white/25 focus:ring-1 focus:ring-white/40"
-                                  style={{ height: "60px" }}
+                                  className="w-full px-4 py-3 border-0 rounded-xl text-base font-medium bg-white/15 text-white placeholder:text-white/35 focus:bg-white/25 focus:ring-2 focus:ring-white/50"
+                                  style={{ height: "52px" }}
                                   required
                                 />
                               </div>
@@ -352,22 +355,22 @@ export default function Home() {
                             <Button
                               type="submit"
                               disabled={isLoggingIn || isRegistering || authLoading}
-                              className="w-full rounded-xl text-xl font-extrabold transition-all disabled:opacity-50 hover:opacity-90"
-                              style={{ backgroundColor: "white", color: portal.accentColor, height: "60px" }}
+                              className="w-full rounded-xl text-lg font-bold tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-95"
+                              style={{ backgroundColor: "white", color: portal.accentColor, height: "56px" }}
                             >
                               {showRegisterForm
                                 ? (isRegistering ? "注册中..." : "注册")
                                 : (isLoggingIn ? "登录中..." : "登录")}
                             </Button>
                             <div className="flex items-center justify-center gap-1.5 pt-3">
-                              <span className="text-sm text-white/50 font-medium">
+                              <span className="text-base text-white/50 font-medium">
                                 {showRegisterForm ? "已有账号？" : "还没有账号？"}
                               </span>
                               <button
                                 type="button"
                                 onClick={toggleForm}
                                 disabled={isLoggingIn || isRegistering}
-                                className="text-sm font-semibold text-white hover:underline"
+                                className="text-base font-semibold text-white hover:underline"
                               >
                                 {showRegisterForm ? "返回登录" : "注册新账号"}
                               </button>
@@ -385,27 +388,30 @@ export default function Home() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="h-full w-full flex flex-col items-center justify-between py-8 px-2"
+                    className="h-full w-full flex flex-col items-center justify-between py-10 px-2"
                   >
                     {/* Top: icon */}
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
                     >
-                      <Icon className="w-5 h-5 text-white" />
+                      <Icon className="w-5 h-5 text-white/90" />
                     </div>
 
-                    {/* Middle: vertical text */}
+                    {/* Spacer to push content down */}
+                    <div className="flex-1" />
+
+                    {/* Vertical text just above arrow */}
                     <div
-                      className="flex-1 flex items-center justify-center"
+                      className="mb-4"
                       style={{
                         writingMode: "vertical-rl",
                         textOrientation: "mixed",
                       }}
                     >
                       <span
-                        className="text-white font-semibold tracking-[0.3em]"
-                        style={{ fontSize: "20px" }}
+                        className="text-white font-bold"
+                        style={{ fontFamily: "'AliHealth', 'PingFang SC', sans-serif", fontSize: "28px", letterSpacing: "0.2em" }}
                       >
                         {portal.title}
                       </span>
@@ -413,9 +419,9 @@ export default function Home() {
 
                     {/* Bottom: arrow button */}
                     <div
-                      className="w-10 h-10 rounded-full border-2 border-white/40 flex items-center justify-center hover:bg-white/20 transition-colors"
+                      className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/15 hover:scale-105 transition-all duration-200"
                     >
-                      <ArrowRight className="w-4 h-4 text-white" />
+                      <ArrowRight className="w-4 h-4 text-white/70" />
                     </div>
                   </motion.div>
                 ) : null}

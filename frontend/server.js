@@ -34,7 +34,10 @@ app.prepare().then(() => {
     }
   });
 
-  // Proxy WebSocket upgrade requests
+  // Let Next.js set up its own HMR WebSocket handler first
+  app.setupWebSocketHandler(server);
+
+  // Then intercept only /api/voice/ WebSocket upgrades for backend proxy
   server.on('upgrade', (req, socket, head) => {
     const { pathname } = parse(req.url);
     if (pathname.startsWith('/api/voice/')) {
@@ -42,10 +45,8 @@ app.prepare().then(() => {
         console.error('[Proxy] WebSocket Proxy Error:', err);
         socket.destroy();
       });
-    } else {
-      console.log(`[Proxy] Ignoring non-voice WebSocket upgrade for: ${pathname}`);
-      // Do nothing for other WebSocket requests (like Next.js HMR).
     }
+    // All other upgrades (HMR etc.) are handled by Next.js above
   });
 
   server.listen(PORT, (err) => {

@@ -180,7 +180,7 @@ export function ChatHeader({
         <div className="flex items-start justify-between gap-4">
           {/* Left: Brand and Title */}
           <div className="flex-shrink-0">
-            <p className="text-[11px] uppercase tracking-[0.35em] text-[#B1997B]">
+            <p className="text-[11px] uppercase tracking-[0.35em] text-[#B1997B] font-alihealth">
               {portalConfig.brandName}
             </p>
             <div className="mt-2">
@@ -191,12 +191,12 @@ export function ChatHeader({
                   onChange={(e) => setEditTitle(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onBlur={handleSubmit}
-                  className="text-2xl font-semibold h-11 max-w-md border-[#E5E5E5] bg-white/70"
+                  className="text-2xl font-semibold font-alihealth h-11 max-w-md border-[#E5E5E5] bg-white/70"
                   autoFocus
                 />
               ) : (
                 <button
-                  className="text-2xl font-semibold text-[#1A1A1A] font-serif cursor-text hover:text-[#D16E47] transition-colors"
+                  className="text-2xl font-semibold text-[#1A1A1A] font-alihealth cursor-text hover:text-[#D16E47] transition-colors"
                   onDoubleClick={handleDoubleClick}
                   title={t("chatHeader.doubleClickToEdit")}
                 >

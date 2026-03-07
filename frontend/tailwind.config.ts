@@ -19,6 +19,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        'alihealth': ['"AliHealth"', '"PingFang SC"', 'system-ui', 'sans-serif'],
+      },
       fontSize: {
         xs: ['0.8125rem', { lineHeight: '1.125rem' }],    // 13px (was 12px, +8%)
         sm: ['0.9375rem', { lineHeight: '1.375rem' }],    // 15px (was 14px, +7%)
