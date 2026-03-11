@@ -9,7 +9,7 @@ import type { PatientTodo } from "@/types/patient";
 import { CreateTodoModal } from "./CreateTodoModal";
 
 // Constants
-const PRIMARY_COLOR = "#D94527";
+const PRIMARY_COLOR = "#DA7756";
 
 interface PatientTodosProps {
   patientId: string;
@@ -140,7 +140,7 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent mb-4"></div>
           <p className="text-gray-500">加载中...</p>
         </div>
       </div>

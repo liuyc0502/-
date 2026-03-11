@@ -170,7 +170,7 @@ export function ChatSidebar({
   const [showText, setShowText] = useState(expanded);
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const accentColor = portalConfig.accentColor || "#D94527";
+  const accentColor = portalConfig.accentColor || "#DA7756";
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const isAdminView = variant === "admin";

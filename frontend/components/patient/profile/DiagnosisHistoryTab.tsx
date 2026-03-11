@@ -134,7 +134,7 @@ export function DiagnosisHistoryTab() {
               <Button
                 variant="outline"
                 size="sm"
-                className="text-[#10B981] border-[#10B981] hover:bg-[#10B981] hover:text-white"
+                className="text-[#6E977B] border-[#6E977B] hover:bg-[#6E977B] hover:text-white"
                 onClick={() => {
                   setSelectedTimelineId(timeline.timeline_id);
                   setDetailModalOpen(true);

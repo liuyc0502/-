@@ -208,7 +208,7 @@ export function KnowledgeBaseView({
       {/* Header with Tab Navigation */}
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">知识库</h1>
+          <h1 className="text-2xl font-bold text-gray-900">知识库</h1>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-gray-100 h-14 p-1 gap-1">
               <TabsTrigger
@@ -262,7 +262,7 @@ export function KnowledgeBaseView({
                                     expandedNodes.includes(node.id) ? "rotate-90" : ""
                                   }`}
                                 />
-                                <BookOpen className="h-4 w-4 text-[#D94527]" />
+                                <BookOpen className="h-4 w-4 text-[#DA7756]" />
                                 <span className="font-medium text-gray-900">{node.label}</span>
                               </button>
                               {expandedNodes.includes(node.id) && node.children && (
@@ -276,7 +276,7 @@ export function KnowledgeBaseView({
                                       <button
                                         key={child.id}
                                         onClick={() => handleFileClick(child)}
-                                        className="w-full text-left px-4 py-1.5 text-sm text-gray-600 hover:text-[#D94527] hover:bg-gray-50 transition-colors"
+                                        className="w-full text-left px-4 py-1.5 text-sm text-gray-600 hover:text-[#DA7756] hover:bg-gray-50 transition-colors"
                                       >
                                         {child.label}
                                       </button>
@@ -320,7 +320,7 @@ export function KnowledgeBaseView({
                       ) : (
                         <Card className="bg-white border-gray-200">
                           <CardContent className="p-8">
-                            <article className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-[#D94527] prose-strong:text-gray-900 prose-code:text-[#D94527] prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
+                            <article className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-[#DA7756] prose-strong:text-gray-900 prose-code:text-[#DA7756] prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {fileContent}
                               </ReactMarkdown>
@@ -351,7 +351,7 @@ export function KnowledgeBaseView({
                             onClick={() => handleCategoryClick(category)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                               selectedCategory === category
-                                ? "bg-[#D94527] text-white border border-[#D94527]"
+                                ? "bg-[#DA7756] text-white border border-[#DA7756]"
                                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                             }`}
                           >
@@ -430,7 +430,7 @@ export function KnowledgeBaseView({
               <div className="grid grid-cols-3 gap-4">
                 <Card className="bg-white border-gray-200">
                   <CardContent className="p-6 text-center">
-                    <div className="text-4xl font-bold text-[#D94527]">{learningStats.total_views_this_week}</div>
+                    <div className="text-4xl font-bold text-[#DA7756]">{learningStats.total_views_this_week}</div>
                     <div className="text-sm text-gray-600 mt-2">本周查阅知识点</div>
                   </CardContent>
                 </Card>
@@ -452,7 +452,7 @@ export function KnowledgeBaseView({
               <Card className="bg-white border-gray-200">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-[#D94527]" />
+                    <TrendingUp className="h-5 w-5 text-[#DA7756]" />
                     学习热力图
                   </CardTitle>
                 </CardHeader>
@@ -464,7 +464,7 @@ export function KnowledgeBaseView({
                       return (
                         <div
                           key={index}
-                          className={`h-12 rounded ${colors[intensity]} hover:ring-2 hover:ring-[#D94527] cursor-pointer transition-all`}
+                          className={`h-12 rounded ${colors[intensity]} hover:ring-2 hover:ring-[#DA7756] cursor-pointer transition-all`}
                           title={`${count} 个知识点`}
                         />
                       );

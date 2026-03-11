@@ -78,7 +78,7 @@ function CaseCard({
 
         <Button
           variant="outline"
-          className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
+          className="w-full text-[#DA7756] border-[#DA7756] hover:bg-[#DA7756] hover:text-white"
         >
           查看详情
         </Button>
@@ -163,7 +163,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">病例库</h1>
+          <h1 className="text-2xl font-bold text-gray-900">病例库</h1>
           <div className="flex items-center gap-4">
             <Tabs value={activeTab} onValueChange={onTabChange}>
               <TabsList className="bg-gray-100 h-14 p-1 gap-1">
@@ -220,7 +220,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                       }}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         selectedDiseases.includes(type)
-                          ? "bg-[#D94527] text-white"
+                          ? "bg-[#DA7756] text-white"
                           : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                       }`}
                     >
@@ -230,7 +230,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                   <div className="ml-auto flex items-center gap-2">
                     <Button
                       onClick={() => setCreateDialogOpen(true)}
-                      className="bg-[#D94527] hover:bg-[#C23E21] text-white"
+                      className="bg-[#DA7756] hover:bg-[#C46B4D] text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       新建病例
@@ -257,7 +257,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                             onClick={() => setSelectedAgeRange(selectedAgeRange === range ? "" : range)}
                             className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                               selectedAgeRange === range
-                                ? "bg-[#D94527] text-white"
+                                ? "bg-[#DA7756] text-white"
                                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                             }`}
                           >
@@ -272,7 +272,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                           onClick={() => setSelectedGender(selectedGender === "男" ? "" : "男")}
                           className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                             selectedGender === "男"
-                              ? "bg-[#D94527] text-white"
+                              ? "bg-[#DA7756] text-white"
                               : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                           }`}
                         >
@@ -282,7 +282,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                           onClick={() => setSelectedGender(selectedGender === "女" ? "" : "女")}
                           className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                             selectedGender === "女"
-                              ? "bg-[#D94527] text-white"
+                              ? "bg-[#DA7756] text-white"
                               : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                           }`}
                         >

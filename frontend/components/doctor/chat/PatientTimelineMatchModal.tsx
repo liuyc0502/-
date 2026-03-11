@@ -7,7 +7,7 @@ import patientService from "@/services/patientService";
 import type { Patient, TimelineStage } from "@/types/patient";
 import { CreatePatientDialog } from "@/components/doctor/patients/CreatePatientDialog";
 
-const PRIMARY_COLOR = "#D94527";
+const PRIMARY_COLOR = "#DA7756";
 
 interface MatchedPatient {
   patient_id: number;

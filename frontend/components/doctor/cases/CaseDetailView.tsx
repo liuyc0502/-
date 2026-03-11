@@ -481,7 +481,7 @@ const handleDeleteAllLabResults = () => {
     return (
       <div className="h-full flex items-center justify-center bg-[#FAFAFA]">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent mb-4"></div>
           <p className="text-gray-500">加载中...</p>
         </div>
       </div>
@@ -507,7 +507,7 @@ const handleDeleteAllLabResults = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 {caseData.case_title || caseData.diagnosis || "病例详情"}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
@@ -577,7 +577,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <User className="h-5 w-5 text-[#D94527]" />
+                        <User className="h-5 w-5 text-[#DA7756]" />
                         患者信息
                       </CardTitle>
                     </CardHeader>
@@ -718,7 +718,7 @@ const handleDeleteAllLabResults = () => {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                          <ImageIcon className="h-5 w-5 text-[#D94527]" />
+                          <ImageIcon className="h-5 w-5 text-[#DA7756]" />
                           影像资料
                         </CardTitle>
                         <div className="flex gap-2">
@@ -750,7 +750,7 @@ const handleDeleteAllLabResults = () => {
                         <div className="flex gap-4 overflow-x-auto pb-2">
                           {caseData.images.map((image) => (
                             <div key={image.image_id} className="flex-shrink-0 w-64 group cursor-pointer">
-                              <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#D94527] transition-colors">
+                              <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#DA7756] transition-colors">
                                 <img
                                   src={image.thumbnail_url || image.image_url}
                                   alt={image.image_description || image.image_type || "影像资料"}
@@ -812,7 +812,7 @@ const handleDeleteAllLabResults = () => {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                          <Stethoscope className="h-5 w-5 text-[#D94527]" />
+                          <Stethoscope className="h-5 w-5 text-[#DA7756]" />
                           症状表现
                         </CardTitle>
                         <div className="flex gap-2">
@@ -873,7 +873,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-[#D94527]" />
+                        <FileText className="h-5 w-5 text-[#DA7756]" />
                         现病史
                       </CardTitle>
                     </CardHeader>
@@ -890,7 +890,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-[#D94527]" />
+                        <Calendar className="h-5 w-5 text-[#DA7756]" />
                         既往史
                       </CardTitle>
                     </CardHeader>
@@ -907,7 +907,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <User className="h-5 w-5 text-[#D94527]" />
+                        <User className="h-5 w-5 text-[#DA7756]" />
                         家族史
                       </CardTitle>
                     </CardHeader>
@@ -927,7 +927,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <Stethoscope className="h-5 w-5 text-[#D94527]" />
+                        <Stethoscope className="h-5 w-5 text-[#DA7756]" />
                         体格检查
                       </CardTitle>
                     </CardHeader>
@@ -956,7 +956,7 @@ const handleDeleteAllLabResults = () => {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                          <TestTube className="h-5 w-5 text-[#D94527]" />
+                          <TestTube className="h-5 w-5 text-[#DA7756]" />
                           实验室检查
                         </CardTitle>
                         <div className="flex gap-2">
@@ -1018,7 +1018,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-[#D94527]" />
+                        <FileText className="h-5 w-5 text-[#DA7756]" />
                         影像学检查
                       </CardTitle>
                     </CardHeader>
@@ -1049,7 +1049,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <ClipboardList className="h-5 w-5 text-[#D94527]" />
+                        <ClipboardList className="h-5 w-5 text-[#DA7756]" />
                         治疗方案
                       </CardTitle>
                     </CardHeader>
@@ -1066,7 +1066,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <Pill className="h-5 w-5 text-[#D94527]" />
+                        <Pill className="h-5 w-5 text-[#DA7756]" />
                         用药方案
                       </CardTitle>
                     </CardHeader>
@@ -1083,7 +1083,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-[#D94527]" />
+                        <TrendingUp className="h-5 w-5 text-[#DA7756]" />
                         预后
                       </CardTitle>
                     </CardHeader>
@@ -1100,7 +1100,7 @@ const handleDeleteAllLabResults = () => {
                   <Card className="bg-white border-gray-200">
                     <CardHeader>
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
-                        <StickyNote className="h-5 w-5 text-[#D94527]" />
+                        <StickyNote className="h-5 w-5 text-[#DA7756]" />
                         临床备注
                       </CardTitle>
                     </CardHeader>
@@ -1246,7 +1246,7 @@ const handleDeleteAllLabResults = () => {
           </Form.Item>
           <Form.Item className="mb-0 flex justify-end gap-2">
             <Button onClick={() => setIsImageModalOpen(false)}>取消</Button>
-            <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
+            <Button type="submit" className="bg-[#DA7756] text-white hover:bg-[#C46B4D]">
               添加
             </Button>
           </Form.Item>
@@ -1288,7 +1288,7 @@ const handleDeleteAllLabResults = () => {
           </Form.Item>
           <Form.Item className="mb-0 flex justify-end gap-2">
             <Button onClick={() => setIsSymptomModalOpen(false)}>取消</Button>
-            <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
+            <Button type="submit" className="bg-[#DA7756] text-white hover:bg-[#C46B4D]">
               添加
             </Button>
           </Form.Item>
@@ -1362,7 +1362,7 @@ const handleDeleteAllLabResults = () => {
           </div>
           <Form.Item className="mb-0 flex justify-end gap-2">
             <Button onClick={() => setIsLabResultModalOpen(false)}>取消</Button>
-            <Button type="submit" className="bg-[#D94527] text-white hover:bg-[#C93D1F]">
+            <Button type="submit" className="bg-[#DA7756] text-white hover:bg-[#C46B4D]">
               添加
             </Button>
           </Form.Item>

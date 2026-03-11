@@ -167,7 +167,7 @@ export function CarePlanView() {
       {/* Header */}
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center ">
-          <h1 className="text-3xl font-bold text-gray-900">康复计划</h1>
+          <h1 className="text-2xl font-bold text-gray-900">康复计划</h1>
         </div>
       </div>
 
@@ -182,11 +182,11 @@ export function CarePlanView() {
                 </Button>
                 <div className="text-center">
                   <div className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-[#10B981]" />
+                    <Calendar className="h-5 w-5 text-[#6E977B]" />
                     {todayPlan?.date || selectedDate.toISOString().split('T')[0]} (今天)
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
-                    完成度: <span className="font-bold text-[#10B981]">{todayCompletionRate}%</span>
+                    完成度: <span className="font-bold text-[#6E977B]">{todayCompletionRate}%</span>
                   </div>
                 </div>
                 <Button variant="ghost" size="sm">
@@ -204,7 +204,7 @@ export function CarePlanView() {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <Pill className="h-5 w-5 text-[#10B981]" />
+                      <Pill className="h-5 w-5 text-[#6E977B]" />
                       用药提醒
                     </h2>
                     <div className="text-sm text-gray-600">
@@ -271,7 +271,7 @@ export function CarePlanView() {
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-[#10B981]" />
+                      <Activity className="h-5 w-5 text-[#6E977B]" />
                       康复任务
                     </h2>
                     <div className="text-sm text-gray-600">
@@ -332,15 +332,15 @@ export function CarePlanView() {
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-5 space-y-4">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-[#10B981]" />
+                    <TrendingUp className="h-5 w-5 text-[#6E977B]" />
                     本周进度
                   </h3>
 
                   {weeklyProgress ? (
                     <>
                       <div className="space-y-3">
-                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200">
-                          <div className="text-3xl font-bold text-[#10B981]">
+                        <div className="text-center p-4 bg-gradient-to-br from-[#EFF7F5] to-blue-50 rounded-lg border border-green-200">
+                          <div className="text-3xl font-bold text-[#6E977B]">
                             {weeklyProgress.overall_completion_rate}%
                           </div>
                           <div className="text-sm text-gray-600 mt-1">平均完成率</div>
@@ -352,7 +352,7 @@ export function CarePlanView() {
                             <span className="font-bold text-gray-900">{weeklyProgress.medication_compliance_rate}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-[#10B981] h-2 rounded-full" style={{ width: `${weeklyProgress.medication_compliance_rate}%` }}></div>
+                            <div className="bg-[#6E977B] h-2 rounded-full" style={{ width: `${weeklyProgress.medication_compliance_rate}%` }}></div>
                           </div>
                         </div>
 
@@ -379,7 +379,7 @@ export function CarePlanView() {
                               <div key={index} className="flex-1 flex flex-col items-center gap-1">
                                 <div className="w-full bg-gray-200 rounded-t flex items-end" style={{ height: "80px" }}>
                                   <div
-                                    className="w-full bg-[#10B981] rounded-t transition-all"
+                                    className="w-full bg-[#6E977B] rounded-t transition-all"
                                     style={{ height: `${day.completion_rate}%` }}
                                   ></div>
                                 </div>

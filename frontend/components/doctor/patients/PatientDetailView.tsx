@@ -55,10 +55,10 @@ export function PatientDetailView({ patientId, onBack, onConversationClick }: Pa
               <ArrowLeft className="h-5 w-5" />
             </Button>
             {loading ? (
-              <h1 className="text-3xl font-bold text-gray-900">加载中...</h1>
+              <h1 className="text-2xl font-bold text-gray-900">加载中...</h1>
             ) : patient ? (
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900">
                  {patient.name} · {patient.gender} · {patient.age}岁
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
@@ -66,7 +66,7 @@ export function PatientDetailView({ patientId, onBack, onConversationClick }: Pa
                 </p>
               </div>
             ) : (
-              <h1 className="text-3xl font-bold text-gray-900">患者信息</h1>
+              <h1 className="text-2xl font-bold text-gray-900">患者信息</h1>
             )}
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>

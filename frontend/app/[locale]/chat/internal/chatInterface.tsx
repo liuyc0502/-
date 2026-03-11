@@ -39,6 +39,7 @@ import { PatientDetailView } from "@/components/doctor/patients/PatientDetailVie
 import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
 import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
 import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
+import { TemplateListView } from "@/components/doctor/templates/TemplateListView";
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
@@ -1922,6 +1923,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   onClearSelection={() => setSelectedKnowledgeId(null)}
                   />
                 )}
+                {activeView === "templates" && <TemplateListView />}
               </>
             ) : variant === "patient" ? (
               <>

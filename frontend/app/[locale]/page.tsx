@@ -44,7 +44,7 @@ const portals: Portal[] = [
     subtitle: "医学知识，触手可及",
     description: "通俗易懂的医学解读，帮助您更好地了解自身健康状况",
     loginTitle: "患者端",
-    accentColor: "#4A8F82",
+    accentColor: "#6E977B",
     accentLight: "#EFF7F5",
     icon: HeartPulse,
   },
@@ -54,7 +54,7 @@ const portals: Portal[] = [
     subtitle: "全面管理，实时监控",
     description: "智能体配置与系统管理，掌控全局运行状态",
     loginTitle: "管理员端",
-    accentColor: "#7C6494",
+    accentColor: "#586E9F",
     accentLight: "#F3EFF7",
     icon: Settings,
   },
@@ -151,22 +151,37 @@ export default function Home() {
       style={{ backgroundColor: "#FDF8F2" }}
     >
       {/* ======= LEFT: Welcome area ======= */}
-      <div className="flex-[55] flex flex-col justify-center px-16 xl:px-24 relative">
-        {/* Nexent logo top-left */}
-        <p
-          className="absolute top-10 left-10 font-medium uppercase"
-          style={{ fontFamily: "'AliHealth', 'PingFang SC', sans-serif", fontSize: "11px", color: "#b5b0a8", letterSpacing: "0.3em" }}
-        >
-          Nexent
-        </p>
+      <div className="flex-[65] flex flex-col items-center justify-center relative">
+        {/* ModelEngine + Nexent logo top-left */}
+        <div className="absolute top-8 left-10 flex items-end gap-3">
+          <img
+            src="/modelengine-logo2.png"
+            alt="ModelEngine"
+            style={{ height: "27px", width: "auto" }}
+          />
+          <span
+            style={{
+              fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
+              fontSize: "18px",
+              fontWeight: 900,
+              color: "#4A6CF7",
+              lineHeight: 1,
+              paddingBottom: "3px",
+            }}
+          >
+            Nexent
+          </span>
+        </div>
+
+  
 
         {/* Main title */}
-        <div className="ml-8 xl:ml-16">
+        <div>
           <h1
             style={{
               fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
-              fontWeight: 400,
-              fontSize: "clamp(28px, 3.5vw, 44px)",
+              fontWeight: 700,
+              fontSize: "clamp(34px, 4.2vw, 52px)",
               lineHeight: 1.2,
               color: "#6b6460",
               letterSpacing: "0.06em",
@@ -178,39 +193,41 @@ export default function Home() {
             style={{
               fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
               fontWeight: 700,
-              fontSize: "clamp(72px, 9vw, 120px)",
               lineHeight: 0.9,
               color: "#1a1a1a",
               marginTop: "2px",
-              marginLeft: "clamp(80px, 10vw, 160px)",
+              marginLeft: "clamp(40px, 5vw, 80px)",
               letterSpacing: "-0.02em",
+              display: "flex",
+              alignItems: "baseline",
             }}
           >
-            安语
+            <span style={{ fontSize: "clamp(72px, 9vw, 120px)" }}>安</span>
+            <span style={{ fontSize: "clamp(75px, 9.4vw, 125px)", position: "relative", top: "4px" }}>语</span>
           </h2>
 
           <p
-            className="mt-10"
+            className="mt-16"
             style={{
               fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
               fontWeight: 700,
-              fontSize: "15px",
+              fontSize: "17px",
               color: "#8a847c",
               lineHeight: 1.75,
               maxWidth: "400px",
-              letterSpacing: "0.06em",
-              marginLeft: "clamp(16px, 2vw, 32px)",
+              letterSpacing: "0.18em",
+              marginLeft: "clamp(8px, 1vw, 16px)",
             }}
           >
             一个基于大语言模型的病理知识问答智能体
             <br />
-            为医生、患者和管理者提供专业、可靠的智能服务
+            <span style={{ whiteSpace: "nowrap" }}>为医生、患者和管理者提供专业、可靠的智能服务</span>
           </p>
         </div>
       </div>
 
       {/* ======= RIGHT: Three vertical color strips ======= */}
-      <div className="flex-[45] flex py-8 pr-12 gap-0">
+      <div className="flex-[35] flex py-8 pr-12 gap-0">
         {portals.map((portal) => {
           const isExpanded = expandedPortal === portal.id;
           const isCollapsed = expandedPortal !== null && !isExpanded;

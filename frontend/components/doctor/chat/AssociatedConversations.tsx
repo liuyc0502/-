@@ -129,7 +129,7 @@ export function AssociatedConversations({
       title={
         showTitle ? (
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-[#D94527]" />
+            <MessageSquare className="h-4 w-4 text-[#DA7756]" />
             <span>关联对话</span>
             {patientName && (
               <span className="text-sm text-gray-500 font-normal">
@@ -174,12 +174,12 @@ export function AssociatedConversations({
             {conversations.map((conversation) => (
               <div
                 key={conversation.conversation_id}
-                className="cursor-pointer hover:shadow-md transition-all p-3 rounded-lg border border-gray-200 bg-white hover:border-[#D94527] group"
+                className="cursor-pointer hover:shadow-md transition-all p-3 rounded-lg border border-gray-200 bg-white hover:border-[#DA7756] group"
                 onClick={() => handleConversationClick(conversation.conversation_id)}
               >
                 {/* 标题和状态 */}
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex-1 font-medium text-sm text-gray-900 line-clamp-1 group-hover:text-[#D94527]">
+                  <div className="flex-1 font-medium text-sm text-gray-900 line-clamp-1 group-hover:text-[#DA7756]">
                     {conversation.conversation_title || "未命名对话"}
                   </div>
                   {conversation.conversation_status && (

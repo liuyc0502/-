@@ -438,6 +438,7 @@ export function TimelineSelector({
       <Modal
         title="新建时间线"
         open={isModalOpen}
+        forceRender
         onOk={() => form.submit()}
         onCancel={() => {
           setIsModalOpen(false);

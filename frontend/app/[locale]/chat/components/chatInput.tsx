@@ -40,6 +40,10 @@ import { FilePreview } from "@/types/chat";
 import type { PortalChatConfig } from "@/const/portalChatConfig";
 
 import { ChatAgentSelector } from "./chatAgentSelector";
+import { ChatTemplateModal } from "./chatTemplateModal";
+import { ChatCommandPicker } from "./chatCommandPicker";
+import { listTemplates } from "@/services/chatTemplateService";
+import type { ChatTemplate } from "@/services/chatTemplateService";
 
 const getTimeGreeting = () => {
   const hour = new Date().getHours();
@@ -375,9 +379,16 @@ export function ChatInput({
   const [showStopTooltip, setShowStopTooltip] = useState(false);
   const { t } = useTranslation("common");
 
+  // Template quick commands state
+  const [templates, setTemplates] = useState<ChatTemplate[]>([]);
+  const [showCommandPicker, setShowCommandPicker] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<ChatTemplate | null>(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+
   // Use the configuration hook to get the application avatar
   const { appConfig } = useConfig();
-  const accentColor = portalConfig?.accentColor || "#D94527";
+  const accentColor = portalConfig?.accentColor || "#DA7756";
   const placeholderText =
     portalConfig?.inputPlaceholder ||
     t("chatInput.sendMessageTo", {
@@ -391,6 +402,11 @@ export function ChatInput({
     userDisplayName ||
     portalConfig?.defaultUserName ||
     t("chatInput.friend", { defaultValue: "朋友" });
+
+  // Load templates on mount
+  useEffect(() => {
+    listTemplates().then(setTemplates).catch(() => {});
+  }, []);
 
   // When the recording status changes, notify the parent component
   useEffect(() => {
@@ -552,6 +568,25 @@ export function ChatInput({
       }
       onKeyDown(e);
     }
+  };
+
+  // Template selection handlers
+  const handleTemplateSelect = (template: ChatTemplate) => {
+    setShowCommandPicker(false);
+    setSelectedTemplate(template);
+    setShowTemplateModal(true);
+    // Clear the slash command text from input
+    const lastSlashIdx = input.lastIndexOf("/");
+    if (lastSlashIdx !== -1) {
+      onInputChange(input.slice(0, lastSlashIdx));
+    }
+  };
+
+  const handleTemplateModalSubmit = (renderedPrompt: string) => {
+    onInputChange(renderedPrompt);
+    setShowTemplateModal(false);
+    setSelectedTemplate(null);
+    setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
   // Add a function to automatically adjust the height
@@ -1066,6 +1101,32 @@ export function ChatInput({
             )}
             {renderAttachments()}
 
+            {/* Quick template buttons */}
+            {templates.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
+                {templates.slice(0, 8).map((tpl) => (
+                  <button
+                    key={tpl.template_id}
+                    type="button"
+                    onClick={() => handleTemplateSelect(tpl)}
+                    className="flex-shrink-0 px-3 py-1 text-sm border border-[#E8E2D6] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#D9CFC0] bg-white transition whitespace-nowrap"
+                  >
+                    /{tpl.slash_command}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="relative">
+              {/* Slash command picker */}
+              <ChatCommandPicker
+                templates={templates}
+                query={commandQuery}
+                visible={showCommandPicker}
+                accentColor={accentColor}
+                onSelect={handleTemplateSelect}
+                onClose={() => setShowCommandPicker(false)}
+              />
             <div
               className="max-h-[300px] overflow-y-auto"
               style={{
@@ -1076,7 +1137,18 @@ export function ChatInput({
               <Textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => onInputChange(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  onInputChange(value);
+                  // Slash command detection
+                  const lastSlashIdx = value.lastIndexOf("/");
+                  if (lastSlashIdx !== -1 && !value.slice(lastSlashIdx).includes(" ")) {
+                    setShowCommandPicker(true);
+                    setCommandQuery(value.slice(lastSlashIdx + 1));
+                  } else {
+                    setShowCommandPicker(false);
+                  }
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholderText}
                 className="px-1 py-2 text-lg resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
@@ -1088,6 +1160,7 @@ export function ChatInput({
                 }}
               />
             </div>
+            </div>{/* end relative wrapper */}
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-2">
@@ -1311,6 +1384,16 @@ export function ChatInput({
         </div>
       ) : (
         <div className="w-full max-w-3xl mx-auto">{renderInputArea()}</div>
+      )}
+
+      {/* Template parameter modal - only mount when needed to avoid useForm/Form disconnection warning */}
+      {showTemplateModal && selectedTemplate && (
+        <ChatTemplateModal
+          template={selectedTemplate}
+          visible={showTemplateModal}
+          onClose={() => { setShowTemplateModal(false); setSelectedTemplate(null); }}
+          onSubmit={handleTemplateModalSubmit}
+        />
       )}
     </>
   );

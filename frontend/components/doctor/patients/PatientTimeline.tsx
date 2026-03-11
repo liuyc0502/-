@@ -24,7 +24,7 @@ import { AssociatedConversations } from "@/components/doctor/chat/AssociatedConv
 // ============================================================================
 // Constants
 // ============================================================================
-const PRIMARY_COLOR = "#D94527";
+const PRIMARY_COLOR = "#DA7756";
 
 // ============================================================================
 // Types
@@ -384,7 +384,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
                     disabled={!isClickable}
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
                       isSelected
-                        ? "bg-[#D94527] text-white ring-4 ring-[#D94527]/30 scale-110"
+                        ? "bg-[#DA7756] text-white ring-4 ring-[#DA7756]/30 scale-110"
                         : status === "completed"
                         ? "bg-green-500 text-white hover:scale-105 cursor-pointer"
                         : status === "current"
@@ -396,7 +396,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
                   </button>
                   <div className="mt-3 text-center">
                     <div
-                      className={`text-sm font-semibold ${isSelected ? "text-[#D94527]" : "text-gray-900"}`}
+                      className={`text-sm font-semibold ${isSelected ? "text-[#DA7756]" : "text-gray-900"}`}
                     >
                       {timeline.stage_title}
                     </div>
@@ -464,7 +464,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
               className="bg-white border-gray-200 h-full"
               title={
                 <div className="text-sm font-bold flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-[#D94527]" />
+                  <ImageIcon className="h-4 w-4 text-[#DA7756]" />
                   影像资料
                 </div>
               }
@@ -474,7 +474,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
                   <div className="flex gap-4 overflow-x-auto pb-2">
                     {selectedTimeline.images.map((image) => (
                       <div key={image.image_id} className="flex-shrink-0 w-64 group cursor-pointer">
-                        <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#D94527] transition-colors">
+                        <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#DA7756] transition-colors">
                           <img
                             src={image.thumbnail_url || image.image_url}
                             alt={image.image_label}
@@ -540,7 +540,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
                       {selectedTimeline.attachments.map((file) => (
                         <button
                           key={file.attachment_id}
-                          className="flex items-center gap-2 text-xs text-[#D94527] hover:underline"
+                          className="flex items-center gap-2 text-xs text-[#DA7756] hover:underline"
                           onClick={() => {
                             if (file.file_url) {
                               window.open(file.file_url, "_blank", "noopener,noreferrer");
@@ -568,7 +568,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
             className="bg-white border-gray-200"
             title={
               <div className="text-sm font-bold flex items-center gap-2">
-                <TestTube className="h-4 w-4 text-[#D94527]" />
+                <TestTube className="h-4 w-4 text-[#DA7756]" />
                 检查指标详情
               </div>
             }
@@ -637,7 +637,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
             className="bg-white border-gray-200"
             title={
               <div className="text-sm font-bold flex items-center gap-2">
-                <TestTube className="h-4 w-4 text-[#D94527]" />
+                <TestTube className="h-4 w-4 text-[#DA7756]" />
                 检验报告 ({labReports.length})
               </div>
             }
@@ -723,7 +723,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
                           href={report.report_image_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-[#D94527] hover:underline flex items-center gap-1"
+                          className="text-xs text-[#DA7756] hover:underline flex items-center gap-1"
                         >
                           <ImageIcon className="h-3 w-3" />
                           查看原始报告图片
@@ -749,7 +749,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
             className="bg-white border-gray-200"
             title={
               <div className="text-sm font-bold flex items-center gap-2">
-                <ImageIcon className="h-4 w-4 text-[#D94527]" />
+                <ImageIcon className="h-4 w-4 text-[#DA7756]" />
                 影像报告 ({imagingReports.length})
               </div>
             }
@@ -820,7 +820,7 @@ export function PatientTimeline({ patientId, onConversationClick }: PatientTimel
                           href={report.report_image_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-[#D94527] hover:underline flex items-center gap-1"
+                          className="text-xs text-[#DA7756] hover:underline flex items-center gap-1"
                         >
                           <ImageIcon className="h-3 w-3" />
                           查看原始报告图片

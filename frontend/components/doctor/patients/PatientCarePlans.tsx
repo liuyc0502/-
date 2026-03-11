@@ -96,7 +96,7 @@ export function PatientCarePlans({ patientId }: PatientCarePlansProps) {
         </div>
         <Button
           onClick={handleCreatePlan}
-          className="bg-[#D94527] hover:bg-[#C23E21] text-white"
+          className="bg-[#DA7756] hover:bg-[#C46B4D] text-white"
         >
           <Plus className="h-4 w-4 mr-2" />
           创建康复计划
@@ -112,7 +112,7 @@ export function PatientCarePlans({ patientId }: PatientCarePlansProps) {
             <Button
               onClick={handleCreatePlan}
               variant="outline"
-              className="text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white"
+              className="text-[#DA7756] border-[#DA7756] hover:bg-[#DA7756] hover:text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               创建康复计划
@@ -152,7 +152,7 @@ export function PatientCarePlans({ patientId }: PatientCarePlansProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditPlan(plan)}
-                      className="text-gray-600 hover:text-[#D94527] hover:border-[#D94527]"
+                      className="text-gray-600 hover:text-[#DA7756] hover:border-[#DA7756]"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

@@ -21,6 +21,7 @@ from apps.patient_app import router as patient_router
 from apps.patient_report_app import router as patient_report_router
 from apps.medical_case_app import router as medical_case_router
 from apps.care_plan_app import router as care_plan_router
+from apps.chat_template_app import router as chat_template_router
 from apps.portal_agent_assignment_app import router as portal_agent_assignment_router
 from apps.prompt_app import router as prompt_router
 from apps.remote_mcp_app import router as remote_mcp_router
@@ -59,6 +60,7 @@ app.include_router(patient_report_router)  # Register before patient_router to a
 app.include_router(patient_router)
 app.include_router(medical_case_router)
 app.include_router(care_plan_router)
+app.include_router(chat_template_router)
 app.include_router(elasticsearch_router)
 app.include_router(voice_router)
 app.include_router(file_manager_router)

@@ -257,7 +257,7 @@ export function PatientOverview({ patientId, onConversationClick }: PatientOverv
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent mb-4"></div>
           <p className="text-gray-500">加载中...</p>
         </div>
       </div>
@@ -528,7 +528,7 @@ export function PatientOverview({ patientId, onConversationClick }: PatientOverv
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-white border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
             <CardContent className="p-6 space-y-3">
-              <FileText className="h-8 w-8 text-[#D94527]" />
+              <FileText className="h-8 w-8 text-[#DA7756]" />
               <h3 className="font-bold text-gray-900">就诊记录</h3>
               <p className="text-sm text-gray-600">共{visitCount}次就诊</p>
               {latestTimeline && (

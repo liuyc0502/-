@@ -43,6 +43,7 @@ export function ChatStreamMain({
   hideAgentSelector = false,
 }: ChatStreamMainProps) {
   const { t } = useTranslation();
+  const accentColor = portalConfig?.accentColor || "#DA7756";
   // Animation variants for ChatInput
   const chatInputVariants = {
     initial: {
@@ -483,7 +484,7 @@ export function ChatStreamMain({
             ) : conversationLoadError ? (
               <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)]">
                 <div className="text-center max-w-md">
-                  <div className="text-[#D94527] text-sm mb-4">
+                  <div className="text-sm mb-4" style={{ color: accentColor }}>
                     {t("chatStreamMain.loadError")}
                   </div>
                   <div className="text-[#6B6B6B] text-xs mb-4">

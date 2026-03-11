@@ -277,6 +277,12 @@ export const API_ENDPOINTS = {
     today: (patientId: number) => `${API_BASE_URL}/care_plan/today/${patientId}`,
     weeklyProgress: (patientId: number) => `${API_BASE_URL}/care_plan/weekly_progress/${patientId}`,
   },
+  chatTemplate: {
+    list: `${API_BASE_URL}/chat_template/list`,
+    create: `${API_BASE_URL}/chat_template/create`,
+    update: (id: number) => `${API_BASE_URL}/chat_template/update/${id}`,
+    delete: (id: number) => `${API_BASE_URL}/chat_template/delete/${id}`,
+  },
   learningRecord: {
     recordView: `${API_BASE_URL}/learning_record/record_view`,
     list: `${API_BASE_URL}/learning_record/list`,

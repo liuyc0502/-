@@ -783,3 +783,21 @@ class PatientImagingReport(TableBase):
     report_image_url = Column(String(500), doc="Report image URL")
     ai_summary = Column(Text, doc="AI-generated summary")
     tenant_id = Column(String(100), doc="Tenant ID")
+
+class ChatTemplate(TableBase):
+    """
+    Chat template (slash command) table for doctor quick prompts
+    """
+    __tablename__ = "chat_template_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    template_id = Column(Integer, Sequence(
+        "chat_template_t_template_id_seq", schema=SCHEMA),
+        primary_key=True, nullable=False, doc="Template ID, unique primary key")
+    template_name = Column(String(200), nullable=False, doc="Display name of the template")
+    slash_command = Column(String(100), nullable=False, doc="Slash command trigger (without leading /)")
+    prompt_template = Column(Text, nullable=False, doc="Prompt template with {{variable}} placeholders")
+    fields = Column(JSON, doc="JSON array of field definitions")
+    sort_order = Column(Integer, default=0, doc="Display sort order")
+    user_id = Column(String(100), doc="Owner user ID")
+    tenant_id = Column(String(100), doc="Tenant ID")

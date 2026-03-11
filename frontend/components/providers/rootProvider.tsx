@@ -1,7 +1,8 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ConfigProvider, App } from "antd";
+import { ConfigProvider, App, unstableSetRender } from "antd";
+import { createRoot, Root } from "react-dom/client";
 
 import {
   AuthProvider as AuthContextProvider,
@@ -11,6 +12,26 @@ import {
 
 import { LoginModal, RegisterModal, SessionListeners } from "@/components/auth";
 import { FullScreenLoading } from "@/components/ui/loading";
+
+const antdContainerToRoot = new WeakMap<Element | DocumentFragment, Root>();
+
+// Ant Design v5 compatibility bridge for React 19+/Next 15 runtime.
+unstableSetRender((node, container) => {
+  let root = antdContainerToRoot.get(container);
+
+  if (!root) {
+    root = createRoot(container);
+    antdContainerToRoot.set(container, root);
+  }
+
+  root.render(node);
+
+  return async () => {
+    await Promise.resolve();
+    root.unmount();
+    antdContainerToRoot.delete(container);
+  };
+});
 
 function AppReadyWrapper({ children }: { children: ReactNode }) {
   const { isReady } = useAuth();
@@ -25,9 +46,6 @@ export function RootProvider({ children }: { children: ReactNode }) {
   return (
     <ConfigProvider
       getPopupContainer={() => document.body}
-      // Suppress React version compatibility warning for Next.js 15
-      // This is a false positive - we're using React 18.2.0, but Next.js 15
-      // may trigger this warning due to internal optimizations
       warning={{ strict: false }}
     >
       <App>

@@ -126,9 +126,9 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
       {/* Header */}
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">患者档案</h1>
+          <h1 className="text-2xl font-bold text-gray-900">患者档案</h1>
           <Button
-            className="bg-[#D94527] hover:bg-[#C23E21] text-white h-14"
+            className="bg-[#DA7756] hover:bg-[#C46B4D] text-white h-14 w-36 text-base font-medium"
             onClick={() => setCreatePatientDialogOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -175,7 +175,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent mb-4"></div>
+                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent mb-4"></div>
                 <p className="text-gray-500">加载中...</p>
               </div>
             </div>
@@ -237,7 +237,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                       </div>
                       <Button
                         variant="outline"
-                        className="w-full text-[#D94527] border-[#D94527] hover:bg-[#D94527] hover:text-white mt-4"
+                        className="w-full text-[#DA7756] border-[#DA7756] hover:bg-[#DA7756] hover:text-white mt-4"
                       >
                         查看档案
                       </Button>

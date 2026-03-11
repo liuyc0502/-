@@ -723,7 +723,7 @@ export function EditTimelineDetailModal({
     >
       {dataLoading ? (
         <div className="text-center py-8">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D94527] border-r-transparent"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent"></div>
           <p className="text-gray-500 mt-2">加载中...</p>
         </div>
       ) : (

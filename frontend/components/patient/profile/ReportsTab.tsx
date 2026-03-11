@@ -91,7 +91,7 @@ export function ReportsTab() {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#10B981] border-r-transparent mb-4"></div>
+            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#6E977B] border-r-transparent mb-4"></div>
             <p className="text-gray-500">加载中...</p>
           </div>
         </div>
@@ -145,7 +145,7 @@ export function ReportsTab() {
             {selectedReport.hasAI && (
               <div className="space-y-4 p-5 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                  <Sparkles className="h-5 w-5 text-[#10B981]" />
+                  <Sparkles className="h-5 w-5 text-[#6E977B]" />
                   AI智能解读
                 </div>
 
@@ -233,7 +233,7 @@ export function ReportsTab() {
                   placeholder="输入您的问题..."
                   className="pr-20 h-12"
                 />
-                <Button className="absolute right-1 top-1 bg-[#10B981] hover:bg-[#059669] text-white h-10">
+                <Button className="absolute right-1 top-1 bg-[#6E977B] hover:bg-[#5E856C] text-white h-10">
                   提问
                 </Button>
               </div>
@@ -249,7 +249,7 @@ export function ReportsTab() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#10B981] border-r-transparent mb-4"></div>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#6E977B] border-r-transparent mb-4"></div>
           <p className="text-gray-500">加载中...</p>
         </div>
       </div>
@@ -344,7 +344,7 @@ export function ReportsTab() {
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-[#10B981]" />
+                    <FileText className="h-5 w-5 text-[#6E977B]" />
                     <h3 className="font-bold text-lg text-gray-900">{report.type}</h3>
                   </div>
                   {report.hasAI && (
@@ -384,7 +384,7 @@ export function ReportsTab() {
 
                 <Button
                   variant="outline"
-                  className="w-full text-[#10B981] border-[#10B981] hover:bg-[#10B981] hover:text-white"
+                  className="w-full text-[#6E977B] border-[#6E977B] hover:bg-[#6E977B] hover:text-white"
                 >
                   查看详细解读
                 </Button>

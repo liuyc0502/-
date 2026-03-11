@@ -241,12 +241,12 @@ export function DiagnosisDetailModal({
             <div className="space-y-3 overflow-y-auto pr-3">
               {/* AI Patient Summary - Highlighted */}
               {timelineData.detail?.patient_summary && (
-                <Card className="border-[#10B981] bg-gradient-to-r from-green-50 to-white">
+                <Card className="border-[#6E977B] bg-gradient-to-r from-[#EFF7F5] to-white">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <MessageCircle className="h-4 w-4 text-[#10B981]" />
+                      <MessageCircle className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">为您解读</h3>
-                      <span className="text-xs bg-[#10B981] text-white px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-[#6E977B] text-white px-2 py-0.5 rounded-full">
                         AI 通俗版
                       </span>
                     </div>
@@ -262,7 +262,7 @@ export function DiagnosisDetailModal({
                 <Card className="border-gray-200">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-4 w-4 text-[#10B981]" />
+                      <FileText className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">诊断说明</h3>
                     </div>
                     <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
@@ -277,7 +277,7 @@ export function DiagnosisDetailModal({
                 <Card className="border-gray-200">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <TestTube className="h-4 w-4 text-[#10B981]" />
+                      <TestTube className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">关键检查指标</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -310,13 +310,13 @@ export function DiagnosisDetailModal({
                 <Card className="border-gray-200">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Pill className="h-4 w-4 text-[#10B981]" />
+                      <Pill className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">用药信息</h3>
                     </div>
                     <ul className="space-y-1 text-sm">
                       {timelineData.detail.medications.slice(0, 3).map((med, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-gray-700">
-                          <span className="text-[#10B981] mt-0.5">💊</span>
+                          <span className="text-[#6E977B] mt-0.5">💊</span>
                           <span className="line-clamp-1">{med}</span>
                         </li>
                       ))}
@@ -333,7 +333,7 @@ export function DiagnosisDetailModal({
                 <Card className="border-gray-200">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Scan className="h-4 w-4 text-[#10B981]" />
+                      <Scan className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">医学影像</h3>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -343,7 +343,7 @@ export function DiagnosisDetailModal({
                             <Image
                               src={imageUrls[img.image_id] || ""}
                               alt={img.image_label || "医学影像"}
-                              className="rounded-lg object-cover w-full h-20 border border-gray-200 hover:border-[#10B981] transition-colors"
+                              className="rounded-lg object-cover w-full h-20 border border-gray-200 hover:border-[#6E977B] transition-colors"
                               fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
                             />
                             <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-[10px] p-0.5 rounded-b-lg truncate">
@@ -362,7 +362,7 @@ export function DiagnosisDetailModal({
                 <Card className="border-gray-200">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <TestTube className="h-4 w-4 text-[#10B981]" />
+                      <TestTube className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">化验报告</h3>
                     </div>
                     <div className="space-y-2">
@@ -408,7 +408,7 @@ export function DiagnosisDetailModal({
                 <Card className="border-gray-200">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Scan className="h-4 w-4 text-[#10B981]" />
+                      <Scan className="h-4 w-4 text-[#6E977B]" />
                       <h3 className="font-semibold text-sm text-gray-900">影像检查</h3>
                     </div>
                     <div className="space-y-3">
@@ -467,13 +467,13 @@ export function DiagnosisDetailModal({
                   <Card className="border-gray-200">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="h-4 w-4 text-[#10B981]" />
+                        <CheckCircle className="h-4 w-4 text-[#6E977B]" />
                         <h3 className="font-semibold text-sm text-gray-900">医生建议</h3>
                       </div>
                       <ul className="space-y-1 text-sm">
                         {timelineData.detail.patient_suggestions.slice(0, 3).map((suggestion, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-gray-700">
-                            <span className="text-[#10B981] mt-0.5">📌</span>
+                            <span className="text-[#6E977B] mt-0.5">📌</span>
                             <span className="line-clamp-1">{suggestion}</span>
                           </li>
                         ))}

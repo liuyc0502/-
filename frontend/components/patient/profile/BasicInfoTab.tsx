@@ -61,7 +61,7 @@ export function BasicInfoTab() {
         <CardContent className="p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <User className="h-5 w-5 text-[#10B981]" />
+              <User className="h-5 w-5 text-[#6E977B]" />
               个人信息
             </h2>
           </div>
@@ -124,7 +124,7 @@ export function BasicInfoTab() {
       <Card className="bg-white border-gray-200">
         <CardContent className="p-6 space-y-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Stethoscope className="h-5 w-5 text-[#10B981]" />
+            <Stethoscope className="h-5 w-5 text-[#6E977B]" />
             当前诊断
           </h2>
 
@@ -161,7 +161,7 @@ export function BasicInfoTab() {
                   </div>
                 )}
 
-                <Button className="w-full bg-[#10B981] hover:bg-[#059669] text-white">
+                <Button className="w-full bg-[#6E977B] hover:bg-[#5E856C] text-white">
                   向AI了解我的病情
                 </Button>
               </>
