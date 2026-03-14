@@ -496,6 +496,9 @@ async def create_agent_run_info(
             additional_args["patient_id"] = str(effective_patient_id)
             logger.info(f"[DEBUG] Injected patient_id into additional_args: {additional_args}")
 
+    # Import confirmation manager for interactive tool confirmation
+    from services.confirmation_service import confirmation_manager
+
     agent_run_info = AgentRunInfo(
         query=final_query,
         model_config_list=model_list,
@@ -504,6 +507,7 @@ async def create_agent_run_info(
         mcp_host=mcp_host,
         history=history,
         stop_event=threading.Event(),
-        additional_args=additional_args if additional_args else None
+        additional_args=additional_args if additional_args else None,
+        confirmation_manager=confirmation_manager
     )
     return agent_run_info

@@ -956,5 +956,16 @@
   "diagram.format.svg": "SVG",
   "diagram.format.png": "PNG",
   "diagram.format.selectFormat": "选择格式",
-  "diagram.error.renderFailed": "渲染失败"
+  "diagram.error.renderFailed": "渲染失败",
+
+  "confirmation.confirm": "确认",
+  "confirmation.edit": "编辑",
+  "confirmation.regenerate": "重新生成",
+  "confirmation.save": "保存",
+  "confirmation.cancel": "取消",
+  "confirmation.pending": "待确认",
+  "confirmation.confirmed": "已确认",
+  "confirmation.failed": "失败",
+  "confirmation.timeout": "已超时",
+  "confirmation.regenerateHint": "请输入修改指令（可选）"
 }

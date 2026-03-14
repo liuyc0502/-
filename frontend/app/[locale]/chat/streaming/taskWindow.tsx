@@ -15,9 +15,10 @@ import { ScrollArea } from "@/components/ui/scrollArea";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/ui/markdownRenderer";
 import { chatConfig } from "@/const/chatConfig";
-import { ChatMessageType, TaskMessageType, CardItem, MessageHandler } from "@/types/chat";
+import { ChatMessageType, TaskMessageType, CardItem, MessageHandler, ToolConfirmationData } from "@/types/chat";
 import { useChatTaskMessage } from "@/hooks/useChatTaskMessage";
 import log from "@/lib/logger";
+import ConfirmationCard from "./ConfirmationCard";
 
 // Icon mapping dictionary - map strings to corresponding icon components
 const iconMap: Record<string, React.ReactNode> = {
@@ -321,6 +322,22 @@ const messageHandlers: MessageHandler[] = [
           </div>
         </div>
       );
+    },
+  },
+
+  // tool_confirmation type processor - interactive confirmation card
+  {
+    canHandle: (message) => message.type === chatConfig.messageTypes.TOOL_CONFIRMATION,
+    render: (message, _t) => {
+      try {
+        const confirmData: ToolConfirmationData = typeof message.content === "string"
+          ? JSON.parse(message.content)
+          : message.content;
+        return <ConfirmationCard data={confirmData} />;
+      } catch (error) {
+        log.error("Failed to parse tool confirmation data", error);
+        return <div style={{ color: "red", padding: "8px" }}>无法解析确认卡片数据</div>;
+      }
     },
   },
 

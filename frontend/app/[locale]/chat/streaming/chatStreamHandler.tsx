@@ -73,6 +73,7 @@ export const handleStreamResponse = async (
     | typeof chatConfig.contentTypes.GENERATING_CODE
     | typeof chatConfig.contentTypes.SEARCH_CONTENT
     | typeof chatConfig.contentTypes.CARD
+    | typeof chatConfig.contentTypes.TOOL_CONFIRMATION
     | typeof chatConfig.contentTypes.MEMORY_SEARCH
     | typeof chatConfig.contentTypes.PREPROCESS
     | null = null;
@@ -397,6 +398,37 @@ export const handleStreamResponse = async (
                     // Mark as code generation type
                     lastContentType = chatConfig.contentTypes.GENERATING_CODE;
                   }
+                  break;
+
+                case chatConfig.messageTypes.TOOL_CONFIRMATION:
+                  // Interactive confirmation card for write operations
+                  if (!currentStep) {
+                    currentStep = {
+                      id: `step-confirm-${Date.now()}-${Math.random()
+                        .toString(36)
+                        .substring(2, 9)}`,
+                      title: "Tool Confirmation",
+                      content: "",
+                      expanded: true,
+                      contents: [],
+                      metrics: "",
+                      thinking: { content: "", expanded: true },
+                      code: { content: "", expanded: true },
+                      output: { content: "", expanded: true },
+                    };
+                  }
+
+                  currentStep.contents.push({
+                    id: `confirm-${Date.now()}-${Math.random()
+                      .toString(36)
+                      .substring(2, 7)}`,
+                    type: chatConfig.messageTypes.TOOL_CONFIRMATION,
+                    content: messageContent,
+                    expanded: true,
+                    timestamp: Date.now(),
+                  });
+
+                  lastContentType = chatConfig.contentTypes.TOOL_CONFIRMATION;
                   break;
 
                 case chatConfig.messageTypes.CARD:

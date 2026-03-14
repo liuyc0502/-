@@ -17,7 +17,8 @@ class NexentAgent:
     def __init__(self, observer: MessageObserver,
                  model_config_list: List[ModelConfig],
                  stop_event: Event,
-                 mcp_tool_collection=None):
+                 mcp_tool_collection=None,
+                 confirmation_manager=None):
         """
         init the agent create factory
 
@@ -25,6 +26,7 @@ class NexentAgent:
             mcp_tool_collection:
             observer:
             model_config_list:
+            confirmation_manager: Optional confirmation manager for interactive tool confirmation
         """
         if not isinstance(observer, MessageObserver):
             raise TypeError("Create Observer Object with MessageObserver")
@@ -33,6 +35,7 @@ class NexentAgent:
         self.model_config_list = model_config_list
         self.stop_event = stop_event
         self.mcp_tool_collection = mcp_tool_collection
+        self.confirmation_manager = confirmation_manager
 
         self.agent = None
 
@@ -108,6 +111,15 @@ class NexentAgent:
                 tool_obj = self.create_langchain_tool(tool_config)
             else:
                 raise ValueError(f"unsupported tool source: {source}")
+
+            # Apply confirmation wrapper for write-operation tools
+            if self.confirmation_manager is not None:
+                try:
+                    from tool_collection.mcp.confirmable_wrapper import apply_confirmation_wrapper
+                    tool_obj = apply_confirmation_wrapper(tool_obj, self.observer, self.confirmation_manager)
+                except ImportError:
+                    pass
+
             return tool_obj
         except Exception as e:
             raise ValueError(f"Error in creating tool: {e}")

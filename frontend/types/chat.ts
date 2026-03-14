@@ -24,7 +24,8 @@ export interface StepContent {
         typeof chatConfig.messageTypes.SEARCH_CONTENT_PLACEHOLDER |
         typeof chatConfig.messageTypes.VIRTUAL |
         typeof chatConfig.messageTypes.MEMORY_SEARCH |
-        typeof chatConfig.messageTypes.PREPROCESS
+        typeof chatConfig.messageTypes.PREPROCESS |
+        typeof chatConfig.messageTypes.TOOL_CONFIRMATION
   content: string
   expanded: boolean
   timestamp: number
@@ -343,4 +344,22 @@ export interface StorageUploadResult {
     url: string;
     error?: string;
   }[];
+}
+
+// Tool confirmation card types
+export interface ParameterFieldSchema {
+  key: string;
+  label: string;
+  type: "text" | "number" | "select" | "date" | "textarea" | "list";
+  required: boolean;
+  options?: string[];
+  readonly?: boolean;
+}
+
+export interface ToolConfirmationData {
+  confirmation_id: string;
+  tool_name: string;
+  tool_display_name: string;
+  parameters: Record<string, any>;
+  parameter_schema: ParameterFieldSchema[];
 }

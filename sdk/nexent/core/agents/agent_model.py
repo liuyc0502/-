@@ -53,6 +53,7 @@ class AgentRunInfo(BaseModel):
     history: Optional[List[AgentHistory]] = Field(description="Historical conversation information", default=None)
     stop_event: Event = Field(description="Stop event control")
     additional_args: Optional[Dict[str, Any]] = Field(description="Additional variables to inject into agent execution context", default=None)
+    confirmation_manager: Optional[Any] = Field(description="Confirmation manager for interactive tool confirmation", default=None)
 
     class Config:
         arbitrary_types_allowed = True

@@ -283,6 +283,10 @@ export const API_ENDPOINTS = {
     update: (id: number) => `${API_BASE_URL}/chat_template/update/${id}`,
     delete: (id: number) => `${API_BASE_URL}/chat_template/delete/${id}`,
   },
+  confirmation: {
+    confirm: (id: string) => `${API_BASE_URL}/agent/confirm/${id}`,
+    list: `${API_BASE_URL}/agent/confirmations`,
+  },
   learningRecord: {
     recordView: `${API_BASE_URL}/learning_record/record_view`,
     list: `${API_BASE_URL}/learning_record/list`,
