@@ -1,6 +1,6 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, AlertTriangle, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { ScrollArea } from "@/components/ui/scrollArea";
@@ -10,9 +10,12 @@ import { chatConfig } from "@/const/chatConfig";
 import { USER_ROLES } from "@/const/modelConfig";
 import { ChatMessageType, ProcessedMessages, ChatStreamMainProps } from "@/types/chat";
 
+import { API_ENDPOINTS } from "@/services/api";
+import { fetchWithAuth } from "@/lib/auth";
 import { ChatInput } from "../components/chatInput";
 import { ChatStreamFinalMessage } from "./chatStreamFinalMessage";
 import { TaskWindow } from "./taskWindow";
+import ConsultationCard from "./ConsultationCard";
 
 export function ChatStreamMain({
   messages,
@@ -45,6 +48,56 @@ export function ChatStreamMain({
 }: ChatStreamMainProps) {
   const { t } = useTranslation();
   const accentColor = portalConfig?.accentColor || "#DA7756";
+
+  // Detect active consultation waiting for doctor decision
+  const activeConsultation = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role === ROLE_ASSISTANT && msg.consultationData) {
+        const cd = msg.consultationData;
+        if (cd.waitingForDoctor && !cd.isComplete) {
+          return cd;
+        }
+      }
+    }
+    return null;
+  }, [messages]);
+
+  const [consultationInstructions, setConsultationInstructions] = useState("");
+  const [isConsultationSubmitting, setIsConsultationSubmitting] = useState(false);
+  const [consultationDecisionSent, setConsultationDecisionSent] = useState<"continue" | "conclude" | null>(null);
+
+  // Reset decision sent state when consultation is no longer waiting
+  useEffect(() => {
+    if (!activeConsultation) {
+      setConsultationDecisionSent(null);
+    }
+  }, [activeConsultation]);
+
+  const handleConsultationDecision = async (action: "continue" | "conclude") => {
+    if (!activeConsultation) return;
+    setIsConsultationSubmitting(true);
+    try {
+      await fetchWithAuth(
+        API_ENDPOINTS.consultation.decide(activeConsultation.consultation_id),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action,
+            instructions: action === "continue" ? consultationInstructions : undefined,
+          }),
+        }
+      );
+      setConsultationInstructions("");
+      setConsultationDecisionSent(action);
+    } catch (e) {
+      console.error("Failed to submit consultation decision:", e);
+    } finally {
+      setIsConsultationSubmitting(false);
+    }
+  };
+
   // Animation variants for ChatInput
   const chatInputVariants = {
     initial: {
@@ -541,6 +594,10 @@ export function ChatStreamMain({
             <>
               {processedMessages.finalMessages.map((message, index) => (
                 <div key={message.id || index} className="flex flex-col gap-2">
+                  {/* Consultation Card - shown above final message so the report appears after the card */}
+                  {message.role === ROLE_ASSISTANT && message.consultationData && (
+                    <ConsultationCard data={message.consultationData} />
+                  )}
                   <ChatStreamFinalMessage
                     message={message}
                     onSelectMessage={onSelectMessage}
@@ -600,6 +657,67 @@ export function ChatStreamMain({
       {/* Input box in non-initial mode */}
       {processedMessages.finalMessages.length > 0 && (
       <div className="px-4 md:px-12 pb-6">
+        {activeConsultation ? (
+          /* Consultation decision bar - replaces normal input when waiting for doctor */
+          <div className="max-w-3xl lg:max-w-4xl mx-auto">
+            {consultationDecisionSent ? (
+              /* Feedback after decision submitted */
+              <div className="flex items-center justify-center gap-3 py-4 px-4 bg-gray-50 rounded-lg border border-gray-200">
+                <Loader2 size={16} className="text-[#DA7756] animate-spin" />
+                <span className="text-sm font-medium text-gray-700">
+                  {consultationDecisionSent === "continue"
+                    ? "已提交，正在启动下一轮辩论..."
+                    : "已提交，正在生成会诊结论..."}
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={14} className="text-amber-600" />
+                  <span className="text-sm font-medium text-amber-800">
+                    第 {activeConsultation.waitingRound} 轮辩论已完成，请决定下一步
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={consultationInstructions}
+                    onChange={(e) => setConsultationInstructions(e.target.value)}
+                    placeholder="附加指导意见（可选）..."
+                    className="flex-1 text-sm px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#DA7756] focus:border-[#DA7756] outline-none bg-white"
+                    disabled={isConsultationSubmitting}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleConsultationDecision("continue");
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => handleConsultationDecision("continue")}
+                    disabled={isConsultationSubmitting}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-[#DA7756] hover:bg-[#C46B4D] rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    {isConsultationSubmitting ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                    继续辩论
+                  </button>
+                  <button
+                    onClick={() => handleConsultationDecision("conclude")}
+                    disabled={isConsultationSubmitting}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-[#DA7756] bg-white border border-[#DA7756]/30 hover:bg-[#DA7756]/5 rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    <CheckCircle2 size={14} />
+                    形成结论
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
         <AnimatePresence mode="wait">
           <motion.div
             key="regular-chat-input"
@@ -630,6 +748,7 @@ export function ChatStreamMain({
             />
           </motion.div>
         </AnimatePresence>
+        )}
         </div>
       )}
 

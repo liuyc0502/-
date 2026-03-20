@@ -295,6 +295,15 @@ export const API_ENDPOINTS = {
     confirm: (id: string) => `${API_BASE_URL}/agent/confirm/${id}`,
     list: `${API_BASE_URL}/agent/confirmations`,
   },
+  consultation: {
+    start: `${API_BASE_URL}/agent/consultation/start`,
+    decide: (id: string) => `${API_BASE_URL}/agent/consultation/${id}/decide`,
+    status: (id: string) => `${API_BASE_URL}/agent/consultation/${id}/status`,
+    list: `${API_BASE_URL}/agent/consultations`,
+    history: `${API_BASE_URL}/agent/consultation/history`,
+    historyDetail: (id: number) => `${API_BASE_URL}/agent/consultation/history/${id}`,
+    historyDelete: (id: number) => `${API_BASE_URL}/agent/consultation/history/${id}`,
+  },
   learningRecord: {
     recordView: `${API_BASE_URL}/learning_record/record_view`,
     list: `${API_BASE_URL}/learning_record/list`,

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Dropdown, Badge, Modal, Button } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { WarningFilled } from "@ant-design/icons";
-import { BrainCircuit, Globe } from "lucide-react";
+import { BrainCircuit, Globe, Users } from "lucide-react";
 
 import { Button as ButtonUI } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +23,6 @@ import MemoryManageModal from "../internal/memory/memoryManageModal";
 import type { PortalChatConfig } from "@/const/portalChatConfig";
 import { PatientSelector } from "./PatientSelector";
 import { TimelineSelector } from "./TimelineSelector";
-import { ConversationStatus } from "./ConversationStatus";
-import { TagsManager } from "./TagsManager";
-import { SummaryEditor } from "./SummaryEditor";
 
 // Gradient definition for BrainCircuit icon
 const GradientDefs = () => (
@@ -48,15 +45,10 @@ interface ChatHeaderProps {
   patientName?: string | null;
   timelineId?: number | null;
   timelineName?: string | null;
-  conversationStatus?: string;
-  conversationTags?: string[];
-  conversationSummary?: string;
   onPatientChange?: (patientId: number | null, patientName: string | null) => void;
   onTimelineChange?: (timelineId: number | null, timelineName: string | null) => void;
-  onStatusChange?: (status: string) => void;
-  onTagsChange?: (tags: string[]) => void;
-  onSummaryChange?: (summary: string) => void;
   showPatientLinking?: boolean; // Show patient linking features (default: false)
+  onStartConsultation?: () => void; // Trigger multi-agent consultation
 }
 
 export function ChatHeader({
@@ -68,15 +60,10 @@ export function ChatHeader({
   patientName,
   timelineId,
   timelineName,
-  conversationStatus,
-  conversationTags,
-  conversationSummary,
   onPatientChange,
   onTimelineChange,
-  onStatusChange,
-  onTagsChange,
-  onSummaryChange,
   showPatientLinking = false,
+  onStartConsultation,
   }: ChatHeaderProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -180,10 +167,7 @@ export function ChatHeader({
         <div className="flex items-start justify-between gap-4">
           {/* Left: Brand and Title */}
           <div className="flex-shrink-0">
-            <p className="text-[11px] uppercase tracking-[0.35em] text-[#B1997B] font-alihealth">
-              {portalConfig.brandName}
-            </p>
-            <div className="mt-2">
+            <div className="mt-0">
               {isEditing ? (
                 <Input
                   ref={inputRef}
@@ -235,78 +219,24 @@ export function ChatHeader({
                   />
                 </div>
 
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-xs text-[#999] whitespace-nowrap">状态</span>
-                  <ConversationStatus
-                    conversationId={conversationId || null}
-                    currentStatus={conversationStatus}
-                    onStatusChange={onStatusChange}
-                    
-                  />
-                </div>
- 
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-xs text-[#999] whitespace-nowrap">标签</span>
-                  <TagsManager
-                    conversationId={conversationId || null}
-                    currentTags={conversationTags}
-                    onTagsChange={onTagsChange}
-
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-xs text-[#999] whitespace-nowrap">摘要</span>
-                  <SummaryEditor
-                    conversationId={conversationId || null}
-                    currentSummary={conversationSummary}
-                    onSummaryChange={onSummaryChange}
-
-                    placeholder="点击添加对话摘要..."
-                  />
-                </div>
               </div>
             </div>
           )}
  
-          {/* Right: Language & Memory */}
+          {/* Right: Consultation */}
           <div className="flex items-center space-x-2 flex-shrink-0">
-            <Dropdown
-              menu={{
-                items: languageOptions.map((opt) => ({
-                  key: opt.value,
-                  label: opt.label,
-                })),
-                onClick: ({ key }) => handleLanguageChange(key as string),
-              }}
-            >
-              <a className="ant-dropdown-link text-sm font-medium text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors flex items-center gap-2 cursor-pointer rounded-full border border-[#E5E5E5] px-3 py-2 bg-white">
-                <Globe className="h-4 w-4" />
-                {languageOptions.find((o) => o.value === currentLanguage)
-                  ?.label || currentLanguage}
-                <DownOutlined className="text-[10px]" />
-              </a>
-            </Dropdown>
-            <Badge dot={embeddingConfigured && hasNewMemory} offset={[-4, 4]}>
+            {onStartConsultation && (
               <ButtonUI
                 variant="ghost"
-                className={`rounded-full px-3 py-2 h-10 flex items-center gap-2 border border-[#E5E5E5] bg-white ${
-                  !embeddingConfigured ? "opacity-50" : ""
-                }`}
-                onClick={() => {
-                  if (!embeddingConfigured) {
-                    setShowConfigPrompt(true);
-                    return;
-                  }
-                  setMemoryModalVisible(true);
-                }}
+                className="rounded-full px-4 py-2 h-10 flex items-center gap-2 border border-[#DA7756]/30 bg-white hover:bg-[#DA7756]/10 transition-colors"
+                onClick={onStartConsultation}
               >
-                <BrainCircuit className="h-5 w-5 text-[#B87345]" />
-                <span className="text-sm text-[#6B6B6B]">
-                  {t("chatHeader.memory", { defaultValue: "记忆" })}
+                <Users className="h-4 w-4 text-[#DA7756]" />
+                <span className="text-sm text-[#DA7756] font-medium">
+                  {t("chatHeader.consultation", { defaultValue: "发起会诊" })}
                 </span>
               </ButtonUI>
-            </Badge>
+            )}
           </div>
         </div>
       </header>

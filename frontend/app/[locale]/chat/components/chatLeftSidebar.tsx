@@ -11,7 +11,6 @@ import {
   User,
   Search,
   ChevronDown,
-  Filter,
   X,
   UserCircle2,
 } from "lucide-react";
@@ -118,22 +117,11 @@ const categorizeDialogs = (dialogs: ConversationListItem[]) => {
 const filterConversations = (
   conversations: ConversationListItem[],
   searchTerm: string,
-  statusFilter: string | null,
-  tagFilter: string | null
 ) => {
   return conversations.filter((dialog) => {
-    const matchesSearch = dialog.conversation_title
+    return dialog.conversation_title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      !statusFilter || (dialog as any).conversation_status === statusFilter;
-
-    const matchesTag =
-      !tagFilter ||
-      ((dialog as any).tags && (dialog as any).tags.includes(tagFilter));
-
-    return matchesSearch && matchesStatus && matchesTag;
   });
 };
 
@@ -171,15 +159,12 @@ export function ChatSidebar({
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const accentColor = portalConfig.accentColor || "#DA7756";
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const isAdminView = variant === "admin";
 
   // Memoize filtered conversations to avoid recalculating on every render
   const filteredConversations = useMemo(
-    () =>
-      filterConversations(conversationList, searchTerm, statusFilter, tagFilter),
-    [conversationList, searchTerm, statusFilter, tagFilter]
+    () => filterConversations(conversationList, searchTerm),
+    [conversationList, searchTerm]
   );
 
   // Memoize categorized dialogs
@@ -258,15 +243,6 @@ export function ChatSidebar({
     } else if (e.key === "Escape") {
       handleCancelEdit();
     }
-  };
-
-  const handleClearFilters = () => {
-    setStatusFilter(null);
-    setTagFilter(null);
-  };
-
-  const handleStatusFilterToggle = (status: string) => {
-    setStatusFilter(statusFilter === status ? null : status);
   };
 
   const handleDeleteClick = (dialogId: number) => {
@@ -571,44 +547,6 @@ export function ChatSidebar({
                       )}
                     </div>
 
-                    {/* Filter Pills - inline style - only show for doctor portal */}
-                    {variant === "doctor" && (
-                      <div className="flex items-center gap-1.5 mt-2 flex-nowrap overflow-x-auto">
-                        <button
-                          onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
-                          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                            statusFilter === 'active'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                          }`}
-                        >
-                          进行中
-                        </button>
-
-                        <button
-                          onClick={() => setStatusFilter(statusFilter === 'pending_followup' ? null : 'pending_followup')}
-                          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                            statusFilter === 'pending_followup'
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                          }`}
-                        >
-                          待跟进
-                        </button>
-
-                        <button
-                          onClick={() => setStatusFilter(statusFilter === 'difficult_case' ? null : 'difficult_case')}
-                          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                            statusFilter === 'difficult_case'
-                              ? 'bg-rose-100 text-rose-700'
-                              : 'bg-[#F5F2ED] text-[#8B8680] hover:bg-[#EBE6DF]'
-                          }`}
-                        >
-                          疑难
-                        </button>
-
-                      </div>
-                    )}
                   </div>
                 )}
 

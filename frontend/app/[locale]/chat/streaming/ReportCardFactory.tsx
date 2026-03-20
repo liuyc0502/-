@@ -9,6 +9,7 @@ import QCCheckCard from "./QCCheckCard";
 import SymptomSummaryCard from "./SymptomSummaryCard";
 import TriageRecommendationCard from "./TriageRecommendationCard";
 import ReasoningChainCard from "./ReasoningChainCard";
+import ConsultationReportCard from "./ConsultationReportCard";
 
 interface ReportCardFactoryProps {
   data: ReportCardData;
@@ -26,6 +27,8 @@ function renderCard(data: ReportCardData) {
       return <TriageRecommendationCard data={data} />;
     case "reasoning_chain":
       return <ReasoningChainCard data={data} />;
+    case "consultation_report":
+      return <ConsultationReportCard data={data as any} />;
     default:
       return null;
   }

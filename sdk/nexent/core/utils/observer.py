@@ -29,6 +29,13 @@ class ProcessType(Enum):
     TOOL_CONFIRMATION = "tool_confirmation"  # interactive confirmation card for write operations
     REPORT_CARD = "report_card"  # structured pathology report card (interpretation + QC)
 
+    # Multi-agent consultation events
+    CONSULTATION_START = "consultation_start"  # consultation session initiated
+    CONSULTATION_AGENT_STEP = "consultation_agent_step"  # per-agent reasoning step within consultation
+    CONSULTATION_AGENT_OPINION = "consultation_agent_opinion"  # agent completed opinion for a round
+    CONSULTATION_ROUND_COMPLETE = "consultation_round_complete"  # all agents done for a round
+    CONSULTATION_WAITING_DOCTOR = "consultation_waiting_doctor"  # blocking for doctor decision
+
 
 # message transformer base class
 class MessageTransformer:
@@ -167,7 +174,12 @@ class MessageObserver:
             ProcessType.TOOL: default_transformer,
             ProcessType.MEMORY_SEARCH: default_transformer,
             ProcessType.TOOL_CONFIRMATION: default_transformer,
-            ProcessType.REPORT_CARD: default_transformer
+            ProcessType.REPORT_CARD: default_transformer,
+            ProcessType.CONSULTATION_START: default_transformer,
+            ProcessType.CONSULTATION_AGENT_STEP: default_transformer,
+            ProcessType.CONSULTATION_AGENT_OPINION: default_transformer,
+            ProcessType.CONSULTATION_ROUND_COMPLETE: default_transformer,
+            ProcessType.CONSULTATION_WAITING_DOCTOR: default_transformer
         }
 
     def add_model_new_token(self, new_token):

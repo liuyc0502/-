@@ -139,6 +139,7 @@ export interface ChatMessageType {
   steps?: AgentStep[]
   finalAnswer?: string
   reportCards?: ReportCardData[]
+  consultationData?: import("./consultation").ConsultationState
   error?: string
   agentRun?: string
   searchResults?: SearchResult[]
@@ -379,4 +380,8 @@ import type { SymptomSummaryData, TriageRecommendationData } from "./symptomRepo
 export type { ReasoningChainData } from "./reasoningChain";
 import type { ReasoningChainData } from "./reasoningChain";
 
-export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData;
+// Consultation card types
+export type { ConsultationReportData } from "./consultation";
+import type { ConsultationReportData } from "./consultation";
+
+export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData | ConsultationReportData;

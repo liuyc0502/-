@@ -17,6 +17,8 @@ import {
   Microscope,
   Notebook,
   Sparkles,
+  Stethoscope,
+  UsersRound,
   Users,
 } from "lucide-react";
 
@@ -122,6 +124,8 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
       { id: "chats", label: "对话", icon: MessageSquare },
       { id: "patients", label: "患者档案", icon: Users },
       { id: "cases", label: "病例库", icon: FolderKanban },
+      { id: "consultations", label: "会诊记录", icon: UsersRound },
+      { id: "specialist-config", label: "专科配置", icon: Stethoscope },
       { id: "knowledge", label: "病理知识库", icon: BookOpen },
       { id: "templates", label: "快捷指令", icon: LayoutTemplate },
     ],
