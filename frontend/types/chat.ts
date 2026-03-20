@@ -25,7 +25,8 @@ export interface StepContent {
         typeof chatConfig.messageTypes.VIRTUAL |
         typeof chatConfig.messageTypes.MEMORY_SEARCH |
         typeof chatConfig.messageTypes.PREPROCESS |
-        typeof chatConfig.messageTypes.TOOL_CONFIRMATION
+        typeof chatConfig.messageTypes.TOOL_CONFIRMATION |
+        typeof chatConfig.messageTypes.REPORT_CARD
   content: string
   expanded: boolean
   timestamp: number
@@ -137,6 +138,7 @@ export interface ChatMessageType {
   reference?: any
   steps?: AgentStep[]
   finalAnswer?: string
+  reportCards?: ReportCardData[]
   error?: string
   agentRun?: string
   searchResults?: SearchResult[]
@@ -180,6 +182,7 @@ export interface ChatStreamMainProps {
   portalConfig: PortalChatConfig;
   userDisplayName?: string;
   hideAgentSelector?: boolean;
+  hideTemplates?: boolean;
 }
 
 // Card item type for task window
@@ -363,3 +366,17 @@ export interface ToolConfirmationData {
   parameters: Record<string, any>;
   parameter_schema: ParameterFieldSchema[];
 }
+
+// Report interpretation card types
+export type { ReportInterpretationData, QCCheckData } from "./reportInterpretation";
+import type { ReportInterpretationData, QCCheckData } from "./reportInterpretation";
+
+// Symptom report card types
+export type { SymptomSummaryData, TriageRecommendationData } from "./symptomReport";
+import type { SymptomSummaryData, TriageRecommendationData } from "./symptomReport";
+
+// Reasoning chain card types
+export type { ReasoningChainData } from "./reasoningChain";
+import type { ReasoningChainData } from "./reasoningChain";
+
+export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData;

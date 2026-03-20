@@ -78,7 +78,9 @@ class ConfirmationManager:
         confirmation_id: str,
         action: str,
         parameters: Optional[Dict[str, Any]] = None,
-        instructions: Optional[str] = None
+        instructions: Optional[str] = None,
+        user_id: Optional[str] = None,
+        tenant_id: Optional[str] = None
     ) -> bool:
         """Resolve a pending confirmation. Called by REST endpoint."""
         with self._lock:
@@ -91,7 +93,9 @@ class ConfirmationManager:
         request.result = {
             "action": action,
             "parameters": parameters or request.parameters,
-            "instructions": instructions or ""
+            "instructions": instructions or "",
+            "user_id": user_id,
+            "tenant_id": tenant_id
         }
         request.event.set()
         logger.info(f"Resolved confirmation {confirmation_id} with action={action}")

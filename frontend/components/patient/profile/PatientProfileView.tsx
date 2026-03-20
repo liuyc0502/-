@@ -13,10 +13,10 @@ export function PatientProfileView() {
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
       {/* Header with Tab Navigation */}
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
-        <div className="px-8 py-6 flex items-center justify-between">
+        <div className="px-8 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">我的档案</h1>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+            <TabsList className="bg-gray-100 h-14 p-1 gap-1 rounded-full">
               <TabsTrigger
                 value="basic"
                 className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"

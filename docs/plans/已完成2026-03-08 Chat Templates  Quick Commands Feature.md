@@ -161,10 +161,6 @@ chatTemplate: {
 - 快捷按钮区：在 textarea 上方渲染 `templates.slice(0,8)` 的圆角 chip 按钮（横向滚动）
 - JSX 末尾添加 `<ChatCommandPicker>` 和 `<ChatTemplateModal>`
 
-### Phase 6: i18n（仅中文）
-
-**Step 15:** 在 `/opt/frontend/public/locales/zh/common.json` 添加 `chatTemplate.*` 翻译键（无需英文）
-
 ------
 
 ## Critical Files

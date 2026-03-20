@@ -210,6 +210,10 @@ class NexentAgent:
                 # prepare for multi-modal final_answer
                 final_answer_str = convert_code_format(str(final_answer))
             final_answer_str = re.sub(THINK_TAG_PATTERN, "", final_answer_str, flags=re.DOTALL | re.IGNORECASE)
+
+            # Extract and emit report cards (<<<REPORT_CARD>>>...<<<END_REPORT_CARD>>> markers)
+            final_answer_str = self._extract_and_emit_report_cards(final_answer_str, observer)
+
             observer.add_message(self.agent.agent_name, ProcessType.FINAL_ANSWER, final_answer_str)
 
             # Check if we need to stop from external stop_event
@@ -220,6 +224,99 @@ class NexentAgent:
             observer.add_message(agent_name=self.agent.agent_name, process_type=ProcessType.ERROR,
                                  content=f"Error in interaction: {str(e)}")
             raise ValueError(f"Error in interaction: {str(e)}")
+
+    @staticmethod
+    def _extract_and_emit_report_cards(text: str, observer: MessageObserver) -> str:
+        """Extract <<<REPORT_CARD>>>...<<<END_REPORT_CARD>>> blocks from text,
+        emit them as REPORT_CARD SSE messages, and return cleaned text."""
+        import json
+
+        pattern = re.compile(
+            r"<<<REPORT_CARD>>>\s*(.*?)\s*<<<END_REPORT_CARD>>>",
+            re.DOTALL
+        )
+
+        matches = pattern.findall(text)
+        for match in matches:
+            try:
+                sanitized = match.strip()
+                brace_start = sanitized.find('{')
+                brace_end = sanitized.rfind('}')
+                if brace_start != -1 and brace_end > brace_start:
+                    sanitized = sanitized[brace_start:brace_end + 1]
+
+                # LLM 输出可能在 JSON 字符串值内包含未转义的换行符（例如句子中间自动换行），
+                # 导致 json.loads 失败。先尝试直接解析，失败后将换行及周围空白合并为单个空格再重试。
+                try:
+                    card_data = json.loads(sanitized)
+                except json.JSONDecodeError:
+                    sanitized = re.sub(r'\s*\n\s*', ' ', sanitized)
+                    card_data = json.loads(sanitized)
+
+                # Emit interpretation card if present
+                if "report_interpretation" in card_data:
+                    interp = card_data["report_interpretation"]
+                    interp["card_type"] = "report_interpretation"
+                    observer.add_message(
+                        "", ProcessType.REPORT_CARD,
+                        json.dumps(interp, ensure_ascii=False)
+                    )
+
+                # Emit QC check card if present
+                if "qc_check" in card_data:
+                    qc = card_data["qc_check"]
+                    qc["card_type"] = "qc_check"
+                    observer.add_message(
+                        "", ProcessType.REPORT_CARD,
+                        json.dumps(qc, ensure_ascii=False)
+                    )
+
+                # Emit symptom summary card if present
+                if "symptom_summary" in card_data:
+                    ss = card_data["symptom_summary"]
+                    ss["card_type"] = "symptom_summary"
+                    observer.add_message(
+                        "", ProcessType.REPORT_CARD,
+                        json.dumps(ss, ensure_ascii=False)
+                    )
+
+                # Emit triage recommendation card if present
+                if "triage_recommendation" in card_data:
+                    tr = card_data["triage_recommendation"]
+                    tr["card_type"] = "triage_recommendation"
+                    observer.add_message(
+                        "", ProcessType.REPORT_CARD,
+                        json.dumps(tr, ensure_ascii=False)
+                    )
+
+                # Emit reasoning chain card if present
+                if "reasoning_chain" in card_data:
+                    rc = card_data["reasoning_chain"]
+                    rc["card_type"] = "reasoning_chain"
+                    observer.add_message(
+                        "", ProcessType.REPORT_CARD,
+                        json.dumps(rc, ensure_ascii=False)
+                    )
+            except (json.JSONDecodeError, KeyError) as e:
+                # JSON 解析失败，记录日志以便排查
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"REPORT_CARD JSON 解析失败: {type(e).__name__}: {e}\n"
+                    f"原始内容前200字符: {match[:200]}"
+                )
+
+        if matches:
+            # LLM 的输出结构通常为：思考文本 → <<<REPORT_CARD>>>JSON<<<END_REPORT_CARD>>> → 总结文本
+            # 卡片数据已通过 SSE 发送，final_answer 只需保留最后一个 <<<END_REPORT_CARD>>> 之后的总结文字。
+            end_marker = "<<<END_REPORT_CARD>>>"
+            last_end_pos = text.rfind(end_marker)
+            if last_end_pos != -1:
+                cleaned = text[last_end_pos + len(end_marker):].strip()
+            else:
+                cleaned = pattern.sub("", text).strip()
+        else:
+            cleaned = text.strip()
+        return cleaned
 
     def set_agent(self, agent: CoreAgent):
         if not isinstance(agent, CoreAgent):

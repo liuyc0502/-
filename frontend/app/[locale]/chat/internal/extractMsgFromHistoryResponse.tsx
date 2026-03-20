@@ -67,6 +67,7 @@ export function extractAssistantMsgFromResponse(
   // extract the content of the Message
   let finalAnswer = "";
   let steps: AgentStep[] = [];
+  let reportCards: any[] = [];
   if (dialog_msg.message && Array.isArray(dialog_msg.message)) {
     dialog_msg.message.forEach((msg: ApiMessageItem) => {
       switch (msg.type) {
@@ -230,6 +231,18 @@ export function extractAssistantMsgFromResponse(
           break;
         }
 
+        case chatConfig.messageTypes.REPORT_CARD: {
+          try {
+            const cardData = typeof msg.content === "string"
+              ? JSON.parse(msg.content)
+              : msg.content;
+            reportCards.push(cardData);
+          } catch (e) {
+            log.error("Failed to parse report card data from history", e);
+          }
+          break;
+        }
+
         default:
           // handle other types of messages
           break;
@@ -253,6 +266,7 @@ export function extractAssistantMsgFromResponse(
     searchResults: searchResultsContent,
     images: imagesContent,
     attachments: undefined,
+    reportCards: reportCards.length > 0 ? reportCards : undefined,
   };
   return formattedAssistantMsg;
 }

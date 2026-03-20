@@ -70,7 +70,7 @@ export function PatientDetailView({ patientId, onBack, onConversationClick }: Pa
             )}
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+            <TabsList className="bg-gray-100 h-14 p-1 gap-1 rounded-full">
               <TabsTrigger
                 value="overview"
                 className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"

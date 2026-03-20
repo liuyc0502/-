@@ -784,6 +784,24 @@ class PatientImagingReport(TableBase):
     ai_summary = Column(Text, doc="AI-generated summary")
     tenant_id = Column(String(100), doc="Tenant ID")
 
+class PatientReportInterpretation(TableBase):
+    """
+    Patient report interpretation cache table
+    """
+    __tablename__ = "patient_report_interpretation_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    interpretation_id = Column(Integer, Sequence("patient_report_interpretation_t_interpretation_id_seq",
+                        schema=SCHEMA), primary_key=True, nullable=False, doc="Interpretation ID, primary key")
+    patient_id = Column(Integer, nullable=False, doc="Patient ID")
+    report_id = Column(String(100), nullable=False, doc="Report ID (lab_123, imaging_456, etc.)")
+    report_type = Column(String(50), nullable=False, doc="Report type: lab/imaging/pathology")
+    interpretation_json = Column(Text, doc="Full interpretation JSON")
+    severity = Column(String(20), doc="Severity: green/yellow/red")
+    summary = Column(Text, doc="One-line AI summary")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
 class ChatTemplate(TableBase):
     """
     Chat template (slash command) table for doctor quick prompts

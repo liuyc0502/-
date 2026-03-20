@@ -289,7 +289,7 @@ export function ChatSidebar({
     return (
       <div className={`mt-4 ${slidingContentClass}`}>
         <p
-          className={`text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-2 font-alihealth ${fadingContentClass}`}
+          className={`text-[11px] uppercase tracking-[0.08em] text-[#BAA890] mb-2 font-alihealth ${fadingContentClass}`}
         >
           {title}
         </p>
@@ -616,7 +616,7 @@ export function ChatSidebar({
                 <div className="flex-1 overflow-y-auto pr-1" style={{ minHeight: 0 }}>
                   {conversationList.length > 0 ? (
                     <>
-                      <p className="text-[11px] uppercase tracking-[0.35em] text-[#BAA890] mb-4 font-alihealth">
+                      <p className="text-[11px] uppercase tracking-[0.08em] text-[#BAA890] mb-4 font-alihealth">
                         {portalConfig.recentLabel}
                       </p>
                       {renderDialogList(today, t("chatLeftSidebar.today"))}

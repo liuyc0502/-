@@ -160,10 +160,6 @@ export function BasicInfoTab() {
                     </div>
                   </div>
                 )}
-
-                <Button className="w-full bg-[#6E977B] hover:bg-[#5E856C] text-white">
-                  向AI了解我的病情
-                </Button>
               </>
             ) : (
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">

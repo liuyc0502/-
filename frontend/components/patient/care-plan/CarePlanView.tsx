@@ -166,7 +166,7 @@ export function CarePlanView() {
     <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
       {/* Header */}
       <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
-        <div className="px-8 py-6 flex items-center ">
+        <div className="px-8 py-4 flex items-center justify-between min-h-[88px]">
           <h1 className="text-2xl font-bold text-gray-900">康复计划</h1>
         </div>
       </div>

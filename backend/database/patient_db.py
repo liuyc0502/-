@@ -5,7 +5,8 @@ from sqlalchemy import and_, or_
 from database.client import get_db_session, as_dict
 from database.db_models import (
     PatientInfo, PatientTimeline, PatientTimelineDetail,
-    PatientMedicalImage, PatientMetrics, PatientAttachment, PatientTodo
+    PatientMedicalImage, PatientMetrics, PatientAttachment, PatientTodo,
+    PatientLabReport, PatientLabReportItem, PatientImagingReport, PatientReportInterpretation
 )
  
 logger = logging.getLogger(__name__)
@@ -477,7 +478,7 @@ def update_todo_status(todo_id: int, status: str, tenant_id: str, user_id: str) 
 
 def delete_timeline(timeline_id: int, tenant_id: str, user_id: str) -> bool:
     """
-    Hard delete timeline record from database
+    Hard delete timeline record and all associated reports from database
     """
     with get_db_session() as session:
         timeline = session.query(PatientTimeline).filter(
@@ -488,10 +489,41 @@ def delete_timeline(timeline_id: int, tenant_id: str, user_id: str) -> bool:
         if not timeline:
             return False
 
+        # Cascade delete associated lab reports and their items
+        lab_reports = session.query(PatientLabReport).filter(
+            PatientLabReport.timeline_id == timeline_id,
+            PatientLabReport.tenant_id == tenant_id,
+        ).all()
+        for lab_report in lab_reports:
+            # Delete lab report items
+            session.query(PatientLabReportItem).filter(
+                PatientLabReportItem.report_id == lab_report.report_id,
+                PatientLabReportItem.tenant_id == tenant_id,
+            ).delete()
+            # Delete associated AI interpretations
+            session.query(PatientReportInterpretation).filter(
+                PatientReportInterpretation.report_id == f"lab_{lab_report.report_id}",
+                PatientReportInterpretation.tenant_id == tenant_id,
+            ).delete()
+            session.delete(lab_report)
+
+        # Cascade delete associated imaging reports
+        imaging_reports = session.query(PatientImagingReport).filter(
+            PatientImagingReport.timeline_id == timeline_id,
+            PatientImagingReport.tenant_id == tenant_id,
+        ).all()
+        for imaging_report in imaging_reports:
+            # Delete associated AI interpretations
+            session.query(PatientReportInterpretation).filter(
+                PatientReportInterpretation.report_id == f"imaging_{imaging_report.report_id}",
+                PatientReportInterpretation.tenant_id == tenant_id,
+            ).delete()
+            session.delete(imaging_report)
+
         session.delete(timeline)
         session.commit()
 
-        logger.info(f"Hard deleted timeline: {timeline_id}")
+        logger.info(f"Hard deleted timeline: {timeline_id} with associated reports")
         return True
 
  

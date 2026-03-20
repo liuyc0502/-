@@ -166,7 +166,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
           <h1 className="text-2xl font-bold text-gray-900">病例库</h1>
           <div className="flex items-center gap-4">
             <Tabs value={activeTab} onValueChange={onTabChange}>
-              <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+              <TabsList className="bg-gray-100 h-14 p-1 gap-1 rounded-full">
                 <TabsTrigger
                   value="search"
                   className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"

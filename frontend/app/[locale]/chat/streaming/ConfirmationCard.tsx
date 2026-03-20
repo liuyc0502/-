@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+
 import {
   Check,
   Pencil,
@@ -18,7 +18,7 @@ import {
   Trash2,
   Save,
 } from "lucide-react";
-import { Input, InputNumber, Select, Form, Button as AntButton } from "antd";
+import { Input, InputNumber, Select } from "antd";
 import { API_ENDPOINTS } from "@/services/api";
 import { getAuthHeaders } from "@/lib/auth";
 import type { ToolConfirmationData, ParameterFieldSchema } from "@/types/chat";
@@ -28,24 +28,28 @@ const { TextArea } = Input;
 
 // Tool name to icon mapping
 const toolIconMap: Record<string, React.ReactNode> = {
-  create_new_patient: <UserPlus size={18} />,
-  update_patient_info: <UserPlus size={18} />,
-  delete_patient_record: <Trash2 size={18} />,
-  create_patient_todo: <ClipboardList size={18} />,
-  update_patient_todo_status: <ClipboardList size={18} />,
-  delete_patient_todo: <Trash2 size={18} />,
-  save_lab_report: <FileText size={18} />,
-  delete_lab_report_record: <Trash2 size={18} />,
-  save_imaging_report: <FileText size={18} />,
-  delete_imaging_report_record: <Trash2 size={18} />,
-  create_medical_case: <Stethoscope size={18} />,
-  update_medical_case_info: <Stethoscope size={18} />,
-  delete_medical_case_record: <Trash2 size={18} />,
-  save_case_detail: <Stethoscope size={18} />,
-  create_timeline_event: <Calendar size={18} />,
-  save_timeline_detail: <Calendar size={18} />,
-  delete_timeline_event: <Trash2 size={18} />,
+  create_new_patient: <UserPlus size={16} />,
+  update_patient_info: <UserPlus size={16} />,
+  delete_patient_record: <Trash2 size={16} />,
+  create_patient_todo: <ClipboardList size={16} />,
+  update_patient_todo_status: <ClipboardList size={16} />,
+  delete_patient_todo: <Trash2 size={16} />,
+  save_lab_report: <FileText size={16} />,
+  delete_lab_report_record: <Trash2 size={16} />,
+  save_imaging_report: <FileText size={16} />,
+  delete_imaging_report_record: <Trash2 size={16} />,
+  create_medical_case: <Stethoscope size={16} />,
+  update_medical_case_info: <Stethoscope size={16} />,
+  delete_medical_case_record: <Trash2 size={16} />,
+  save_case_detail: <Stethoscope size={16} />,
+  create_timeline_event: <Calendar size={16} />,
+  save_timeline_detail: <Calendar size={16} />,
+  delete_timeline_event: <Trash2 size={16} />,
 };
+
+// Detect if tool is a destructive (delete) operation
+const isDestructiveTool = (toolName: string) =>
+  toolName.includes("delete");
 
 type CardStatus = "pending" | "confirming" | "editing" | "regenerating" | "confirmed" | "failed" | "timeout";
 
@@ -54,14 +58,14 @@ interface ConfirmationCardProps {
 }
 
 export default function ConfirmationCard({ data }: ConfirmationCardProps) {
-  const { t } = useTranslation("common");
   const [status, setStatus] = useState<CardStatus>("pending");
   const [isEditing, setIsEditing] = useState(false);
   const [showRegenInput, setShowRegenInput] = useState(false);
   const [regenInstructions, setRegenInstructions] = useState("");
   const [editedParams, setEditedParams] = useState<Record<string, any>>({ ...data.parameters });
   const [errorMsg, setErrorMsg] = useState("");
-  const [form] = Form.useForm();
+
+  const destructive = isDestructiveTool(data.tool_name);
 
   const callConfirmAPI = useCallback(async (action: string, params?: Record<string, any>, instructions?: string) => {
     try {
@@ -125,26 +129,50 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
   const handleEditCancel = useCallback(() => {
     setIsEditing(false);
     setEditedParams({ ...data.parameters });
-    form.setFieldsValue(data.parameters);
-  }, [data.parameters, form]);
+  }, [data.parameters]);
 
   const isResolved = status === "confirmed" || status === "failed" || status === "timeout";
-  const icon = toolIconMap[data.tool_name] || <Save size={18} />;
+  const icon = toolIconMap[data.tool_name] || <Save size={16} />;
+
+  // Theme: teal for normal ops, red for destructive (delete) ops
+  const theme = destructive
+    ? { border: "border-red-200", headerBg: "bg-red-50/80", headerText: "text-red-700", badgeBg: "bg-red-100", badgeText: "text-red-600", badgeBorder: "border-red-200" }
+    : { border: "border-teal-200", headerBg: "bg-teal-50/80", headerText: "text-teal-700", badgeBg: "bg-teal-100", badgeText: "text-teal-600", badgeBorder: "border-teal-200" };
 
   // Status badge
   const statusBadge = () => {
     switch (status) {
       case "pending":
-        return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200"><Clock size={12} /> {t("confirmation.pending")}</span>;
+        return (
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${theme.badgeBg} ${theme.badgeText} border ${theme.badgeBorder}`}>
+            <Clock size={12} /> 待确认
+          </span>
+        );
       case "confirming":
       case "regenerating":
-        return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200"><Loader2 size={12} className="animate-spin" /> 处理中</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 border border-blue-200">
+            <Loader2 size={12} className="animate-spin" /> 处理中
+          </span>
+        );
       case "confirmed":
-        return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200"><Check size={12} /> {t("confirmation.confirmed")}</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-600 border border-green-200">
+            <Check size={12} /> 已确认
+          </span>
+        );
       case "failed":
-        return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200"><AlertCircle size={12} /> {t("confirmation.failed")}</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200">
+            <AlertCircle size={12} /> 失败
+          </span>
+        );
       case "timeout":
-        return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-200"><Clock size={12} /> {t("confirmation.timeout")}</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+            <Clock size={12} /> 已超时
+          </span>
+        );
       default:
         return null;
     }
@@ -225,14 +253,14 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
 
   // Filter schema to only show fields that have values or are required
   const visibleSchema = data.parameter_schema.filter(
-    (field) => field.required || data.parameters[field.key] !== undefined && data.parameters[field.key] !== null
+    (field) => field.required || (data.parameters[field.key] !== undefined && data.parameters[field.key] !== null)
   );
 
   return (
-    <div className={`my-2 rounded-lg border ${isResolved ? "border-gray-200 bg-gray-50/50" : "border-blue-200 bg-white"} shadow-sm overflow-hidden transition-all`}>
+    <div className={`my-2 rounded-lg border ${isResolved ? "border-gray-200" : theme.border} bg-white shadow-sm overflow-hidden transition-all`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
-        <div className="flex items-center gap-2 text-gray-700">
+      <div className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-100 ${isResolved ? "bg-gray-50/80" : theme.headerBg}`}>
+        <div className={`flex items-center gap-2 ${isResolved ? "text-gray-500" : theme.headerText}`}>
           {icon}
           <span className="font-medium text-sm">{data.tool_display_name}</span>
         </div>
@@ -269,7 +297,7 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
             <TextArea
               value={regenInstructions}
               onChange={(e) => setRegenInstructions(e.target.value)}
-              placeholder={t("confirmation.regenerateHint")}
+              placeholder="请输入修改指令（可选）"
               rows={2}
               className="text-sm mb-2"
             />
@@ -289,76 +317,70 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
         <div className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
           {!isEditing && !showRegenInput && (
             <>
-              <AntButton
-                type="primary"
-                size="small"
-                icon={<Check size={14} />}
+              <button
                 onClick={handleConfirm}
-                loading={status === "confirming"}
-                className="flex items-center gap-1"
+                disabled={status === "confirming"}
+                className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-colors disabled:opacity-50
+                  ${destructive
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "bg-teal-600 text-white hover:bg-teal-700"
+                  }`}
               >
-                {t("confirmation.confirm")}
-              </AntButton>
-              <AntButton
-                size="small"
-                icon={<Pencil size={14} />}
+                {status === "confirming" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                确认{destructive ? "删除" : ""}
+              </button>
+              <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
               >
-                {t("confirmation.edit")}
-              </AntButton>
-              <AntButton
-                size="small"
-                icon={<RefreshCw size={14} />}
+                <Pencil size={13} />
+                编辑
+              </button>
+              <button
                 onClick={() => setShowRegenInput(true)}
-                className="flex items-center gap-1"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
               >
-                {t("confirmation.regenerate")}
-              </AntButton>
+                <RefreshCw size={13} />
+                重新生成
+              </button>
             </>
           )}
           {isEditing && (
             <>
-              <AntButton
-                type="primary"
-                size="small"
-                icon={<Check size={14} />}
+              <button
                 onClick={handleEditSave}
-                loading={status === "confirming"}
-                className="flex items-center gap-1"
+                disabled={status === "confirming"}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
               >
-                {t("confirmation.save")}
-              </AntButton>
-              <AntButton
-                size="small"
-                icon={<X size={14} />}
+                {status === "confirming" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                保存
+              </button>
+              <button
                 onClick={handleEditCancel}
-                className="flex items-center gap-1"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
               >
-                {t("confirmation.cancel")}
-              </AntButton>
+                <X size={13} />
+                取消
+              </button>
             </>
           )}
           {showRegenInput && (
             <>
-              <AntButton
-                type="primary"
-                size="small"
-                icon={<RefreshCw size={14} />}
+              <button
                 onClick={handleRegenerate}
-                loading={status === "regenerating"}
-                className="flex items-center gap-1"
+                disabled={status === "regenerating"}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
               >
-                {t("confirmation.regenerate")}
-              </AntButton>
-              <AntButton
-                size="small"
-                icon={<X size={14} />}
+                {status === "regenerating" ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                重新生成
+              </button>
+              <button
                 onClick={() => { setShowRegenInput(false); setRegenInstructions(""); }}
-                className="flex items-center gap-1"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
               >
-                {t("confirmation.cancel")}
-              </AntButton>
+                <X size={13} />
+                取消
+              </button>
             </>
           )}
         </div>

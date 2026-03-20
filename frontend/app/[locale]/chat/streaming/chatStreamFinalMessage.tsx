@@ -20,6 +20,7 @@ import { AttachmentItem } from "@/types/chat";
 import { ROLE_ASSISTANT } from "@/const/agentConfig";
 
 import { ChatAttachment } from "../internal/chatAttachment";
+import ReportCardFactory from "./ReportCardFactory";
 
 interface FinalMessageProps {
   message: ChatMessageType;
@@ -264,8 +265,17 @@ export function ChatStreamFinalMessage({
 
         {/* Assistant message part - show final answer or content */}
         {message.role === ROLE_ASSISTANT &&
-          (message.finalAnswer || message.content !== undefined) && (
+          (message.finalAnswer || message.content !== undefined || (message.reportCards && message.reportCards.length > 0)) && (
             <div className="bg-white rounded-lg w-full -mt-2">
+              {/* Report cards rendered at message level, above final answer */}
+              {message.reportCards && message.reportCards.length > 0 && (
+                <div className="mb-4 space-y-4">
+                  {message.reportCards.map((card, idx) => (
+                    <ReportCardFactory key={`report-card-${idx}`} data={card} />
+                  ))}
+                </div>
+              )}
+
               <MarkdownRenderer
                 content={message.finalAnswer || message.content || ""}
                 searchResults={message?.searchResults}

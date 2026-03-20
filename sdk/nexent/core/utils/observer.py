@@ -27,6 +27,7 @@ class ProcessType(Enum):
     TOOL = "tool"  # tool name
     MEMORY_SEARCH = "memory_search"  # memory search status
     TOOL_CONFIRMATION = "tool_confirmation"  # interactive confirmation card for write operations
+    REPORT_CARD = "report_card"  # structured pathology report card (interpretation + QC)
 
 
 # message transformer base class
@@ -165,7 +166,8 @@ class MessageObserver:
             ProcessType.CARD: default_transformer,
             ProcessType.TOOL: default_transformer,
             ProcessType.MEMORY_SEARCH: default_transformer,
-            ProcessType.TOOL_CONFIRMATION: default_transformer
+            ProcessType.TOOL_CONFIRMATION: default_transformer,
+            ProcessType.REPORT_CARD: default_transformer
         }
 
     def add_model_new_token(self, new_token):

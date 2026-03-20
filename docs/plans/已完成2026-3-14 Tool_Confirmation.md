@@ -199,29 +199,6 @@ confirmation: {
 - 在 `messageHandlers` 数组中添加 `TOOL_CONFIRMATION` 类型的处理器
 - 渲染 `<ConfirmationCard>` 组件
 
-### Phase 5: i18n（仅中文）
-
-**Step 14:** 在 `/opt/frontend/public/locales/zh/common.json` 添加
-
-```json
-"confirmation": {
-  "confirm": "确认",
-  "edit": "编辑",
-  "regenerate": "重新生成",
-  "save": "保存",
-  "cancel": "取消",
-  "pending": "待确认",
-  "confirmed": "已确认",
-  "failed": "失败",
-  "timeout": "已超时",
-  "regenerateHint": "请输入修改指令（可选）",
-  "confirmSuccess": "操作已执行",
-  "confirmFailed": "操作执行失败"
-}
-```
-
-------
-
 ## Critical Files
 
 | File                                                         | Action                            |
@@ -240,8 +217,6 @@ confirmation: {
 | `/opt/frontend/app/[locale]/chat/streaming/chatStreamHandler.tsx` | 处理 tool_confirmation SSE 消息   |
 | `/opt/frontend/components/chat/ConfirmationCard.tsx`         | 新建 - 确认卡片组件               |
 | `/opt/frontend/app/[locale]/chat/streaming/taskWindow.tsx`   | 添加 TOOL_CONFIRMATION 渲染处理器 |
-| `/opt/frontend/public/locales/zh/common.json`                | 添加 i18n keys                    |
-
 ### Pattern References
 
 - 后端服务模式：`/opt/backend/services/agent_service.py`（SSE 流 + agent 管理）

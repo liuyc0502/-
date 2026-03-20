@@ -463,7 +463,7 @@ const handleDeleteAllLabResults = () => {
                 <Button
                   size="sm"
                   onClick={() => handleSave(field)}
-                  className="bg-green-500 hover:bg-green-600 text-white"
+                  className="bg-[#DA7756] hover:bg-[#C46B4D] text-white"
                 >
                   <Check className="h-3 w-3" />
                 </Button>
@@ -535,7 +535,7 @@ const handleDeleteAllLabResults = () => {
             </div>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1">
+            <TabsList className="bg-gray-100 h-14 p-1 gap-1 rounded-full">
               <TabsTrigger
                 value="basic"
                 className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
@@ -680,7 +680,7 @@ const handleDeleteAllLabResults = () => {
                                   <Button
                                     size="sm"
                                     onClick={() => handleSave("tags")}
-                                    className="bg-green-500 hover:bg-green-600 text-white"
+                                    className="bg-[#DA7756] hover:bg-[#C46B4D] text-white"
                                   >
                                     <Check className="h-3 w-3" />
                                   </Button>
@@ -1173,29 +1173,7 @@ const handleDeleteAllLabResults = () => {
                   </div>
                 </CardContent>
               </Card>
-              {/* AI Analysis Card */}
-              <Card className="bg-purple-50 border-purple-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold text-purple-900 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    AI辅助分析
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-purple-800 space-y-3">
-                  <div>
-                    <p className="font-semibold mb-2">诊断要点:</p>
-                    <ul className="space-y-1 pl-4 list-disc text-purple-700">
-                      <li>临床症状分析</li>
-                      <li>实验室指标异常</li>
-                      <li>影像学特征</li>
-                    </ul>
-                  </div>
-                  <div className="pt-3 border-t border-purple-200">
-                    <p className="text-xs text-purple-600 italic">AI 深度分析功能即将上线...</p>
-                  </div>
-                </CardContent>
-              </Card>
-            
+             
             </div>
           </div>
         </div>

@@ -338,6 +338,7 @@ interface ChatInputProps {
   portalConfig?: PortalChatConfig;
   userDisplayName?: string;
   hideAgentSelector?: boolean;
+  hideTemplates?: boolean;
 }
 
 export function ChatInput({
@@ -360,6 +361,7 @@ export function ChatInput({
   portalConfig,
   userDisplayName,
   hideAgentSelector = false,
+  hideTemplates = false,
 }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState<
@@ -1087,7 +1089,7 @@ export function ChatInput({
       <div ref={dropAreaRef} className="relative">
         {renderDragOverlay()}
         <div className="rounded-[28px] border border-[#E8E2D6] bg-white shadow-[0px_24px_60px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-4 p-4 md:p-6">
+          <div className="flex flex-col gap-2 p-3 md:p-4">
             {/* Agent Selector - shown only when not hidden */}
             {!hideAgentSelector && (
               <div className="flex justify-end">
@@ -1102,7 +1104,7 @@ export function ChatInput({
             {renderAttachments()}
 
             {/* Quick template buttons */}
-            {templates.length > 0 && (
+            {!hideTemplates && templates.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
                 {templates.slice(0, 8).map((tpl) => (
                   <button
@@ -1119,6 +1121,7 @@ export function ChatInput({
 
             <div className="relative">
               {/* Slash command picker */}
+              {!hideTemplates && (
               <ChatCommandPicker
                 templates={templates}
                 query={commandQuery}
@@ -1127,6 +1130,7 @@ export function ChatInput({
                 onSelect={handleTemplateSelect}
                 onClose={() => setShowCommandPicker(false)}
               />
+              )}
             <div
               className="max-h-[300px] overflow-y-auto"
               style={{
@@ -1142,7 +1146,7 @@ export function ChatInput({
                   onInputChange(value);
                   // Slash command detection
                   const lastSlashIdx = value.lastIndexOf("/");
-                  if (lastSlashIdx !== -1 && !value.slice(lastSlashIdx).includes(" ")) {
+                  if (!hideTemplates && lastSlashIdx !== -1 && !value.slice(lastSlashIdx).includes(" ")) {
                     setShowCommandPicker(true);
                     setCommandQuery(value.slice(lastSlashIdx + 1));
                   } else {
@@ -1151,12 +1155,12 @@ export function ChatInput({
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholderText}
-                className="px-1 py-2 text-lg resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
+                className="px-1 py-1 text-base resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
                 rows={1}
                 style={{
-                  minHeight: "40px",
+                  minHeight: "36px",
                   overflow: "auto",
-                  fontSize: "16px",
+                  fontSize: "15px",
                 }}
               />
             </div>
@@ -1226,7 +1230,7 @@ export function ChatInput({
                           onClick={onStop}
                           size="icon"
                           className="h-11 w-11 text-white rounded-full"
-                          style={{ backgroundColor: "#DC4B36" }}
+                          style={{ backgroundColor: accentColor }}
                         >
                           <Square className="h-5 w-5" />
                         </Button>
@@ -1287,17 +1291,17 @@ export function ChatInput({
               </div>
             </div>
 
-            <div className="text-xs text-[#9A9288]">
-              {recordingStatus === "recording" ? (
-                <span className="text-red-500">{t("chatInput.recording")}</span>
-              ) : recordingStatus === "error" ? (
-                <span className="text-red-500">
-                  {t("chatInput.recordingError")}
-                </span>
-              ) : (
-                t("chatInterface.aiGeneratedContentWarning")
-              )}
-            </div>
+            {(recordingStatus === "recording" || recordingStatus === "error") && (
+              <div className="text-xs text-[#9A9288]">
+                {recordingStatus === "recording" ? (
+                  <span className="text-red-500">{t("chatInput.recording")}</span>
+                ) : (
+                  <span className="text-red-500">
+                    {t("chatInput.recordingError")}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

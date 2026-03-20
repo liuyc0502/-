@@ -68,10 +68,10 @@ export const useConversationManagement = () => {
   };
 
   // Update conversation title
-  const updateConversationTitle = async (dialogId: number, title: string) => {
+  const updateConversationTitle = async (dialogId: number, title: string, portalType?: string) => {
     try {
       await conversationService.rename(dialogId, title);
-      await fetchConversationList();
+      await fetchConversationList(portalType);
 
       if (selectedConversationId === dialogId) {
         setConversationTitle(title);

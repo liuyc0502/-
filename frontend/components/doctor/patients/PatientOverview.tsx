@@ -134,7 +134,7 @@ const EditableField = ({
               <Button
                 size="sm"
                 onClick={() => onSave(field)}
-                className="bg-green-500 hover:bg-green-600 text-white h-8 px-2"
+                className="bg-[#DA7756] hover:bg-[#C46B4D] text-white h-8 px-2"
               >
                 <Check className="h-3 w-3" />
               </Button>

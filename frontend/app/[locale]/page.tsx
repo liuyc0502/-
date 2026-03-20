@@ -185,6 +185,7 @@ export default function Home() {
               lineHeight: 1.2,
               color: "#6b6460",
               letterSpacing: "0.06em",
+              marginLeft: "-39px",
             }}
           >
             欢迎来到
@@ -196,7 +197,7 @@ export default function Home() {
               lineHeight: 0.9,
               color: "#1a1a1a",
               marginTop: "2px",
-              marginLeft: "clamp(40px, 5vw, 80px)",
+              marginLeft: "clamp(60px, 7vw, 110px)",
               letterSpacing: "-0.02em",
               display: "flex",
               alignItems: "baseline",
@@ -211,12 +212,12 @@ export default function Home() {
             style={{
               fontFamily: "'AliHealth', 'PingFang SC', sans-serif",
               fontWeight: 700,
-              fontSize: "17px",
+              fontSize: "19px",
               color: "#8a847c",
               lineHeight: 1.75,
-              maxWidth: "400px",
+              maxWidth: "520px",
               letterSpacing: "0.18em",
-              marginLeft: "clamp(8px, 1vw, 16px)",
+              marginLeft: "clamp(28px, 3vw, 48px)",
             }}
           >
             一个基于大语言模型的病理知识问答智能体
@@ -409,10 +410,10 @@ export default function Home() {
                   >
                     {/* Top: icon */}
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      className="w-14 h-14 rounded-xl flex items-center justify-center"
                       style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
                     >
-                      <Icon className="w-5 h-5 text-white/90" />
+                      <Icon className="w-6 h-6 text-white/90" />
                     </div>
 
                     {/* Spacer to push content down */}
@@ -436,9 +437,9 @@ export default function Home() {
 
                     {/* Bottom: arrow button */}
                     <div
-                      className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/15 hover:scale-105 transition-all duration-200"
+                      className="w-12 h-12 rounded-full border-2 border-white/40 flex items-center justify-center hover:bg-white/15 hover:scale-105 transition-all duration-200"
                     >
-                      <ArrowRight className="w-4 h-4 text-white/70" />
+                      <ArrowRight className="w-5 h-5 text-white/80" strokeWidth={2.5} />
                     </div>
                   </motion.div>
                 ) : null}

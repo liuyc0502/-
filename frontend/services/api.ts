@@ -252,6 +252,14 @@ export const API_ENDPOINTS = {
     },
   },
 
+  reportCenter: {
+    list: (patientId: number) => `${API_BASE_URL}/report-center/list/${patientId}`,
+    interpretation: (patientId: number, reportId: string) => `${API_BASE_URL}/report-center/${patientId}/interpretation/${reportId}`,
+    interpret: (patientId: number, reportId: string) => `${API_BASE_URL}/report-center/${patientId}/interpret/${reportId}`,
+    reinterpret: (patientId: number, reportId: string) => `${API_BASE_URL}/report-center/${patientId}/reinterpret/${reportId}`,
+    trends: (patientId: number) => `${API_BASE_URL}/report-center/${patientId}/trends`,
+  },
+
   carePlan: {
     create: `${API_BASE_URL}/care_plan/create`,
     createFromMedicalOrder: `${API_BASE_URL}/care_plan/create_from_medical_order`,

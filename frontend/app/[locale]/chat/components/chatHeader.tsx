@@ -251,20 +251,17 @@ export function ChatHeader({
                     conversationId={conversationId || null}
                     currentTags={conversationTags}
                     onTagsChange={onTagsChange}
-                    
+
                   />
                 </div>
-              </div>
- 
-              {/* Row 2: Summary */}
-              <div className="flex items-center gap-2 mt-2 w-full max-w-lg">
-                <span className="text-xs text-[#999] flex-shrink-0 whitespace-nowrap">摘要</span>
-                <div className="flex-1">
+
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <span className="text-xs text-[#999] whitespace-nowrap">摘要</span>
                   <SummaryEditor
                     conversationId={conversationId || null}
                     currentSummary={conversationSummary}
                     onSummaryChange={onSummaryChange}
-                    
+
                     placeholder="点击添加对话摘要..."
                   />
                 </div>

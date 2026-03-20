@@ -43,8 +43,9 @@ import { TemplateListView } from "@/components/doctor/templates/TemplateListView
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
-
-
+import { SymptomReportView } from "@/components/patient/symptom-report/SymptomReportView";
+import { ReportCenterView } from "@/components/patient/report-center/ReportCenterView";
+import type { SymptomFormData, BodyPart } from "@/types/symptomReport";
 
 import {
   preprocessAttachments,
@@ -177,6 +178,9 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [attachments, setAttachments] = useState<FilePreview[]>([]);
   const [fileUrls, setFileUrls] = useState<{ [id: string]: string }>({});
 
+
+  // Auto-send flag for symptom report
+  const pendingAutoSendRef = useRef(false);
 
   // Image upload purpose selection state
   const [showUploadPurposeModal, setShowUploadPurposeModal] = useState(false);
@@ -930,7 +934,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
         setIsSwitchedConversation,
         conversationManagement.isNewConversation,
         conversationManagement.setConversationTitle,
-        conversationManagement.fetchConversationList,
+        () => conversationManagement.fetchConversationList(variant),
         currentConversationId,
         conversationService,
         false, // isDebug: false for normal chat mode
@@ -1057,6 +1061,40 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
       handleSend();
     }
   };
+
+  // Body part labels for symptom message formatting
+  const BODY_PART_LABELS: Record<BodyPart, string> = {
+    head_neck: "头颈部", chest: "胸部", abdomen: "腹部", back: "腰背部",
+    limbs: "四肢", skin: "皮肤", whole_body: "全身", other: "其他",
+  };
+  const DURATION_LABELS: Record<string, string> = {
+    today: "今天开始", days: "几天内", "1-2weeks": "1-2周", weeks: "数周", "month+": "超过1个月",
+  };
+
+  const handleSymptomStartChat = (formData: SymptomFormData) => {
+    const parts = formData.body_parts.map((p) => BODY_PART_LABELS[p] || p).join("、");
+    const symptoms = formData.symptom_tags.length > 0 ? formData.symptom_tags.join("、") : "";
+    const dur = DURATION_LABELS[formData.duration] || formData.duration;
+
+    let msg = `/symptom 不适部位：${parts}`;
+    if (symptoms) msg += `；症状：${symptoms}`;
+    msg += `；持续${dur}；严重程度 ${formData.severity}/10`;
+    if (formData.description) msg += `；补充描述：${formData.description}`;
+
+    // Start a new conversation, set input, switch to chat, and auto-send
+    conversationManagement.handleNewConversation();
+    setInput(msg);
+    setActiveView("chats");
+    pendingAutoSendRef.current = true;
+  };
+
+  // Auto-send when input is set from symptom report
+  useEffect(() => {
+    if (pendingAutoSendRef.current && input.trim()) {
+      pendingAutoSendRef.current = false;
+      handleSend();
+    }
+  }, [input]);
 
   const handleNewConversation = async () => {
     // When creating new conversation, keep all existing SSE connections active
@@ -1626,7 +1664,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const handleTitleRename = async (newTitle: string) => {
     if (conversationManagement.selectedConversationId && newTitle !== conversationManagement.conversationTitle) {
       try {
-        await conversationManagement.updateConversationTitle(conversationManagement.selectedConversationId, newTitle);
+        await conversationManagement.updateConversationTitle(conversationManagement.selectedConversationId, newTitle, variant);
       } catch (error) {
         log.error(t("chatInterface.renameFailed"), error);
       }
@@ -1857,6 +1895,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   portalConfig={portalConfig}
                   userDisplayName={displayName}
                   hideAgentSelector={variant === "doctor" || variant === "patient"}
+                  hideTemplates={variant === "patient"}
                 />
               </div>
 
@@ -1928,7 +1967,9 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             ) : variant === "patient" ? (
               <>
                 {activeView === "profile" && <PatientProfileView />}
+                {activeView === "report-center" && <ReportCenterView />}
                 {activeView === "care-plan" && <CarePlanView />}
+                {activeView === "symptom-report" && <SymptomReportView onStartChat={handleSymptomStartChat} />}
               </>
             ) : (
               <div className="p-8 text-slate-600">

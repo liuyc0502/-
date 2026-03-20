@@ -44,7 +44,9 @@ async def confirm_tool_execution(
             confirmation_id=confirmation_id,
             action=request.action,
             parameters=request.parameters,
-            instructions=request.instructions
+            instructions=request.instructions,
+            user_id=user_id,
+            tenant_id=tenant_id
         )
 
         if not success:

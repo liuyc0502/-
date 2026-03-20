@@ -243,6 +243,17 @@ def apply_confirmation_wrapper(tool, observer, confirmation_manager):
         visible_params = get_visible_parameters(tool_name, kwargs)
         hidden_params = {k: v for k, v in kwargs.items() if k in HIDDEN_PARAMS}
 
+        # Validate required parameters before showing confirmation card
+        # This prevents showing a card that will fail after confirmation
+        missing = []
+        for field_schema in config["schema"]:
+            if field_schema.get("required") and field_schema["key"] not in visible_params:
+                missing.append(field_schema["label"])
+        if missing:
+            missing_str = "、".join(missing)
+            logger.info(f"Tool {tool_name} missing required params: {missing_str}")
+            return f"缺少必填参数：{missing_str}。请补充这些信息后重新调用工具。"
+
         # Create confirmation request
         confirmation_id = confirmation_manager.create_confirmation(
             tool_name=tool_name,
@@ -272,9 +283,17 @@ def apply_confirmation_wrapper(tool, observer, confirmation_manager):
         if action == "confirm":
             # Doctor confirmed - execute with (possibly modified) parameters
             confirmed_params = result.get("parameters", visible_params)
+            # Use real user_id/tenant_id from the authenticated confirmation request
+            # instead of the values the AI model may have fabricated
+            auth_user_id = result.get("user_id")
+            auth_tenant_id = result.get("tenant_id")
+            if auth_user_id:
+                hidden_params["user_id"] = auth_user_id
+            if auth_tenant_id:
+                hidden_params["tenant_id"] = auth_tenant_id
             # Merge back hidden params
             final_params = {**confirmed_params, **hidden_params}
-            logger.info(f"Executing confirmed tool {tool_name}")
+            logger.info(f"Executing confirmed tool {tool_name} with tenant_id={hidden_params.get('tenant_id')}")
             return original_forward(**final_params)
 
         elif action == "regenerate":

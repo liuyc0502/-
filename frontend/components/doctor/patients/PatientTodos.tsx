@@ -1,15 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, App, Modal, Button, Checkbox } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Lightbulb } from "lucide-react";
+import { App, Checkbox } from "antd";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  CalendarClock,
+  CircleAlert,
+  ChevronDown,
+  ChevronRight,
+  UserRound,
+} from "lucide-react";
 import patientService from "@/services/patientService";
 import type { PatientTodo } from "@/types/patient";
 import { CreateTodoModal } from "./CreateTodoModal";
-
-// Constants
-const PRIMARY_COLOR = "#DA7756";
 
 interface PatientTodosProps {
   patientId: string;
@@ -31,19 +38,116 @@ const formatDate = (dateString?: string): string => {
   return date.toLocaleDateString("zh-CN");
 };
 
-const getPriorityColor = (priority?: string): string => {
-  switch (priority) {
-    case "urgent":
-      return "border-l-4 border-l-red-500 bg-red-50";
-    case "high":
-      return "border-l-4 border-l-yellow-500 bg-yellow-50";
-    default:
-      return "border-l-4 border-l-green-500 bg-green-50";
-  }
+const isOverdue = (dateString?: string): boolean => {
+  if (!dateString) return false;
+  return new Date(dateString) < new Date();
 };
 
+// Priority tag config
+const priorityTag: Record<string, { label: string; className: string }> = {
+  urgent: { label: "紧急", className: "bg-red-100 text-red-700 border-red-200" },
+  high: { label: "本周", className: "bg-amber-100 text-amber-700 border-amber-200" },
+  medium: { label: "本周", className: "bg-amber-100 text-amber-700 border-amber-200" },
+  low: { label: "常规", className: "bg-gray-100 text-gray-700 border-gray-200" },
+};
+
+// Single todo item row
+function TodoItem({
+  todo,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  todo: PatientTodo;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const completed = todo.status === "completed";
+  const overdue = !completed && isOverdue(todo.due_date);
+  const tag = priorityTag[todo.priority || "low"] || priorityTag.low;
+
+  return (
+    <div
+      className={`group flex items-start gap-4 px-6 py-4 border-b border-gray-100 last:border-b-0 transition-colors hover:bg-gray-50/60 ${
+        completed ? "opacity-50" : ""
+      }`}
+    >
+      {/* Checkbox */}
+      <Checkbox
+        checked={completed}
+        onChange={onToggle}
+        className="mt-0.5"
+      />
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2.5">
+          <span
+            className={`text-base font-medium ${
+              completed ? "line-through text-gray-400" : "text-gray-900"
+            }`}
+          >
+            {todo.todo_title}
+          </span>
+          {!completed && (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${tag.className}`}>
+              {tag.label}
+            </span>
+          )}
+        </div>
+
+        {todo.todo_description && (
+          <p className={`text-sm mt-1 ${completed ? "line-through text-gray-400" : "text-gray-500"}`}>
+            {todo.todo_description}
+          </p>
+        )}
+
+        <div className="flex items-center gap-4 mt-2">
+          {todo.due_date && (
+            <span className={`inline-flex items-center gap-1.5 text-sm ${
+              overdue ? "text-red-500 font-medium" : "text-gray-400"
+            }`}>
+              <CalendarClock size={14} />
+              {overdue ? "已逾期 · " : ""}{formatDate(todo.due_date)}
+            </span>
+          )}
+          {todo.assigned_doctor && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-gray-400">
+              <UserRound size={14} />
+              {todo.assigned_doctor}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Actions - show on hover */}
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        {!completed && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEdit}
+            className="text-gray-600 hover:text-[#DA7756] hover:border-[#DA7756]"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onDelete}
+          className="text-gray-600 hover:text-red-600 hover:border-red-600"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function PatientTodos({ patientId }: PatientTodosProps) {
-  const { message,modal } = App.useApp();
+  const { message, modal } = App.useApp();
   const [todos, setTodos] = useState<PatientTodo[]>([]);
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showCompleted, setShowCompleted] = useState(false);
@@ -72,11 +176,11 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
     }
   };
 
-  // Filter todos by priority and status
+  // Categorize todos
   const urgentTodos = todos.filter(
     (todo) => todo.status !== "completed" && todo.priority === "high",
   );
-  const highTodos = todos.filter(
+  const weeklyTodos = todos.filter(
     (todo) => todo.status !== "completed" && todo.priority === "medium",
   );
   const normalTodos = todos.filter(
@@ -86,16 +190,7 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
   );
   const completedTodos = todos.filter((todo) => todo.status === "completed");
 
-  const toggleTodo = async (todoId: number, currentStatus: string) => {
-    try {
-      const newStatus = currentStatus === "completed" ? "pending" : "completed";
-      await patientService.updateTodoStatus(todoId, { status: newStatus });
-      loadTodos();
-    } catch (error) {
-      message.error("更新待办状态失败");
-      console.error("Failed to update todo:", error);
-    }
-  };
+  const pendingCount = todos.filter((t) => t.status !== "completed").length;
 
   const handleEdit = (todo: PatientTodo) => {
     setEditingTodo(todo);
@@ -103,13 +198,11 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
   };
 
   const handleDelete = (todo: PatientTodo) => {
-    console.log('Delete todo clicked:', todo.todo_id);
- 
     if (!todo.todo_id) {
-      message.error('待办ID无效，无法删除');
+      message.error("待办ID无效，无法删除");
       return;
     }
- 
+
     modal.confirm({
       title: "确认删除",
       content: `确定要删除待办"${todo.todo_title}"吗？`,
@@ -118,16 +211,15 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
       okButtonProps: { danger: true },
       onOk: () => {
         return new Promise<void>(async (resolve, reject) => {
-          console.log('Deleting todo:', todo.todo_id);
           try {
             await patientService.deletePatientTodo(todo.todo_id);
-            console.log('Delete todo API success');
             message.success("删除成功");
             await loadTodos();
             resolve();
           } catch (error) {
             console.error("Failed to delete todo:", error);
-            const errorMessage = error instanceof Error ? error.message : '删除失败';
+            const errorMessage =
+              error instanceof Error ? error.message : "删除失败";
             message.error(errorMessage);
             reject(error);
           }
@@ -136,318 +228,148 @@ export function PatientTodos({ patientId }: PatientTodosProps) {
     });
   };
 
+  const toggleTodo = async (todoId: number, currentStatus: string) => {
+    try {
+      const newStatus =
+        currentStatus === "completed" ? "pending" : "completed";
+      await patientService.updateTodoStatus(todoId, { status: newStatus });
+      loadTodos();
+    } catch (error) {
+      message.error("更新待办状态失败");
+      console.error("Failed to update todo:", error);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent mb-4"></div>
-          <p className="text-gray-500">加载中...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">加载中...</div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* AI Suggestions Banner */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <div className="p-5">
-          <div className="flex items-start gap-3">
-            <Lightbulb className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div className="flex-1">
-              <h3 className="font-bold text-blue-900 mb-2">AI智能建议</h3>
-              <p className="text-sm text-gray-600">
-                AI会根据患者病情智能生成待办建议
-              </p>
-            </div>
-          </div>
+  // Render a todo section
+  const renderSection = (
+    title: string,
+    items: PatientTodo[],
+    icon?: React.ReactNode,
+  ) => {
+    if (items.length === 0) return null;
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          {icon}
+          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          <span className="text-sm text-gray-400">{items.length}</span>
         </div>
-      </Card>
+        <Card className="bg-white border-gray-200">
+          <CardContent className="p-0">
+            {items.map((todo) => (
+              <TodoItem
+                key={todo.todo_id}
+                todo={todo}
+                onToggle={() => toggleTodo(todo.todo_id, todo.status)}
+                onEdit={() => handleEdit(todo)}
+                onDelete={() => handleDelete(todo)}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
-      {/* Filter and Stats Bar */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === "all"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              全部
-            </button>
-            <button
-              onClick={() => setFilter("pending")}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === "pending"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              待处理
-            </button>
-            <button
-              onClick={() => setFilter("completed")}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                filter === "completed"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              已完成
-            </button>
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">待办事项</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            共 {todos.length} 项，{pendingCount} 项待处理
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Filter */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            {(["all", "pending", "completed"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  filter === f
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {f === "all" ? "全部" : f === "pending" ? "待处理" : "已完成"}
+              </button>
+            ))}
           </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">
-              共 {todos.length} 项，待处理{" "}
-              {todos.filter((t) => t.status !== "completed").length} 项
-            </span>
-            <button
-              onClick={() => setTodoModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-white transition-all shadow-sm hover:shadow-md"
-              style={{
-                backgroundColor: PRIMARY_COLOR,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#C13D1F";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = PRIMARY_COLOR;
-              }}
-            >
-              <PlusOutlined />
-              创建待办
-            </button>
-          </div>
+          <Button
+            onClick={() => setTodoModalOpen(true)}
+            className="bg-[#DA7756] hover:bg-[#C46B4D] text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            创建待办
+          </Button>
         </div>
       </div>
 
-      {/* Urgent Todos */}
-      {urgentTodos.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-bold text-red-700 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            紧急待办
-          </h3>
-          {urgentTodos.map((todo) => (
-            <Card
-              key={todo.todo_id}
-              className={getPriorityColor(todo.priority)}
-            >
-              <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={todo.status === "completed"}
-                    onChange={() => toggleTodo(todo.todo_id, todo.status)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">
-                      {todo.todo_title}
-                    </h4>
-                    {todo.todo_description && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {todo.todo_description}
-                      </p>
-                    )}
-                    {todo.assigned_doctor && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        负责医生: {todo.assigned_doctor}
-                      </p>
-                    )}
-                    <p className="text-sm text-red-600 font-medium mt-2">
-                      截止：{formatDate(todo.due_date)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEdit(todo)}
-                    />
-                    <Button
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDelete(todo)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+      {/* Todo Sections */}
+      {renderSection(
+        "紧急待办",
+        urgentTodos,
+        <CircleAlert size={18} className="text-red-500" />,
       )}
+      {renderSection("本周待办", weeklyTodos)}
+      {renderSection("常规待办", normalTodos)}
 
-      {/* High Priority Todos */}
-      {highTodos.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-bold text-yellow-700 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-yellow-500" />
-            本周待办
-          </h3>
-          {highTodos.map((todo) => (
-            <Card
-              key={todo.todo_id}
-              className={getPriorityColor(todo.priority)}
-            >
-              <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={todo.status === "completed"}
-                    onChange={() => toggleTodo(todo.todo_id, todo.status)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">
-                      {todo.todo_title}
-                    </h4>
-                    {todo.todo_description && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {todo.todo_description}
-                      </p>
-                    )}
-                    {todo.assigned_doctor && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        负责医生: {todo.assigned_doctor}
-                      </p>
-                    )}
-                    <p className="text-sm text-yellow-600 font-medium mt-2">
-                      截止：{formatDate(todo.due_date)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEdit(todo)}
-                    />
-                    <Button
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDelete(todo)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Normal Todos */}
-      {normalTodos.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-bold text-green-700 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            常规待办
-          </h3>
-          {normalTodos.map((todo) => (
-            <Card
-              key={todo.todo_id}
-              className={getPriorityColor(todo.priority)}
-            >
-              <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={todo.status === "completed"}
-                    onChange={() => toggleTodo(todo.todo_id, todo.status)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">
-                      {todo.todo_title}
-                    </h4>
-                    {todo.todo_description && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {todo.todo_description}
-                      </p>
-                    )}
-                    {todo.assigned_doctor && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        负责医生: {todo.assigned_doctor}
-                      </p>
-                    )}
-                    <p className="text-sm text-green-600 font-medium mt-2">
-                      截止：{formatDate(todo.due_date)}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEdit(todo)}
-                    />
-                    <Button
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDelete(todo)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Completed Todos (Collapsible) */}
+      {/* Completed (collapsible) */}
       {completedTodos.length > 0 && (
-        <div className="space-y-3">
+        <div>
           <button
             onClick={() => setShowCompleted(!showCompleted)}
-            className="text-lg font-bold text-gray-500 flex items-center gap-2 hover:text-gray-700"
+            className="flex items-center gap-2 mb-3 text-lg font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <span className="w-2 h-2 rounded-full bg-gray-400" />
-            已完成 ({completedTodos.length})
-            <span className="text-sm">{showCompleted ? "▼" : "▶"}</span>
+            {showCompleted ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            已完成
+            <span className="text-sm font-normal">{completedTodos.length}</span>
           </button>
-          {showCompleted &&
-            completedTodos.map((todo) => (
-              <Card
-                key={todo.todo_id}
-                className="bg-gray-50 border-gray-200 opacity-60"
-              >
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={todo.status === "completed"}
-                      onChange={() => toggleTodo(todo.todo_id, todo.status)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-700 line-through">
-                        {todo.todo_title}
-                      </h4>
-                      {todo.todo_description && (
-                        <p className="text-sm text-gray-500 mt-1 line-through">
-                          {todo.todo_description}
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDelete(todo)}
-                    />
-                  </div>
-                </div>
-              </Card>
-            ))}
+          {showCompleted && (
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-0">
+                {completedTodos.map((todo) => (
+                  <TodoItem
+                    key={todo.todo_id}
+                    todo={todo}
+                    onToggle={() => toggleTodo(todo.todo_id, todo.status)}
+                    onEdit={() => handleEdit(todo)}
+                    onDelete={() => handleDelete(todo)}
+                  />
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
       {/* Empty State */}
       {todos.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-gray-500 text-lg">暂无待办事项</p>
-        </div>
+        <Card className="bg-white border-gray-200">
+          <CardContent className="p-12 text-center">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无待办事项</h3>
+            <p className="text-sm text-gray-500 mb-6">点击上方按钮为患者创建第一个待办</p>
+            <Button
+              onClick={() => setTodoModalOpen(true)}
+              variant="outline"
+              className="text-[#DA7756] border-[#DA7756] hover:bg-[#DA7756] hover:text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              创建待办
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Create/Edit Todo Modal */}

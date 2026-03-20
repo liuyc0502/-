@@ -41,6 +41,7 @@ export function ChatStreamMain({
   portalConfig,
   userDisplayName,
   hideAgentSelector = false,
+  hideTemplates = false,
 }: ChatStreamMainProps) {
   const { t } = useTranslation();
   const accentColor = portalConfig?.accentColor || "#DA7756";
@@ -529,6 +530,7 @@ export function ChatStreamMain({
                         portalConfig={portalConfig}
                         userDisplayName={userDisplayName}
                         hideAgentSelector={hideAgentSelector}
+                        hideTemplates={hideTemplates}
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -624,6 +626,7 @@ export function ChatStreamMain({
               portalConfig={portalConfig}
               userDisplayName={userDisplayName}
               hideAgentSelector={hideAgentSelector}
+              hideTemplates={hideTemplates}
             />
           </motion.div>
         </AnimatePresence>

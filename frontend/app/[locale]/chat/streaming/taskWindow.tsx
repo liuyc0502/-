@@ -15,10 +15,11 @@ import { ScrollArea } from "@/components/ui/scrollArea";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/ui/markdownRenderer";
 import { chatConfig } from "@/const/chatConfig";
-import { ChatMessageType, TaskMessageType, CardItem, MessageHandler, ToolConfirmationData } from "@/types/chat";
+import { ChatMessageType, TaskMessageType, CardItem, MessageHandler, ToolConfirmationData, ReportCardData } from "@/types/chat";
 import { useChatTaskMessage } from "@/hooks/useChatTaskMessage";
 import log from "@/lib/logger";
 import ConfirmationCard from "./ConfirmationCard";
+import ReportCardFactory from "./ReportCardFactory";
 
 // Icon mapping dictionary - map strings to corresponding icon components
 const iconMap: Record<string, React.ReactNode> = {
@@ -337,6 +338,22 @@ const messageHandlers: MessageHandler[] = [
       } catch (error) {
         log.error("Failed to parse tool confirmation data", error);
         return <div style={{ color: "red", padding: "8px" }}>无法解析确认卡片数据</div>;
+      }
+    },
+  },
+
+  // report_card type processor - structured report interpretation / QC check
+  {
+    canHandle: (message) => message.type === chatConfig.messageTypes.REPORT_CARD,
+    render: (message, _t) => {
+      try {
+        const cardData: ReportCardData = typeof message.content === "string"
+          ? JSON.parse(message.content)
+          : message.content;
+        return <ReportCardFactory data={cardData} />;
+      } catch (error) {
+        log.error("Failed to parse report card data", error);
+        return <div style={{ color: "red", padding: "8px" }}>无法解析报告卡片数据</div>;
       }
     },
   },
@@ -667,24 +684,40 @@ const messageHandlers: MessageHandler[] = [
   // model_output type processor - model output
   {
     canHandle: (message) => message.type === "model_output",
-    render: (message, _t) => (
-      <div
-        style={{
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          fontSize: "0.875rem",
-          lineHeight: 1.5,
-          color: message.subType === "deep_thinking" ? "#6b7280" : "#1f2937",
-          fontWeight: 400,
-        }}
-      >
-        <MarkdownRenderer
-          content={message.content}
-          className="task-message-content"
-          showDiagramToggle={false}
-        />
-      </div>
-    ),
+    render: (message, _t) => {
+      // Strip <<<REPORT_CARD>>>...<<<END_REPORT_CARD>>> blocks and preceding narrative
+      // from model output since report cards are rendered at message level
+      let displayContent = message.content;
+      const endMarker = "<<<END_REPORT_CARD>>>";
+      const lastEndIdx = displayContent.lastIndexOf(endMarker);
+      if (lastEndIdx !== -1) {
+        // Find the start of the narrative leading to the first <<<REPORT_CARD>>>
+        const firstStartIdx = displayContent.indexOf("<<<REPORT_CARD>>>");
+        if (firstStartIdx !== -1) {
+          displayContent = displayContent.substring(0, firstStartIdx) + displayContent.substring(lastEndIdx + endMarker.length);
+        }
+      }
+      displayContent = displayContent.trim();
+      if (!displayContent) return null;
+      return (
+        <div
+          style={{
+            fontFamily:
+              "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+            fontSize: "0.875rem",
+            lineHeight: 1.5,
+            color: message.subType === "deep_thinking" ? "#6b7280" : "#1f2937",
+            fontWeight: 400,
+          }}
+        >
+          <MarkdownRenderer
+            content={displayContent}
+            className="task-message-content"
+            showDiagramToggle={false}
+          />
+        </div>
+      );
+    },
   },
 
   // execution type processor - execution result (not displayed)

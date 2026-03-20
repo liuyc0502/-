@@ -75,12 +75,14 @@ export const handleStreamResponse = async (
     | typeof chatConfig.contentTypes.CARD
     | typeof chatConfig.contentTypes.TOOL_CONFIRMATION
     | typeof chatConfig.contentTypes.MEMORY_SEARCH
+    | typeof chatConfig.contentTypes.REPORT_CARD
     | typeof chatConfig.contentTypes.PREPROCESS
     | null = null;
   let lastModelOutputIndex = -1; // Track the index of the last model output in currentStep.contents
   let searchResultsContent: any[] = [];
   let allSearchResults: any[] = [];
   let finalAnswer = "";
+  let reportCards: any[] = [];
 
   try {
     while (true) {
@@ -385,7 +387,7 @@ export const handleStreamResponse = async (
 
                     // If it does not exist, add one
                     const newGeneratingItem = {
-                      id: `generating-code-${stepIdCounter.current}`,
+                      id: `generating-code-${stepIdCounter.current}-${Date.now()}`,
                       type: chatConfig.messageTypes.GENERATING_CODE,
                       content: t("chatStreamHandler.callingTool"),
                       expanded: true,
@@ -429,6 +431,19 @@ export const handleStreamResponse = async (
                   });
 
                   lastContentType = chatConfig.contentTypes.TOOL_CONFIRMATION;
+                  break;
+
+                case chatConfig.messageTypes.REPORT_CARD:
+                  // Promote report cards to message level, render in main chat area instead of task detail steps
+                  try {
+                    const cardData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    reportCards.push(cardData);
+                  } catch (e) {
+                    log.error("Failed to parse report card data", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.REPORT_CARD;
                   break;
 
                 case chatConfig.messageTypes.CARD:
@@ -886,6 +901,7 @@ export const handleStreamResponse = async (
 
                   // Update other special content
                   if (finalAnswer) lastMsg.finalAnswer = finalAnswer;
+                  if (reportCards.length > 0) lastMsg.reportCards = reportCards;
                 }
 
                 return newMessages;
