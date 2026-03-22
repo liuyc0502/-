@@ -697,7 +697,8 @@ def load_default_agents_json_file(default_agent_path):
 async def list_all_agent_info_impl(
         tenant_id: str,
         exclude_portal_main: bool = True,
-        agent_role_category: str | None = None) -> list[dict]:
+        agent_role_category: str | None = None,
+        include_disabled: bool = False) -> list[dict]:
     """
     list all agent info
  
@@ -717,8 +718,8 @@ async def list_all_agent_info_impl(
  
         simple_agent_list = []
         for agent in agent_list:
-            # check agent is available
-            if not agent["enabled"]:
+            # check agent is enabled
+            if not agent["enabled"] and not include_disabled:
                 continue
  
             # Skip portal_main agents if exclude_portal_main is True
@@ -753,6 +754,7 @@ async def list_all_agent_info_impl(
                 "display_name": agent["display_name"] if agent["display_name"] else agent["name"],
                 "description": agent["description"],
                 "is_available": is_available,
+                "enabled": agent.get("enabled", False),
                 "category": agent.get("category", None),
                 "agent_role_category": agent.get("agent_role_category", "tool"),
                 "portal_type": agent.get("portal_type", None)

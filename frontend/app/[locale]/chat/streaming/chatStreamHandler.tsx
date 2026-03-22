@@ -3,6 +3,7 @@
 import { ROLE_ASSISTANT } from "@/const/agentConfig";
 import { chatConfig } from "@/const/chatConfig";
 import { ChatMessageType, AgentStep } from "@/types/chat";
+import type { ConsultationState } from "@/types/consultation";
 import log from "@/lib/logger";
 
 import {
@@ -76,6 +77,7 @@ export const handleStreamResponse = async (
     | typeof chatConfig.contentTypes.TOOL_CONFIRMATION
     | typeof chatConfig.contentTypes.MEMORY_SEARCH
     | typeof chatConfig.contentTypes.REPORT_CARD
+    | typeof chatConfig.contentTypes.CONSULTATION
     | typeof chatConfig.contentTypes.PREPROCESS
     | null = null;
   let lastModelOutputIndex = -1; // Track the index of the last model output in currentStep.contents
@@ -83,6 +85,8 @@ export const handleStreamResponse = async (
   let allSearchResults: any[] = [];
   let finalAnswer = "";
   let reportCards: any[] = [];
+  let consultationRecommendation: { specialties: string[]; reason: string; resolved: boolean } | null = null;
+  let consultationState: ConsultationState | null = null;
 
   try {
     while (true) {
@@ -119,6 +123,18 @@ export const handleStreamResponse = async (
             if (jsonData.type && jsonData.content) {
               const messageType = jsonData.type;
               const messageContent = jsonData.content;
+
+              // During active consultation, skip non-consultation messages from specialist agents
+              // to prevent their parallel outputs from interleaving in TaskWindow
+              if (consultationState && !consultationState.isComplete) {
+                const isConsultationMsg = messageType.startsWith("consultation_");
+                const isFinalAnswer = messageType === chatConfig.messageTypes.FINAL_ANSWER;
+                const isError = messageType === chatConfig.messageTypes.ERROR;
+                const isReportCard = messageType === chatConfig.messageTypes.REPORT_CARD;
+                if (!isConsultationMsg && !isFinalAnswer && !isError && !isReportCard) {
+                  continue;
+                }
+              }
 
               // Process different types of messages
               switch (messageType) {
@@ -446,6 +462,137 @@ export const handleStreamResponse = async (
                   lastContentType = chatConfig.contentTypes.REPORT_CARD;
                   break;
 
+                case chatConfig.messageTypes.CONSULTATION_RECOMMENDATION:
+                  try {
+                    const recData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    consultationRecommendation = {
+                      specialties: recData.specialties || [],
+                      reason: recData.reason || "",
+                      resolved: false,
+                    };
+                  } catch (e) {
+                    log.error("Failed to parse consultation recommendation data", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.CONSULTATION;
+                  break;
+
+                // Multi-agent consultation events
+                case chatConfig.messageTypes.CONSULTATION_START: {
+                  try {
+                    const startData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    consultationState = {
+                      consultation_id: startData.consultation_id,
+                      question: startData.question,
+                      specialists: startData.specialists || [],
+                      max_rounds: startData.max_rounds || 5,
+                      current_round: 0,
+                      agentSteps: {},
+                      agentOpinions: {},
+                      roundSummaries: {},
+                      consensusHistory: [],
+                      waitingForDoctor: false,
+                      waitingRound: 0,
+                      isComplete: false,
+                    };
+                  } catch (e) {
+                    log.error("Failed to parse consultation start data", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.CONSULTATION;
+                  break;
+                }
+
+                case chatConfig.messageTypes.CONSULTATION_AGENT_STEP: {
+                  try {
+                    const stepData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    if (consultationState) {
+                      const agentName = stepData.agent_name;
+                      if (!consultationState.agentSteps[agentName]) {
+                        consultationState.agentSteps[agentName] = [];
+                      }
+                      consultationState.agentSteps[agentName].push(stepData);
+                      consultationState.current_round = stepData.round;
+                    }
+                  } catch (e) {
+                    log.error("Failed to parse consultation agent step", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.CONSULTATION;
+                  break;
+                }
+
+                case chatConfig.messageTypes.CONSULTATION_AGENT_OPINION: {
+                  try {
+                    const opinionData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    if (consultationState) {
+                      const round = opinionData.round;
+                      if (!consultationState.agentOpinions[round]) {
+                        consultationState.agentOpinions[round] = {};
+                      }
+                      consultationState.agentOpinions[round][opinionData.agent_name] = opinionData;
+                    }
+                  } catch (e) {
+                    log.error("Failed to parse consultation agent opinion", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.CONSULTATION;
+                  break;
+                }
+
+                case chatConfig.messageTypes.CONSULTATION_ROUND_COMPLETE: {
+                  try {
+                    const roundData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    if (consultationState) {
+                      consultationState.roundSummaries[roundData.round] = {
+                        summary: roundData.summary,
+                        consensus_level: roundData.consensus_level,
+                        consensus_score: roundData.consensus_score,
+                        entropy: roundData.entropy,
+                        convergence_velocity: roundData.convergence_velocity,
+                        opinion_clusters: roundData.opinion_clusters,
+                        scheduling: roundData.scheduling,
+                      };
+                      // Track consensus history for trend visualization
+                      if (roundData.consensus_score !== undefined) {
+                        consultationState.consensusHistory.push({
+                          round: roundData.round,
+                          score: roundData.consensus_score,
+                          entropy: roundData.entropy ?? 0,
+                          velocity: roundData.convergence_velocity ?? 0,
+                        });
+                      }
+                      consultationState.waitingForDoctor = false;
+                    }
+                  } catch (e) {
+                    log.error("Failed to parse consultation round complete", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.CONSULTATION;
+                  break;
+                }
+
+                case chatConfig.messageTypes.CONSULTATION_WAITING_DOCTOR: {
+                  try {
+                    const waitData = typeof messageContent === "string"
+                      ? JSON.parse(messageContent)
+                      : messageContent;
+                    if (consultationState) {
+                      consultationState.waitingForDoctor = true;
+                      consultationState.waitingRound = waitData.round;
+                    }
+                  } catch (e) {
+                    log.error("Failed to parse consultation waiting doctor", e);
+                  }
+                  lastContentType = chatConfig.contentTypes.CONSULTATION;
+                  break;
+                }
+
                 case chatConfig.messageTypes.CARD:
                   // If there's no currentStep, create one
                   if (!currentStep) {
@@ -623,6 +770,10 @@ export const handleStreamResponse = async (
                 case chatConfig.messageTypes.FINAL_ANSWER:
                   // Accumulate final answer content and process user break tag
                   finalAnswer += processUserBreakTag(messageContent, t);
+                  // Mark consultation as complete so subsequent messages are no longer filtered
+                  if (consultationState) {
+                    consultationState.isComplete = true;
+                  }
                   break;
 
                 case chatConfig.messageTypes.PARSE:
@@ -902,6 +1053,8 @@ export const handleStreamResponse = async (
                   // Update other special content
                   if (finalAnswer) lastMsg.finalAnswer = finalAnswer;
                   if (reportCards.length > 0) lastMsg.reportCards = reportCards;
+                  if (consultationRecommendation) lastMsg.consultationRecommendation = consultationRecommendation;
+                  if (consultationState) lastMsg.consultationData = { ...consultationState };
                 }
 
                 return newMessages;

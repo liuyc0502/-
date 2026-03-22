@@ -125,13 +125,55 @@
 
 ## 三、创新功能（已实现）
 
-### 医生端创新（2 个）
+### 医生端创新（3 个）
 
 
 | #   | 创新点               | 描述                                                                                               | 设计文档                                                          |
 | --- | -------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | 1   | ⭐ 病理报告结构化解读 + 质控(待验证) | 上传报告后 AI 自动拆为”核心诊断、关键描述、术语解释、临床意义、待确认点”五板块，同时质控检查缺失字段（切缘、脉管侵犯、TNM 等），红黄绿标记 | [设计文档](2026-3-15%20Report_Interpretation_QC.md) |
-| 2   | ⭐ 病理知识溯源链         | AI 回答时展示完整推理过程：引用哪条知识→推出什么结论→为什么排除其他可能→最终置信度，可视化 Chain-of-Thought                          |                                                                 
+| 2   | ⭐ 病理知识溯源链(待验证)    | AI 回答时展示完整推理过程：引用哪条知识→推出什么结论→为什么排除其他可能→最终置信度，可视化 Chain-of-Thought                          |                                                                   |
+| 3   | ⭐ 多智能体辩论会诊(待验证)  | 多个专科 Agent 并行分析 → 多轮辩论 → 医生介入控制（继续辩论/附加指导/形成结论）→ 共识报告，实现从”单专家”到”专家团队”的会诊工作流 | [设计文档](2026-3-20%20Multi-Agent%20Debate%20Consultation.md) |
+
+### 底层算法创新（2 个）
+
+
+| #   | 创新点 | 描述 | 理论基础 |
+| --- | ------ | ---- | -------- |
+| 4   | ⭐ CWEC 共识收敛算法 | 四维量化共识评估：Agreement Graph Score（签名加权图一致性）、Confidence-Weighted Entropy（加权信息熵）、Convergence Velocity（收敛速度）、Composite Consensus Score（综合共识分数）。基于 union-find 图聚类将专家意见自动分簇，替代原有的布尔判断，实现连续可微的共识度量 | Delphi Method (Dalkey & Helmer, 1963)、Shannon Entropy (Shannon, 1948)、Fleiss' Kappa (Fleiss, 1971) |
+| 5   | ⭐ ADS 自适应辩论调度 | CUSUM 停滞检测 + EVNR（Expected Value of Next Round）信息价值评估 + DFS（Disagreement Focus Score）关键分歧识别。自动选择四种辩论策略（CONVERGED/PROGRESSING/FOCUSED_DEBATE/STAGNATED），动态注入聚焦 Prompt，支持自动终止和专家权重动态调整 | CUSUM (Page, 1954)、Information Value Theory (Howard, 1966)、Argumentation Framework (Dung, 1995) |
+
+#### CWEC 算法核心公式
+
+```
+AGS^t = Σ_{i<j} A[i][j]·√(c_i·c_j) / (N·(N-1)/2)     ∈ [-1, 1]
+
+CWE_norm^t = (-Σ_k p_k·log₂(p_k)) / log₂(N)            ∈ [0, 1]
+    where p_k = Σ_{i∈cluster_k} c_i·w_i / Σ_i c_i·w_i
+
+CV^t = CWE_norm^{t-1} - CWE_norm^t                       (正值=收敛)
+
+CCS^t = 0.4·(1-CWE_norm^t) + 0.35·(AGS^t+1)/2 + 0.25·mean(c_i)  ∈ [0, 1]
+```
+
+#### ADS 调度策略决策树
+
+```
+CCS ≥ 0.85           → CONVERGED (自动建议结束)
+CV > 0.05            → PROGRESSING (标准继续)
+CV ≤ 0.05 ∧ DFS>0.3  → FOCUSED_DEBATE (聚焦分歧点)
+CV ≤ 0.05 ∧ DFS≤0.3  → STAGNATED (建议终止)
+```
+
+#### 关键实现文件
+
+| 文件 | 说明 |
+| ---- | ---- |
+| `backend/services/consensus_engine.py` | CWEC 共识收敛算法引擎 |
+| `backend/services/debate_scheduler.py` | ADS 自适应辩论调度器 |
+| `backend/services/consultation_orchestrator.py` | 算法集成到辩论编排主循环 |
+| `frontend/.../ConsultationCard.tsx` | 共识仪表盘、收敛趋势图、调度建议横幅、意见簇分组 |
+| `frontend/.../ConsultationReportCard.tsx` | 收敛历史折线图 |
+
 ### 患者端创新（2 个）
 
 
@@ -140,12 +182,3 @@
 | 5   | ⭐ 报告通俗解读(待验证) | 同一份报告用大白话解释，标注严重程度（绿/黄/红），给出下一步建议，和医生端专业解读形成对比                                 |          |
 | 6   | ⭐ 症状自报 + 智能导诊(待验证) | AI 引导式提问（部位→特征→时长→伴随症状），生成结构化症状摘要卡片 + 就诊科室建议，帮患者”整理好信息再去看医生”              |          |
 
-### 贯穿能力（通过 System Prompt 实现，不需额外开发）
-
-
-| #   | 能力           | 描述                                                         |
-| --- | -------------- | ------------------------------------------------------------ |
-| A   | 证据可追溯问答 | 每次回答附带知识来源引用，说明依据                           |
-| B   | 结构化追问模式 | 信息不足时先追问器官部位、标本类型、形态特征、IHC 结果再分析 |
-| C   | 鉴别诊断辅助   | 给出鉴别诊断思路与排除路径，不替代医生下结论                 |
-| D   | IHC 染色建议   | 信息不足时推荐下一步免疫组化标记及用途                       |

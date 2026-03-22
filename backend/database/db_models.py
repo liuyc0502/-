@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, JSON, Numeric, Sequence, String, Text, TIMESTAMP,ARRAY
+from sqlalchemy import Boolean, Column, Float, Integer, JSON, Numeric, Sequence, String, Text, TIMESTAMP, ARRAY
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
 
@@ -818,4 +818,31 @@ class ChatTemplate(TableBase):
     fields = Column(JSON, doc="JSON array of field definitions")
     sort_order = Column(Integer, default=0, doc="Display sort order")
     user_id = Column(String(100), doc="Owner user ID")
+    tenant_id = Column(String(100), doc="Tenant ID")
+
+
+class ConsultationRecord(TableBase):
+    """
+    Multi-agent debate consultation record table
+    """
+    __tablename__ = "consultation_record_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    consultation_id = Column(Integer, Sequence(
+        "consultation_record_t_id_seq", schema=SCHEMA),
+        primary_key=True, nullable=False, doc="Consultation ID, primary key")
+    consultation_uuid = Column(String(64), nullable=False, doc="UUID from runtime session")
+    question = Column(Text, nullable=False, doc="Consultation question")
+    status = Column(String(20), nullable=False, default="running", doc="Status: running|completed|timeout")
+    total_rounds = Column(Integer, default=0, doc="Total debate rounds completed")
+    max_rounds = Column(Integer, default=5, doc="Maximum rounds allowed")
+    specialist_agents = Column(JSON, doc="JSON array of specialist agent info [{name, specialty, agent_id}]")
+    round_results = Column(JSON, doc="JSON array of round results with opinions")
+    final_recommendation = Column(Text, doc="Final synthesized recommendation")
+    agreements = Column(JSON, doc="JSON array of consensus points")
+    disagreements = Column(JSON, doc="JSON array of disagreement points")
+    consensus_metrics = Column(JSON, doc="JSON array of per-round CWEC metrics [{consensus_score, entropy, ...}]")
+    confidence = Column(Float, default=0, doc="Overall confidence score 0-100")
+    conversation_id = Column(Integer, doc="Associated conversation ID")
+    patient_id = Column(Integer, doc="Associated patient ID")
     tenant_id = Column(String(100), doc="Tenant ID")

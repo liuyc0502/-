@@ -17,6 +17,8 @@ import { USER_ROLES } from "@/const/modelConfig";
 import { useConfig } from "@/hooks/useConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { conversationService } from "@/services/conversationService";
+import { API_ENDPOINTS } from "@/services/api";
+import { fetchWithAuth } from "@/lib/auth";
 import { storageService } from "@/services/storageService";
 import  patientService  from "@/services/patientService";
 import { useConversationManagement } from "@/hooks/chat/useConversationManagement";
@@ -25,6 +27,7 @@ import { getPortalMainAgent } from "@/services/portalAgentAssignmentService";
 import { ChatSidebar } from "../components/chatLeftSidebar";
 import type { FilePreview, PortalNavItemId } from "@/types/chat";
 import { ChatHeader } from "../components/chatHeader";
+import ConsultationStartModal from "../components/ConsultationStartModal";
 import { ChatRightPanel } from "../components/chatRightPanel";
 import { ChatStreamMain } from "../streaming/chatStreamMain";
 
@@ -38,6 +41,9 @@ import { PatientListView } from "@/components/doctor/patients/PatientListView";
 import { PatientDetailView } from "@/components/doctor/patients/PatientDetailView";
 import { CaseLibraryView } from "@/components/doctor/cases/CaseLibraryView";
 import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
+import { ConsultationHistoryView } from "@/components/doctor/consultations/ConsultationHistoryView";
+import { ConsultationDetailView } from "@/components/doctor/consultations/ConsultationDetailView";
+import { SpecialistAgentConfigView } from "@/components/doctor/consultations/SpecialistAgentConfigView";
 import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
 import { TemplateListView } from "@/components/doctor/templates/TemplateListView";
 
@@ -114,6 +120,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   // Doctor portal state management
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [selectedConsultationId, setSelectedConsultationId] = useState<number | null>(null);
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
   const [caseLibraryTab, setCaseLibraryTab] = useState("search");
 
@@ -122,6 +129,9 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [linkedPatientName, setLinkedPatientName] = useState<string | null>(null);
   const [linkedTimelineId, setLinkedTimelineId] = useState<number | null>(null);
   const [linkedTimelineName, setLinkedTimelineName] = useState<string | null>(null);
+
+  // Consultation modal state
+  const [consultationModalVisible, setConsultationModalVisible] = useState(false);
 
   // Use conversation management hook
   const conversationManagement = useConversationManagement();
@@ -1671,6 +1681,108 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
     }
   };
 
+  // Handle starting a multi-agent consultation
+  const handleStartConsultation = async (question: string, agentIds: number[]) => {
+    let currentConversationId = conversationManagement.selectedConversationId;
+
+    try {
+      // Auto-create conversation if none exists (same as handleSend)
+      if (!currentConversationId || currentConversationId === -1) {
+        const createData = await conversationService.create(
+          t("chatInterface.newConversation"),
+          variant
+        );
+        const newId = createData.conversation_id;
+        if (newId == null || typeof newId !== "number") {
+          throw new Error("Create conversation returned invalid ID");
+        }
+        currentConversationId = newId;
+        conversationManagement.setConversationId(currentConversationId);
+        conversationManagement.setSelectedConversationId(currentConversationId);
+        conversationManagement.currentSelectedConversationRef.current = currentConversationId;
+        conversationManagement.setConversationTitle(
+          createData.conversation_title || t("chatInterface.newConversation")
+        );
+        await conversationManagement.fetchConversationList(variant);
+      }
+      if (currentConversationId == null || currentConversationId === -1) {
+        throw new Error("No valid conversation for consultation");
+      }
+      const consultationConversationId: number = currentConversationId;
+      const response = await fetchWithAuth(API_ENDPOINTS.consultation.start, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          specialist_agent_ids: agentIds,
+          max_rounds: 5,
+          patient_id: linkedPatientId ?? currentConversation?.patient_id ?? null,
+          conversation_id: consultationConversationId,
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Failed to start consultation");
+      }
+
+      // Create setMessages factory for current conversation (same pattern as handleSend)
+      const setMessages: React.Dispatch<React.SetStateAction<ChatMessageType[]>> =
+        (valueOrUpdater) => {
+          setSessionMessages((prev) => {
+            const prevArr = prev[consultationConversationId] || [];
+            let nextArr: ChatMessageType[];
+            if (typeof valueOrUpdater === "function") {
+              nextArr = (valueOrUpdater as (prev: ChatMessageType[]) => ChatMessageType[])(prevArr);
+            } else {
+              nextArr = valueOrUpdater;
+            }
+            return { ...prev, [consultationConversationId]: [...nextArr] };
+          });
+        };
+
+      // Add user message (consultation question) and assistant placeholder
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `consultation-user-${Date.now()}`,
+          role: "user" as "user",
+          content: `[多学科会诊] ${question}`,
+          timestamp: new Date(),
+          isComplete: true,
+          showRawContent: true,
+        },
+        {
+          id: `consultation-${Date.now()}`,
+          role: ROLE_ASSISTANT as "assistant",
+          content: "",
+          timestamp: new Date(),
+          isComplete: false,
+          steps: [],
+        },
+      ]);
+
+      // Process the SSE stream
+      const reader = response.body.getReader();
+      const stepIdCounter = { current: 0 };
+      await handleStreamResponse(
+        reader,
+        setMessages,
+        () => {}, // resetTimeout - consultation has its own timeout via backend
+        stepIdCounter,
+        setIsSwitchedConversation,
+        false, // isNewConversation
+        conversationManagement.setConversationTitle,
+        () => conversationManagement.fetchConversationList(variant),
+        consultationConversationId,
+        conversationService,
+        false, // isDebug
+        t,
+      );
+    } catch (error) {
+      log.error("Failed to start consultation:", error);
+    }
+  };
+
   // Handle message selection
   const handleMessageSelect = (messageId: string) => {
     if (messageId !== selectedMessageId) {
@@ -1834,35 +1946,19 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   patientName={linkedPatientName ?? currentConversation?.patient_name ?? null}
                   timelineId={linkedTimelineId ?? currentConversation?.linked_timeline_id ?? null}
                   timelineName={linkedTimelineName ?? currentConversation?.linked_timeline_name ?? null}
-                  conversationStatus={currentConversation?.conversation_status}
-                  conversationTags={currentConversation?.tags}
-                  conversationSummary={currentConversation?.summary || undefined}
                   onPatientChange={async (patientId, patientName) => {
-                    // Update local state immediately for UI responsiveness
                     setLinkedPatientId(patientId);
                     setLinkedPatientName(patientName);
-                    // Clear timeline when patient changes (since timelines are patient-specific)
                     setLinkedTimelineId(null);
                     setLinkedTimelineName(null);
-                    // Refresh conversation list to get updated data (including current conversation)
                     await conversationManagement.fetchConversationList(variant);
                   }}
                   onTimelineChange={async (timelineId, timelineName) => {
-                    // Update local state immediately for UI responsiveness
                     setLinkedTimelineId(timelineId);
                     setLinkedTimelineName(timelineName);
-                    // Refresh conversation list to get updated data (including current conversation)
                     await conversationManagement.fetchConversationList(variant);
                   }}
-                  onStatusChange={(status) => {
-                    conversationManagement.fetchConversationList(variant);
-                  }}
-                  onTagsChange={(tags) => {
-                    conversationManagement.fetchConversationList(variant);
-                  }}
-                  onSummaryChange={(summary) => {
-                    conversationManagement.fetchConversationList(variant);
-                  }}
+                  onStartConsultation={variant === "doctor" ? () => setConsultationModalVisible(true) : undefined}
                 />
 
                 <ChatStreamMain
@@ -1888,6 +1984,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   onFileUpload={handleFileUpload}
                   onImageUpload={handleImageUpload}
                   onOpinionChange={handleOpinionChange}
+                  onStartConsultation={variant === "doctor" ? handleStartConsultation : undefined}
                   currentConversationId={conversationManagement.conversationId}
                   shouldScrollToBottom={shouldScrollToBottom}
                   selectedAgentId={selectedAgentId}
@@ -1955,6 +2052,18 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                     />
                   )
                 )}
+                {activeView === "consultations" && (
+                  selectedConsultationId ? (
+                    <ConsultationDetailView
+                      consultationId={selectedConsultationId}
+                      onBack={() => setSelectedConsultationId(null)}
+                    />
+                  ) : (
+                    <ConsultationHistoryView
+                      onSelectConsultation={setSelectedConsultationId}
+                    />
+                  )
+                )}
                 {activeView === "knowledge" && (
                   <KnowledgeBaseView
                   onSelectKnowledge={setSelectedKnowledgeId}
@@ -1963,6 +2072,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                   />
                 )}
                 {activeView === "templates" && <TemplateListView />}
+                {activeView === "specialist-config" && <SpecialistAgentConfigView />}
               </>
             ) : variant === "patient" ? (
               <>
@@ -2027,6 +2137,13 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
           </div>
         </div>
       )}
+
+      {/* Consultation Start Modal */}
+      <ConsultationStartModal
+        visible={consultationModalVisible}
+        onClose={() => setConsultationModalVisible(false)}
+        onStart={handleStartConsultation}
+      />
 
     </>
   );

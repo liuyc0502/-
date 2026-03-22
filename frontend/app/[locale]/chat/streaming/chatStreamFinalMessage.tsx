@@ -21,6 +21,7 @@ import { ROLE_ASSISTANT } from "@/const/agentConfig";
 
 import { ChatAttachment } from "../internal/chatAttachment";
 import ReportCardFactory from "./ReportCardFactory";
+import ConsultationTriggerCard from "./ConsultationTriggerCard";
 
 interface FinalMessageProps {
   message: ChatMessageType;
@@ -30,6 +31,7 @@ interface FinalMessageProps {
   imagesCount?: number;
   onImageClick?: (imageUrl: string) => void;
   onOpinionChange?: (messageId: number, opinion: Opinion) => void;
+  onStartConsultation?: (question: string, agentIds: number[]) => void;
   hideButtons?: boolean;
   index?: number;
   currentConversationId?: number;
@@ -46,6 +48,7 @@ export function ChatStreamFinalMessage({
   imagesCount = 0,
   onImageClick,
   onOpinionChange,
+  onStartConsultation,
   hideButtons = false,
   index,
   currentConversationId,
@@ -280,6 +283,24 @@ export function ChatStreamFinalMessage({
                 content={message.finalAnswer || message.content || ""}
                 searchResults={message?.searchResults}
               />
+
+              {/* Consultation trigger recommendation card - below final answer */}
+              {message.consultationRecommendation && onStartConsultation && (
+                <div className="mt-4">
+                  <ConsultationTriggerCard
+                    specialties={message.consultationRecommendation.specialties}
+                    reason={message.consultationRecommendation.reason}
+                    resolved={message.consultationRecommendation.resolved}
+                    onConfirm={(question, agentIds) => {
+                      message.consultationRecommendation!.resolved = true;
+                      onStartConsultation(question, agentIds);
+                    }}
+                    onDismiss={() => {
+                      message.consultationRecommendation!.resolved = true;
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Button group - only show when hideButtons is false and message is complete */}
               {!hideButtons && message.isComplete && (

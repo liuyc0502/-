@@ -139,6 +139,12 @@ export interface ChatMessageType {
   steps?: AgentStep[]
   finalAnswer?: string
   reportCards?: ReportCardData[]
+  consultationData?: import("./consultation").ConsultationState
+  consultationRecommendation?: {
+    specialties: string[]
+    reason: string
+    resolved: boolean
+  }
   error?: string
   agentRun?: string
   searchResults?: SearchResult[]
@@ -175,6 +181,7 @@ export interface ChatStreamMainProps {
   onImageUpload?: (file: File) => void;
   onImageAnnotate?: (imageUrl: string) => void;
   onOpinionChange?: (messageId: number, opinion: "Y" | "N" | null) => void;
+  onStartConsultation?: (question: string, agentIds: number[]) => void;
   currentConversationId?: number;
   shouldScrollToBottom?: boolean;
   selectedAgentId?: number | null;
@@ -379,4 +386,8 @@ import type { SymptomSummaryData, TriageRecommendationData } from "./symptomRepo
 export type { ReasoningChainData } from "./reasoningChain";
 import type { ReasoningChainData } from "./reasoningChain";
 
-export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData;
+// Consultation card types
+export type { ConsultationReportData } from "./consultation";
+import type { ConsultationReportData } from "./consultation";
+
+export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData | ConsultationReportData;

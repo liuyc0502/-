@@ -214,6 +214,9 @@ class NexentAgent:
             # Extract and emit report cards (<<<REPORT_CARD>>>...<<<END_REPORT_CARD>>> markers)
             final_answer_str = self._extract_and_emit_report_cards(final_answer_str, observer)
 
+            # Extract and emit consultation trigger (<<<CONSULTATION_TRIGGER>>>...<<<END_CONSULTATION_TRIGGER>>> markers)
+            final_answer_str = self._extract_and_emit_consultation_trigger(final_answer_str, observer)
+
             observer.add_message(self.agent.agent_name, ProcessType.FINAL_ANSWER, final_answer_str)
 
             # Check if we need to stop from external stop_event
@@ -316,6 +319,64 @@ class NexentAgent:
                 cleaned = pattern.sub("", text).strip()
         else:
             cleaned = text.strip()
+        return cleaned
+
+    @staticmethod
+    def _extract_and_emit_consultation_trigger(text: str, observer: MessageObserver) -> str:
+        """Extract <<<CONSULTATION_TRIGGER>>>...<<<END_CONSULTATION_TRIGGER>>> blocks from text,
+        emit them as CONSULTATION_RECOMMENDATION SSE messages, and return cleaned text."""
+        import json
+        import logging
+
+        pattern = re.compile(
+            r"<<<CONSULTATION_TRIGGER>>>\s*(.*?)\s*<<<END_CONSULTATION_TRIGGER>>>",
+            re.DOTALL
+        )
+
+        match = pattern.search(text)
+        if not match:
+            return text
+
+        raw = match.group(1).strip()
+        try:
+            # Extract JSON object
+            brace_start = raw.find('{')
+            brace_end = raw.rfind('}')
+            if brace_start != -1 and brace_end > brace_start:
+                raw = raw[brace_start:brace_end + 1]
+
+            try:
+                trigger_data = json.loads(raw)
+            except json.JSONDecodeError:
+                raw = re.sub(r'\s*\n\s*', ' ', raw)
+                trigger_data = json.loads(raw)
+
+            specialties = trigger_data.get("specialties", [])
+            reason = trigger_data.get("reason", "")
+
+            if specialties:
+                observer.add_message(
+                    "", ProcessType.CONSULTATION_RECOMMENDATION,
+                    json.dumps({
+                        "specialties": specialties,
+                        "reason": reason,
+                    }, ensure_ascii=False)
+                )
+        except (json.JSONDecodeError, KeyError) as e:
+            logging.getLogger(__name__).warning(
+                f"CONSULTATION_TRIGGER JSON parse failed: {type(e).__name__}: {e}\n"
+                f"Raw content first 200 chars: {match.group(1)[:200]}"
+            )
+
+        # Remove marker block, keep text after it
+        end_marker = "<<<END_CONSULTATION_TRIGGER>>>"
+        end_pos = text.rfind(end_marker)
+        if end_pos != -1:
+            before = text[:match.start()].strip()
+            after = text[end_pos + len(end_marker):].strip()
+            cleaned = (before + "\n\n" + after).strip() if before and after else (before or after)
+        else:
+            cleaned = pattern.sub("", text).strip()
         return cleaned
 
     def set_agent(self, agent: CoreAgent):

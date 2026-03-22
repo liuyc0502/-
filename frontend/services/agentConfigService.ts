@@ -103,6 +103,7 @@ export const fetchTools = async () => {
 export interface FetchAgentListOptions {
   agentRoleCategory?: string; // 'portal_main', 'tool', or 'all'
   includePortalMain?: boolean;
+  includeDisabled?: boolean;
 }
 
 export const fetchAgentList = async (options?: FetchAgentListOptions) => {
@@ -113,6 +114,9 @@ export const fetchAgentList = async (options?: FetchAgentListOptions) => {
     }
     if (options?.includePortalMain) {
       params.set("include_portal_main", "true");
+    }
+    if (options?.includeDisabled) {
+      params.set("include_disabled", "true");
     }
 
     const requestUrl = params.toString()
@@ -134,6 +138,7 @@ export const fetchAgentList = async (options?: FetchAgentListOptions) => {
       display_name: agent.display_name || agent.name,
       description: agent.description,
       is_available: agent.is_available,
+      enabled: agent.enabled ?? true,
       category: agent.category || null,
       agent_role_category: agent.agent_role_category || "tool",
       portal_type: agent.portal_type || null,

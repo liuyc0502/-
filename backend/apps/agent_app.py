@@ -148,7 +148,8 @@ async def import_agent_api(request: AgentImportRequest, authorization: Optional[
 async def list_all_agent_info_api(authorization: Optional[str] = Header(None),
  request: Request = None,
  include_portal_main: bool = Query(False),
- agent_role_category: Optional[str] = Query(None)
+ agent_role_category: Optional[str] = Query(None),
+ include_disabled: bool = Query(False),
  ):
     """
     list all agent info
@@ -158,7 +159,8 @@ async def list_all_agent_info_api(authorization: Optional[str] = Header(None),
         return await list_all_agent_info_impl(
             tenant_id=tenant_id,
             exclude_portal_main=not include_portal_main if agent_role_category is None else False,
-            agent_role_category=agent_role_category)
+            agent_role_category=agent_role_category,
+            include_disabled=include_disabled)
     except Exception as e:
         logger.error(f"Agent list error: {str(e)}")
         raise HTTPException(

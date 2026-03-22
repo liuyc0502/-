@@ -204,6 +204,7 @@ export function TemplateListView() {
         onCancel={() => setModalOpen(false)}
         okText="保存"
         cancelText="取消"
+        okButtonProps={{ style: { backgroundColor: '#DA7756', borderColor: '#DA7756' } }}
         width={640}
         forceRender
       >
