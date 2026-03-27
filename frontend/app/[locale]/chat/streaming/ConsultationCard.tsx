@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Brain,
@@ -13,8 +13,20 @@ import {
   TrendingUp,
   Target,
   AlertTriangle,
+  Image as ImageIcon,
 } from "lucide-react";
 import type { ConsultationState, ConsultationSchedulingData } from "@/types/consultation";
+import dynamic from "next/dynamic";
+
+const InteractiveChart = dynamic(
+  () => import("@/components/consultation/InteractiveChart"),
+  { ssr: false, loading: () => <div className="h-60 bg-gray-50 animate-pulse rounded" /> }
+);
+
+const Diagram = dynamic(
+  () => import("@/components/ui/Diagram").then((mod) => mod.Diagram),
+  { ssr: false, loading: () => <div className="h-40 bg-gray-50 animate-pulse rounded" /> }
+);
 interface ConsultationCardProps {
   data: ConsultationState;
 }
@@ -229,6 +241,104 @@ function ClusterBadges({ clusters }: { clusters: string[][] }) {
   );
 }
 
+// Parse opinion text for chart JSON (from generate_chart tool) and Mermaid blocks
+function RichOpinionContent({ text }: { text: string }) {
+  const segments = useMemo(() => {
+    const result: { type: "text" | "chart" | "mermaid"; content: string }[] = [];
+    // Match ```mermaid blocks and ```json/```chart blocks containing chart specs
+    const blockRegex = /```(mermaid|chart|json)\s*\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = blockRegex.exec(text)) !== null) {
+      // Add text before this block
+      if (match.index > lastIndex) {
+        result.push({ type: "text", content: text.slice(lastIndex, match.index) });
+      }
+
+      const lang = match[1];
+      const content = match[2].trim();
+
+      if (lang === "mermaid") {
+        result.push({ type: "mermaid", content });
+      } else {
+        // Try to parse as chart spec
+        try {
+          const parsed = JSON.parse(content);
+          if (parsed && (parsed.chart_type || parsed.type === "chart")) {
+            result.push({ type: "chart", content });
+          } else {
+            result.push({ type: "text", content: match[0] });
+          }
+        } catch {
+          result.push({ type: "text", content: match[0] });
+        }
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Also detect inline chart JSON from generate_chart tool results
+    // Pattern: {"type": "chart", "chart_type": ...}
+    const remaining = text.slice(lastIndex);
+    const chartJsonRegex = /\{[^{}]*"type"\s*:\s*"chart"[^{}]*"chart_type"\s*:\s*"[^"]*"[^]*?\}/g;
+    let inlineLastIndex = 0;
+    let inlineMatch;
+
+    while ((inlineMatch = chartJsonRegex.exec(remaining)) !== null) {
+      if (inlineMatch.index > inlineLastIndex) {
+        result.push({ type: "text", content: remaining.slice(inlineLastIndex, inlineMatch.index) });
+      }
+      try {
+        const parsed = JSON.parse(inlineMatch[0]);
+        if (parsed.chart_type && parsed.data) {
+          result.push({ type: "chart", content: inlineMatch[0] });
+        } else {
+          result.push({ type: "text", content: inlineMatch[0] });
+        }
+      } catch {
+        result.push({ type: "text", content: inlineMatch[0] });
+      }
+      inlineLastIndex = inlineMatch.index + inlineMatch[0].length;
+    }
+
+    if (inlineLastIndex < remaining.length) {
+      result.push({ type: "text", content: remaining.slice(inlineLastIndex) });
+    } else if (lastIndex < text.length && inlineLastIndex === 0) {
+      result.push({ type: "text", content: remaining });
+    }
+
+    return result;
+  }, [text]);
+
+  // If no special blocks found, return simple text
+  const hasSpecial = segments.some((s) => s.type !== "text");
+  if (!hasSpecial) {
+    return <ExpandableText text={text} lines={4} className="text-sm text-gray-700" />;
+  }
+
+  return (
+    <div className="space-y-2">
+      {segments.map((seg, idx) => {
+        if (seg.type === "mermaid") {
+          return <Diagram key={idx} code={seg.content} />;
+        }
+        if (seg.type === "chart") {
+          try {
+            const spec = JSON.parse(seg.content);
+            return <InteractiveChart key={idx} spec={spec} />;
+          } catch {
+            return <ExpandableText key={idx} text={seg.content} lines={4} className="text-sm text-gray-700" />;
+          }
+        }
+        return seg.content.trim() ? (
+          <ExpandableText key={idx} text={seg.content} lines={4} className="text-sm text-gray-700" />
+        ) : null;
+      })}
+    </div>
+  );
+}
+
 // Specialist agent panel showing their reasoning steps and opinion
 function SpecialistPanel({
   name,
@@ -309,7 +419,7 @@ function SpecialistPanel({
               <p className="text-sm font-medium text-gray-800 mb-1">
                 结论:
               </p>
-              <ExpandableText text={latestOpinion.conclusion} lines={4} className="text-sm text-gray-700" />
+              <RichOpinionContent text={latestOpinion.conclusion} />
               <div className="mt-1.5">
                 <ConfidenceBar confidence={latestOpinion.confidence} />
               </div>
@@ -366,6 +476,27 @@ export default function ConsultationCard({ data }: ConsultationCardProps) {
         <p className="text-sm text-gray-600 mt-1 line-clamp-2">
           {data.question}
         </p>
+        {/* Attachment thumbnails */}
+        {data.attachments && data.attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {data.attachments.map((att, idx) => (
+              <a
+                key={idx}
+                href={att.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 hover:border-[#DA7756]/40 transition-colors"
+              >
+                {att.type === "image" ? (
+                  <ImageIcon size={12} className="text-[#DA7756]" />
+                ) : (
+                  <span className="w-3 h-3 bg-gray-300 rounded text-[8px] flex items-center justify-center font-bold text-white">F</span>
+                )}
+                <span className="truncate max-w-[120px]">{att.name}</span>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Body: Specialists panel + Consensus panel */}

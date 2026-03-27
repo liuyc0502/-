@@ -44,8 +44,10 @@ import { CaseDetailView } from "@/components/doctor/cases/CaseDetailView";
 import { ConsultationHistoryView } from "@/components/doctor/consultations/ConsultationHistoryView";
 import { ConsultationDetailView } from "@/components/doctor/consultations/ConsultationDetailView";
 import { SpecialistAgentConfigView } from "@/components/doctor/consultations/SpecialistAgentConfigView";
-import { KnowledgeBaseView } from "@/components/doctor/knowledge/KnowledgeBaseView";
 import { TemplateListView } from "@/components/doctor/templates/TemplateListView";
+import { KnowledgeGraphExplorer } from "@/components/doctor/knowledge-graph/KnowledgeGraphExplorer";
+
+import { HealthMapExplorer } from "@/components/patient/health-map/HealthMapExplorer";
 
 import { PatientProfileView } from "@/components/patient/profile/PatientProfileView";
 import { CarePlanView } from "@/components/patient/care-plan/CarePlanView";
@@ -121,7 +123,6 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [selectedConsultationId, setSelectedConsultationId] = useState<number | null>(null);
-  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
   const [caseLibraryTab, setCaseLibraryTab] = useState("search");
 
   // Linked patient/timeline state for current conversation (used when conversation not yet created)
@@ -1682,7 +1683,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
   };
 
   // Handle starting a multi-agent consultation
-  const handleStartConsultation = async (question: string, agentIds: number[]) => {
+  const handleStartConsultation = async (question: string, agentIds: number[], minioFiles?: { name: string; type: string; object_name: string; url: string }[]) => {
     let currentConversationId = conversationManagement.selectedConversationId;
 
     try {
@@ -1718,6 +1719,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
           max_rounds: 5,
           patient_id: linkedPatientId ?? currentConversation?.patient_id ?? null,
           conversation_id: consultationConversationId,
+          minio_files: minioFiles || null,
         }),
       });
 
@@ -2007,7 +2009,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden bg-app-surface">
             {variant === "admin" ? (
               <>
                 {activeView === "agents" && <AdminAgentConfig />}
@@ -2064,15 +2066,9 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                     />
                   )
                 )}
-                {activeView === "knowledge" && (
-                  <KnowledgeBaseView
-                  onSelectKnowledge={setSelectedKnowledgeId}
-                  selectedKnowledgeId={selectedKnowledgeId}
-                  onClearSelection={() => setSelectedKnowledgeId(null)}
-                  />
-                )}
                 {activeView === "templates" && <TemplateListView />}
                 {activeView === "specialist-config" && <SpecialistAgentConfigView />}
+                {activeView === "knowledge-graph" && <KnowledgeGraphExplorer />}
               </>
             ) : variant === "patient" ? (
               <>
@@ -2080,6 +2076,7 @@ export function ChatInterface({ variant = "general" }: ChatInterfaceProps) {
                 {activeView === "report-center" && <ReportCenterView />}
                 {activeView === "care-plan" && <CarePlanView />}
                 {activeView === "symptom-report" && <SymptomReportView onStartChat={handleSymptomStartChat} />}
+                {activeView === "health-map" && <HealthMapExplorer />}
               </>
             ) : (
               <div className="p-8 text-slate-600">

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, AlertTriangle, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { ChevronDown, AlertTriangle, Send, CheckCircle2, Loader2, Paperclip, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { ScrollArea } from "@/components/ui/scrollArea";
@@ -12,6 +12,7 @@ import { ChatMessageType, ProcessedMessages, ChatStreamMainProps } from "@/types
 
 import { API_ENDPOINTS } from "@/services/api";
 import { fetchWithAuth } from "@/lib/auth";
+import { storageService } from "@/services/storageService";
 import { ChatInput } from "../components/chatInput";
 import { ChatStreamFinalMessage } from "./chatStreamFinalMessage";
 import { TaskWindow } from "./taskWindow";
@@ -67,6 +68,8 @@ export function ChatStreamMain({
   const [consultationInstructions, setConsultationInstructions] = useState("");
   const [isConsultationSubmitting, setIsConsultationSubmitting] = useState(false);
   const [consultationDecisionSent, setConsultationDecisionSent] = useState<"continue" | "conclude" | null>(null);
+  const [interventionFiles, setInterventionFiles] = useState<File[]>([]);
+  const interventionFileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset decision sent state when consultation is no longer waiting
   useEffect(() => {
@@ -79,6 +82,20 @@ export function ChatStreamMain({
     if (!activeConsultation) return;
     setIsConsultationSubmitting(true);
     try {
+      // Upload intervention files if any
+      let minioFiles: { name: string; type: string; object_name: string; url: string }[] | undefined;
+      if (interventionFiles.length > 0) {
+        const result = await storageService.uploadFiles(interventionFiles, "consultation");
+        minioFiles = result.results
+          .filter((r) => r.success)
+          .map((r, idx) => ({
+            name: r.file_name,
+            type: interventionFiles[idx]?.type?.startsWith("image/") ? "image" : "file",
+            object_name: r.object_name,
+            url: r.url,
+          }));
+      }
+
       await fetchWithAuth(
         API_ENDPOINTS.consultation.decide(activeConsultation.consultation_id),
         {
@@ -87,10 +104,12 @@ export function ChatStreamMain({
           body: JSON.stringify({
             action,
             instructions: action === "continue" ? consultationInstructions : undefined,
+            minio_files: minioFiles || undefined,
           }),
         }
       );
       setConsultationInstructions("");
+      setInterventionFiles([]);
       setConsultationDecisionSent(action);
     } catch (e) {
       console.error("Failed to submit consultation decision:", e);
@@ -680,7 +699,46 @@ export function ChatStreamMain({
                     第 {activeConsultation.waitingRound} 轮辩论已完成，请决定下一步
                   </span>
                 </div>
+                {/* Intervention file chips */}
+                {interventionFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {interventionFiles.map((file, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 rounded px-2 py-0.5 text-xs text-gray-600"
+                      >
+                        {file.name.length > 20 ? file.name.slice(0, 18) + "..." : file.name}
+                        <button
+                          onClick={() => setInterventionFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          className="hover:text-red-500"
+                        >
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => interventionFileInputRef.current?.click()}
+                    disabled={isConsultationSubmitting}
+                    className="inline-flex items-center justify-center w-9 h-9 text-gray-500 hover:text-[#DA7756] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                    title="追加附件"
+                  >
+                    <Paperclip size={16} />
+                  </button>
+                  <input
+                    ref={interventionFileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setInterventionFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+                      }
+                      e.target.value = "";
+                    }}
+                  />
                   <input
                     type="text"
                     value={consultationInstructions}

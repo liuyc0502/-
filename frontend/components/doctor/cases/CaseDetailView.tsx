@@ -479,7 +479,7 @@ const handleDeleteAllLabResults = () => {
   };
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#FAFAFA]">
+      <div className="h-full flex items-center justify-center bg-app-surface">
         <div className="text-center">
           <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#DA7756] border-r-transparent mb-4"></div>
           <p className="text-gray-500">加载中...</p>
@@ -489,7 +489,7 @@ const handleDeleteAllLabResults = () => {
   }
   if (!caseData) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#FAFAFA]">
+      <div className="h-full flex items-center justify-center bg-app-surface">
         <div className="text-center">
           <p className="text-gray-500 mb-4">未找到病例信息</p>
           <Button onClick={onBack}>返回病例库</Button>
@@ -498,9 +498,9 @@ const handleDeleteAllLabResults = () => {
     );
   }
   return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+    <div className="h-full flex flex-col bg-app-surface overflow-hidden">
       {/* Header with Tab Navigation */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+      <div className="bg-app-surface border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={onBack} className="text-gray-600 hover:text-gray-900">
@@ -535,28 +535,28 @@ const handleDeleteAllLabResults = () => {
             </div>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1 rounded-full">
+            <TabsList className="h-14 rounded-xl border border-gray-200 bg-white p-1">
               <TabsTrigger
                 value="basic"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 基本信息
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 病史
               </TabsTrigger>
               <TabsTrigger
                 value="examination"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 检查
               </TabsTrigger>
               <TabsTrigger
                 value="treatment"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 诊疗
               </TabsTrigger>

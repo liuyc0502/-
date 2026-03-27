@@ -40,11 +40,13 @@ class ConsultationStartRequest(BaseModel):
     max_rounds: int = Field(5, description="Maximum debate rounds")
     patient_id: Optional[int] = Field(None, description="Patient ID for context")
     conversation_id: Optional[int] = Field(None, description="Conversation ID to link")
+    minio_files: Optional[List[Dict]] = Field(None, description="Uploaded file attachments [{name, type, object_name, url}]")
 
 
 class ConsultationDecisionRequest(BaseModel):
     action: str = Field(..., description="Action: 'continue' or 'conclude'")
     instructions: Optional[str] = Field(None, description="Optional instructions for next round")
+    minio_files: Optional[List[Dict]] = Field(None, description="Additional file attachments [{name, type, object_name, url}]")
 
 
 @router.post("/agent/consultation/start")
@@ -71,6 +73,7 @@ async def start_consultation(
             question=request.question,
             specialist_agent_ids=request.specialist_agent_ids,
             max_rounds=request.max_rounds,
+            minio_files=request.minio_files,
         )
 
         # Build specialist configs
@@ -151,6 +154,7 @@ async def start_consultation(
                 "mcp_host": mcp_host,
                 "conversation_id": request.conversation_id,
                 "patient_id": request.patient_id,
+                "minio_files": request.minio_files,
             },
             daemon=True,
         )
@@ -265,6 +269,7 @@ async def consultation_decision(
             consultation_id=consultation_id,
             action=request.action,
             instructions=request.instructions,
+            minio_files=request.minio_files,
         )
 
         if not success:

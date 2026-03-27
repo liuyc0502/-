@@ -496,6 +496,7 @@ export const handleStreamResponse = async (
                       consensusHistory: [],
                       waitingForDoctor: false,
                       waitingRound: 0,
+                      attachments: startData.attachments || [],
                       isComplete: false,
                     };
                   } catch (e) {

@@ -8,7 +8,7 @@ export default function PatientPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA] text-[#6B6B6B]">
+      <div className="flex items-center justify-center min-h-screen bg-app-surface text-[#6B6B6B]">
         Loading...
       </div>
     );

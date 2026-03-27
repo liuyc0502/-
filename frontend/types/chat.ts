@@ -390,4 +390,8 @@ import type { ReasoningChainData } from "./reasoningChain";
 export type { ConsultationReportData } from "./consultation";
 import type { ConsultationReportData } from "./consultation";
 
-export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData | ConsultationReportData;
+// Knowledge graph card types
+export type { KnowledgeGraphData } from "./knowledgeGraph";
+import type { KnowledgeGraphData } from "./knowledgeGraph";
+
+export type ReportCardData = ReportInterpretationData | QCCheckData | SymptomSummaryData | TriageRecommendationData | ReasoningChainData | ConsultationReportData | KnowledgeGraphData;

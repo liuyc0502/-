@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Pencil, Stethoscope, Wrench } from "lucide-react";
+import { NAME_CHECK_STATUS } from "@/const/agentConfig";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { App, Modal, Input, Switch, Checkbox } from "antd";
+import { App, Modal, Input, Switch, Checkbox, ConfigProvider } from "antd";
 import {
+  checkAgentName,
   fetchAgentList,
   getCreatingSubAgentId,
   searchAgentInfo,
@@ -43,6 +45,35 @@ interface EditFormState {
   boundToolIds: Set<string>;
   initialToolIds: Set<string>;
   isNew: boolean;
+}
+
+const SPECIALIST_NAME_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+function sanitizeSpecialistVariableName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/_assistant$/, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function buildDefaultSpecialistVariableName(
+  agentId: number,
+  displayName: string,
+  currentName: string
+): string {
+  const sanitizedCurrentName = sanitizeSpecialistVariableName(currentName);
+  if (sanitizedCurrentName && !sanitizedCurrentName.startsWith("specialist_")) {
+    return `${sanitizedCurrentName}_assistant`.slice(0, 50);
+  }
+
+  const sanitizedDisplayName = sanitizeSpecialistVariableName(displayName);
+  if (sanitizedDisplayName) {
+    return `${sanitizedDisplayName}_assistant`.slice(0, 50);
+  }
+
+  return `specialist_${agentId}_assistant`;
 }
 
 export function SpecialistAgentConfigView() {
@@ -101,7 +132,7 @@ export function SpecialistAgentConfigView() {
         return;
       }
       const newId = Number(result.data.agentId);
-      const defaultName = result.data.name || `specialist_${Date.now()}`;
+      const defaultName = result.data.name || `specialist_${newId}_assistant`;
 
       // Initialize as tool-type agent
       const updateResult = await updateAgent(
@@ -181,15 +212,40 @@ export function SpecialistAgentConfigView() {
 
   const handleSave = async () => {
     if (!editForm) return;
-    if (!editForm.displayName.trim()) {
+    const trimmedDisplayName = editForm.displayName.trim();
+    if (!trimmedDisplayName) {
       message.warning("请填写显示名称");
       return;
     }
 
-    // Auto-generate internal name using agentId to guarantee uniqueness
-    let internalName = editForm.name;
-    if (editForm.isNew || !internalName || internalName.startsWith("specialist_")) {
-      internalName = `specialist_${editForm.agentId}`;
+    const hasCustomInternalName = Boolean(editForm.name.trim()) && !editForm.name.trim().startsWith("specialist_");
+    let internalName = hasCustomInternalName
+      ? editForm.name.trim()
+      : buildDefaultSpecialistVariableName(
+          editForm.agentId,
+          trimmedDisplayName,
+          editForm.name,
+        );
+
+    if (internalName.length > 50) {
+      message.warning("变量名长度不能超过 50 个字符");
+      return;
+    }
+
+    if (!SPECIALIST_NAME_PATTERN.test(internalName)) {
+      message.warning("变量名仅支持字母、数字和下划线，且不能以数字开头");
+      return;
+    }
+
+    let nameCheck = await checkAgentName(internalName, editForm.agentId);
+    if (!hasCustomInternalName && nameCheck.status === NAME_CHECK_STATUS.EXISTS_IN_TENANT) {
+      internalName = `specialist_${editForm.agentId}_assistant`;
+      nameCheck = await checkAgentName(internalName, editForm.agentId);
+    }
+
+    if (nameCheck.status === NAME_CHECK_STATUS.EXISTS_IN_TENANT) {
+      message.warning(`变量名「${internalName}」已存在，请修改`);
+      return;
     }
 
     setSaving(true);
@@ -207,7 +263,7 @@ export function SpecialistAgentConfigView() {
         editForm.dutyPrompt || undefined,
         undefined,
         undefined,
-        editForm.displayName,
+        trimmedDisplayName,
         undefined,
         undefined,
         undefined,
@@ -312,9 +368,18 @@ export function SpecialistAgentConfigView() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#DA7756",
+          colorPrimaryHover: "#C46B4D",
+          colorPrimaryActive: "#B85F44",
+        },
+      }}
+    >
+    <div className="h-full flex flex-col bg-app-surface overflow-hidden">
       {/* Header */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+      <div className="bg-app-surface border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">专科智能体配置</h1>
           <Button
@@ -337,7 +402,7 @@ export function SpecialistAgentConfigView() {
               className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
                 filter === f
                   ? "bg-[#DA7756] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
               }`}
             >
               {f === "all" ? `全部 (${agents.length})` : f === "enabled" ? `已启用 (${agents.filter((a) => a.enabled).length})` : `未启用 (${agents.filter((a) => !a.enabled).length})`}
@@ -451,6 +516,23 @@ export function SpecialistAgentConfigView() {
       >
         {editForm && (
           <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Agent变量名
+              </label>
+              <Input
+                value={editForm.name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+                placeholder="如：radiology_specialist_assistant"
+                maxLength={50}
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                留空时会按显示名称自动生成；仅支持字母、数字和下划线。
+              </p>
+            </div>
+
             {/* Display Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -568,5 +650,6 @@ export function SpecialistAgentConfigView() {
         )}
       </Modal>
     </div>
+    </ConfigProvider>
   );
 }

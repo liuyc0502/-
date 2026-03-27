@@ -766,7 +766,11 @@ const checkAgentField = async (
 ): Promise<{ status: string; action?: string }> => {
   try {
     // Get all agents in current tenant
-    const response = await fetch(API_ENDPOINTS.agent.list, {
+    const params = new URLSearchParams({
+      include_disabled: "true",
+      include_portal_main: "true",
+    });
+    const response = await fetch(`${API_ENDPOINTS.agent.list}?${params.toString()}`, {
       headers: getAuthHeaders(),
     });
     if (!response.ok) {

@@ -164,9 +164,9 @@ export function TemplateListView() {
   ];
 
   return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+    <div className="h-full flex flex-col bg-app-surface overflow-hidden">
       {/* Header */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+      <div className="bg-app-surface border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">快捷指令模板</h1>
           <Button

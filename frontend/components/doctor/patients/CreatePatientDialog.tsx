@@ -85,6 +85,12 @@ export function CreatePatientDialog({ open, onClose, onSuccess }: CreatePatientD
       width={1000}
       okText="创建"
       cancelText="取消"
+      okButtonProps={{
+        style: {
+          backgroundColor: "#DA7756",
+          borderColor: "#DA7756",
+        },
+      }}
       destroyOnClose
     >
       <Form

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Run consultation record migrations: table creation and follow-up ALTERs.
+Run consultation record table migration
 """
 
 import os
@@ -20,16 +20,18 @@ def main():
     print("Consultation Record Table Migration")
     print("=" * 70)
 
-    migration_dir = os.path.dirname(__file__)
-    sql_files = [
-        os.path.join(migration_dir, 'create_consultation_record_table.sql'),
-        os.path.join(migration_dir, 'add_consensus_metrics.sql'),
-    ]
+    # Read SQL file
+    sql_file = os.path.join(os.path.dirname(__file__), 'create_consultation_record_table.sql')
 
-    for path in sql_files:
-        if not os.path.exists(path):
-            print(f"SQL file not found: {path}")
-            sys.exit(1)
+    if not os.path.exists(sql_file):
+        print(f"SQL file not found: {sql_file}")
+        sys.exit(1)
+
+    with open(sql_file, 'r', encoding='utf-8') as f:
+        sql_content = f.read()
+
+    print(f"\nSQL file loaded: {sql_file}")
+    print(f"SQL length: {len(sql_content)} characters")
 
     # Connect to database
     try:
@@ -46,32 +48,25 @@ def main():
 
         print("Connected successfully")
 
-        for sql_file in sql_files:
-            with open(sql_file, 'r', encoding='utf-8') as f:
-                sql_content = f.read()
+        # Execute migration
+        print("\nExecuting migration...")
+        cursor.execute(sql_content)
 
-            print(f"\n--- {os.path.basename(sql_file)} ---")
-            print(f"SQL length: {len(sql_content)} characters")
-
-            print("\nExecuting migration...")
-            cursor.execute(sql_content)
-
-            # Fetch verification results (only create script ends with SELECT)
-            if cursor.description:
-                results = cursor.fetchall()
-                if results:
-                    print("\nMigration verification:")
-                    print("Table Name                       | Column Count")
-                    print("-" * 60)
-                    for row in results:
-                        print(f"{row[0]:32} | {row[1]}")
+        # Fetch verification results
+        if cursor.description:
+            results = cursor.fetchall()
+            if results:
+                print("\nMigration verification:")
+                print("Table Name                       | Column Count")
+                print("-" * 60)
+                for row in results:
+                    print(f"{row[0]:32} | {row[1]}")
 
         print("\nMigration completed successfully!")
-        print("\nCreated / updated:")
+        print("\nCreated table:")
         print("   1. consultation_record_t  - Multi-agent debate consultation sessions")
-        print("   2. consensus_metrics column (JSONB) when applicable")
 
-        print("\nCreated indexes (if new table):")
+        print("\nCreated indexes:")
         print("   - idx_consultation_record_uuid")
         print("   - idx_consultation_record_tenant")
         print("   - idx_consultation_record_conversation")

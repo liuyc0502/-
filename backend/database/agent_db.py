@@ -1,5 +1,7 @@
 import logging
 
+from sqlalchemy import or_
+
 from database.client import get_db_session, as_dict, filter_property
 from database.db_models import AgentInfo, ToolInstance, AgentRelation
 
@@ -47,8 +49,16 @@ def search_blank_sub_agent_by_main_agent_id(tenant_id: str):
         sub_agent = session.query(AgentInfo).filter(
             AgentInfo.tenant_id == tenant_id,
             AgentInfo.delete_flag != 'Y',
-            AgentInfo.enabled == False
-        ).first()
+            AgentInfo.enabled == False,
+            or_(AgentInfo.agent_role_category.is_(None), AgentInfo.agent_role_category != 'portal_main'),
+            or_(AgentInfo.name.is_(None), AgentInfo.name == ''),
+            or_(AgentInfo.display_name.is_(None), AgentInfo.display_name == ''),
+            or_(AgentInfo.description.is_(None), AgentInfo.description == ''),
+            or_(AgentInfo.business_description.is_(None), AgentInfo.business_description == ''),
+            or_(AgentInfo.duty_prompt.is_(None), AgentInfo.duty_prompt == ''),
+            or_(AgentInfo.constraint_prompt.is_(None), AgentInfo.constraint_prompt == ''),
+            or_(AgentInfo.few_shots_prompt.is_(None), AgentInfo.few_shots_prompt == ''),
+        ).order_by(AgentInfo.create_time.desc()).first()
         if sub_agent:
             return sub_agent.agent_id
         else:

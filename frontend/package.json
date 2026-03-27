@@ -50,6 +50,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "dagre": "^0.8.5",
     "date-fns": "^4.1.0",
     "dicebear": "^9.2.2",
     "dotenv": "^16.4.7",
@@ -95,6 +96,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/dagre": "^0.7.52",
     "@types/node": "22.15.16",
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.6",

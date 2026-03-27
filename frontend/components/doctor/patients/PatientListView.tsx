@@ -122,9 +122,9 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+    <div className="h-full flex flex-col bg-app-surface overflow-hidden">
       {/* Header */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+      <div className="bg-app-surface border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">患者档案</h1>
           <Button
@@ -158,17 +158,13 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                 onClick={() => setActiveFilter(option.id)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   activeFilter === option.id
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#DA7756] text-white"
+                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                 }`}
               >
                 {option.label}
               </button>
             ))}
-            <button className="ml-auto px-4 py-2 rounded-lg bg-white text-gray-600 hover:bg-gray-100 flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              高级筛选
-            </button>
           </div>
 
           {/* Patient Cards Grid */}

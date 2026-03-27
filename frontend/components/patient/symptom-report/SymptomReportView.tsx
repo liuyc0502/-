@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Plus, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "antd";
 import { useAuth } from "@/hooks/useAuth";
 import patientService from "@/services/patientService";
@@ -134,38 +135,35 @@ export function SymptomReportView({ onStartChat }: SymptomReportViewProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+    <div className="h-full flex flex-col bg-app-surface overflow-hidden">
       {/* Header */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
-        <div className="px-8 py-4 flex items-center justify-between">
+      <div className="bg-app-surface border-b border-gray-200 flex-shrink-0">
+        <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">症状自报</h1>
-          <div className="flex items-center bg-gray-100 rounded-full p-1 gap-1">
-            <button
-              onClick={() => setActiveTab("form")}
-              className={`rounded-full px-8 py-3 font-bold text-base transition-colors ${
-                activeTab === "form"
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              新建症状报告
-            </button>
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`rounded-full px-8 py-3 font-bold text-base transition-colors ${
-                activeTab === "history"
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              历史记录
-              {historyRecords.length > 0 && (
-                <span className="ml-1.5 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
-                  {historyRecords.length}
-                </span>
-              )}
-            </button>
-          </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as "form" | "history")}
+          >
+            <TabsList className="h-14 rounded-xl border border-gray-200 bg-white p-1">
+              <TabsTrigger
+                value="form"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+              >
+                新建症状报告
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+              >
+                历史记录
+                {historyRecords.length > 0 && (
+                  <span className="ml-1.5 rounded-full bg-[#E7E4DE] px-1.5 py-0.5 text-xs font-semibold text-[#5A534B]">
+                    {historyRecords.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 

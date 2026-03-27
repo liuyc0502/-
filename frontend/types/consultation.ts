@@ -6,11 +6,21 @@ export interface ConsultationSpecialist {
   agent_id?: number;
 }
 
+export interface ConsultationAttachment {
+  name: string;
+  type: "image" | "file";
+  object_name: string;
+  url: string;
+  round?: number;
+  source?: "initial" | "intervention";
+}
+
 export interface ConsultationStartData {
   consultation_id: string;
   question: string;
   specialists: ConsultationSpecialist[];
   max_rounds: number;
+  attachments?: ConsultationAttachment[];
 }
 
 export interface ConsultationAgentStepData {
@@ -107,6 +117,8 @@ export interface ConsultationState {
   // Whether waiting for doctor decision
   waitingForDoctor: boolean;
   waitingRound: number;
+  // File attachments
+  attachments?: ConsultationAttachment[];
   // Final status
   isComplete: boolean;
 }

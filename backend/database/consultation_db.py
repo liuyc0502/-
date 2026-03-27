@@ -27,6 +27,7 @@ def create_consultation_record(data: dict, tenant_id: str, user_id: str) -> dict
             confidence=data.get("confidence", 0),
             conversation_id=data.get("conversation_id"),
             patient_id=data.get("patient_id"),
+            attachments=data.get("attachments", []),
             tenant_id=tenant_id,
             created_by=user_id,
             updated_by=user_id,

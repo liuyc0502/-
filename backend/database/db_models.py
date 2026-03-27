@@ -846,3 +846,19 @@ class ConsultationRecord(TableBase):
     conversation_id = Column(Integer, doc="Associated conversation ID")
     patient_id = Column(Integer, doc="Associated patient ID")
     tenant_id = Column(String(100), doc="Tenant ID")
+    attachments = Column(JSON, doc="JSON array of file attachments [{name, type, object_name, url, round, source}]")
+
+
+class KnowledgeGraphCache(TableBase):
+    """
+    Knowledge graph subgraph cache table
+    """
+    __tablename__ = "knowledge_graph_cache_t"
+    __table_args__ = {"schema": SCHEMA}
+
+    cache_id = Column(String(32), primary_key=True, nullable=False, doc="Cache ID (MD5 hash)")
+    query = Column(Text, nullable=False, doc="Original query that generated the graph")
+    subgraph_json = Column(JSON, doc="Full subgraph JSON (nodes, edges, predictions, anomalies)")
+    node_count = Column(Integer, default=0, doc="Number of nodes in the subgraph")
+    edge_count = Column(Integer, default=0, doc="Number of edges in the subgraph")
+    tenant_id = Column(String(100), doc="Tenant ID")

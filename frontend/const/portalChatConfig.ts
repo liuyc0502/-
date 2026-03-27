@@ -1,7 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 
 import {
-  BookOpen,
   BookOpenCheck,
   Brain,
   ClipboardList,
@@ -14,7 +13,9 @@ import {
   LifeBuoy,
   Lightbulb,
   MessageSquare,
+  Map,
   Microscope,
+  Network,
   Notebook,
   Sparkles,
   Stethoscope,
@@ -93,7 +94,7 @@ const sharedQuickActions: PortalQuickActionConfig[] = [
 export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   general: {
     accentColor: "#DA7756",
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#FDF8F2",
     brandName: "安语",
     heroSubheading: "How can I help you today?",
     inputPlaceholder: "How can I help you today?",
@@ -114,7 +115,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   },
   doctor: {
     accentColor: "#DA7756",
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#FDF8F2",
     brandName: "安语",
     heroSubheading: "今天我能如何帮助您？",
     inputPlaceholder: "我今天想咨询的问题是...",
@@ -125,7 +126,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
       { id: "cases", label: "病例库", icon: FolderKanban },
       { id: "consultations", label: "会诊记录", icon: ClipboardList },
       { id: "specialist-config", label: "专科配置", icon: Stethoscope },
-      { id: "knowledge", label: "病理知识库", icon: BookOpen },
+      { id: "knowledge-graph", label: "知识图谱", icon: Network },
       { id: "templates", label: "快捷指令", icon: LayoutTemplate },
     ],
     quickActions: sharedQuickActions,
@@ -136,7 +137,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
   },
   patient: {
     accentColor: "#6E977B",
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#FDF8F2",
     brandName: "安语",
     heroSubheading: "今天我能如何帮助您的健康？",
     inputPlaceholder: "我今天想了解的健康问题是...",
@@ -147,6 +148,7 @@ export const portalChatConfigs: Record<PortalChatVariant, PortalChatConfig> = {
       { id: "profile", label: "我的档案", icon: Users },
       { id: "report-center", label: "报告解读", icon: FileSearch },
       { id: "care-plan", label: "康复计划", icon: LifeBuoy },
+      { id: "health-map", label: "健康地图", icon: Map },
     ],
     quickActions: [
       ...sharedQuickActions,

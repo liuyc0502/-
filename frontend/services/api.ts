@@ -311,6 +311,14 @@ export const API_ENDPOINTS = {
     delete: (recordId: number) => `${API_BASE_URL}/learning_record/${recordId}`,
     clearAll: `${API_BASE_URL}/learning_record/clear_all`,
   },
+  knowledgeGraph: {
+    generate: `${API_BASE_URL}/knowledge-graph/generate`,
+    patientMapGenerate: `${API_BASE_URL}/knowledge-graph/patient-map/generate`,
+    predict: `${API_BASE_URL}/knowledge-graph/predict`,
+    history: `${API_BASE_URL}/knowledge-graph/history`,
+    historyDetail: (cacheId: string) => `${API_BASE_URL}/knowledge-graph/history/${cacheId}`,
+    historyDelete: (cacheId: string) => `${API_BASE_URL}/knowledge-graph/history/${cacheId}`,
+  },
   annotation: {
     create: `${API_BASE_URL}/patient/annotation/create`,
     list: (imageId: number) => `${API_BASE_URL}/patient/annotation/list/${imageId}`,

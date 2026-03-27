@@ -300,6 +300,15 @@ class NexentAgent:
                         "", ProcessType.REPORT_CARD,
                         json.dumps(rc, ensure_ascii=False)
                     )
+
+                # Emit knowledge graph card if present
+                if "knowledge_graph" in card_data:
+                    kg = card_data["knowledge_graph"]
+                    kg["card_type"] = "knowledge_graph"
+                    observer.add_message(
+                        "", ProcessType.REPORT_CARD,
+                        json.dumps(kg, ensure_ascii=False)
+                    )
             except (json.JSONDecodeError, KeyError) as e:
                 # JSON 解析失败，记录日志以便排查
                 import logging

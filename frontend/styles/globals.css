@@ -75,6 +75,10 @@
 }
 
 @layer utilities {
+  .bg-app-surface {
+    background-color: #fdf8f2;
+  }
+
   .bg-grid-slate-200 {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(226 232 240 / 0.8)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
   }
@@ -218,6 +222,67 @@
 
 .tool-pool-tabs.ant-tabs.ant-tabs-left .ant-tabs-tabpane {
   padding-left: 0 !important;
+}
+
+.kg-patient-select .ant-select-selector {
+  height: 44px !important;
+  border-radius: 0.5rem !important;
+  border-color: #ddd8d2 !important;
+  background: #fcfbf9 !important;
+  box-shadow: none !important;
+  padding: 0 12px !important;
+}
+
+.kg-patient-select.ant-select-focused .ant-select-selector,
+.kg-patient-select:hover .ant-select-selector {
+  border-color: #cfc8c0 !important;
+}
+
+.kg-patient-select .ant-select-selection-placeholder,
+.kg-patient-select .ant-select-selection-item {
+  color: #2e251d !important;
+  line-height: 42px !important;
+  font-size: 14px !important;
+}
+
+.kg-patient-select .ant-select-arrow {
+  color: #7e6a54 !important;
+}
+
+.kg-patient-select-dropdown {
+  padding: 6px !important;
+  border: 1px solid #e5d9c8 !important;
+  border-radius: 14px !important;
+  background: #fbf7f1 !important;
+  box-shadow: 0 10px 30px rgba(90, 64, 34, 0.12) !important;
+}
+
+.kg-patient-select-dropdown .ant-select-item {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+  padding: 9px 12px !important;
+}
+
+.kg-patient-select-dropdown .ant-select-item-option-content {
+  color: #2e251d !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.kg-patient-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: #f3ece2 !important;
+}
+
+.kg-patient-select-dropdown
+  .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: #efe5d8 !important;
+}
+
+.kg-patient-select-dropdown
+  .ant-select-item-option-selected:not(.ant-select-item-option-disabled)
+  .ant-select-item-option-content {
+  color: #241a12 !important;
+  font-weight: 600 !important;
 }
 
 /* Reduce tab inner and outer margins to make tabs more compact */

@@ -227,12 +227,11 @@ export function ChatHeader({
           <div className="flex items-center space-x-2 flex-shrink-0">
             {onStartConsultation && (
               <ButtonUI
-                variant="ghost"
-                className="rounded-full px-4 py-2 h-10 flex items-center gap-2 border border-[#DA7756]/30 bg-white hover:bg-[#DA7756]/10 transition-colors"
+                className="h-14 rounded-md bg-[#DA7756] px-6 text-base font-medium text-white hover:bg-[#C46B4D]"
                 onClick={onStartConsultation}
               >
-                <Users className="h-4 w-4 text-[#DA7756]" />
-                <span className="text-sm text-[#DA7756] font-medium">
+                <Users className="h-4 w-4" />
+                <span>
                   {t("chatHeader.consultation", { defaultValue: "发起会诊" })}
                 </span>
               </ButtonUI>

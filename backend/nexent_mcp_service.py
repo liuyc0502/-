@@ -12,6 +12,7 @@ from tool_collection.mcp.patient_timeline_tools import patient_timeline_tools
 from tool_collection.mcp.patient_info_tools import patient_info_tools
 from tool_collection.mcp.medical_case_tools import medical_case_tools
 from tool_collection.mcp.doctor_report_management_tools import doctor_report_mgmt_tools
+from tool_collection.mcp.chart_generation_tools import chart_generation_tools
 
 """
 hierarchical proxy architecture:
@@ -37,5 +38,6 @@ nexent_mcp.mount(patient_timeline_tools.name, patient_timeline_tools)
 nexent_mcp.mount(patient_info_tools.name, patient_info_tools)
 nexent_mcp.mount(medical_case_tools.name, medical_case_tools)
 nexent_mcp.mount(doctor_report_mgmt_tools.name, doctor_report_mgmt_tools)
+nexent_mcp.mount(chart_generation_tools.name, chart_generation_tools)
 if __name__ == "__main__":
     nexent_mcp.run(transport="sse", host="0.0.0.0", port=5011)

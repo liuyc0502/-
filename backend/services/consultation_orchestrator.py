@@ -60,6 +60,7 @@ class ConsultationOrchestrator:
         mcp_host: Optional[List[str]] = None,
         conversation_id: Optional[int] = None,
         patient_id: Optional[int] = None,
+        minio_files: Optional[List[Dict[str, Any]]] = None,
     ):
         """
         Main orchestration loop for multi-agent debate.
@@ -90,8 +91,17 @@ class ConsultationOrchestrator:
                     "question": question,
                     "specialists": specialists_info,
                     "max_rounds": max_rounds,
+                    "attachments": minio_files or [],
                 }, ensure_ascii=False)
             )
+
+            # Multimodal: track all attachments and OCR cache
+            all_minio_files: List[Dict[str, Any]] = list(minio_files or [])
+            ocr_text_cache: Dict[str, str] = {}
+
+            # OCR preprocess for image attachments
+            if all_minio_files:
+                ocr_text_cache = self._preprocess_ocr(all_minio_files, mcp_host)
 
             all_round_results: List[RoundResult] = []
             doctor_instructions = ""
@@ -112,6 +122,8 @@ class ConsultationOrchestrator:
                     doctor_instructions=doctor_instructions,
                     additional_args=additional_args,
                     mcp_host=mcp_host,
+                    minio_files=all_minio_files,
+                    ocr_text_cache=ocr_text_cache,
                 )
                 all_round_results.append(round_result)
                 self.consultation_manager.add_round_result(consultation_id, round_result)
@@ -164,8 +176,20 @@ class ConsultationOrchestrator:
                 if decision.get("action") == "conclude" or decision.get("action") == "error":
                     break
 
-                # Doctor chose to continue, possibly with instructions
+                # Doctor chose to continue, possibly with instructions and new files
                 doctor_instructions = decision.get("instructions", "")
+
+                # Merge intervention files if any
+                intervention_files = decision.get("minio_files", [])
+                if intervention_files:
+                    # Tag with round and source for tracking
+                    for f in intervention_files:
+                        f["round"] = round_num
+                        f["source"] = "intervention"
+                    all_minio_files.extend(intervention_files)
+                    # OCR preprocess new image files
+                    new_ocr = self._preprocess_ocr(intervention_files, mcp_host)
+                    ocr_text_cache.update(new_ocr)
 
                 # If focused debate strategy, inject prompt modifier
                 if scheduling.strategy == DebateStrategy.FOCUSED_DEBATE:
@@ -264,6 +288,7 @@ class ConsultationOrchestrator:
                         "confidence": final_report.get("confidence", 0),
                         "conversation_id": conversation_id,
                         "patient_id": patient_id,
+                        "attachments": all_minio_files,
                     },
                     tenant_id=self.tenant_id,
                     user_id=self.user_id,
@@ -293,9 +318,14 @@ class ConsultationOrchestrator:
         doctor_instructions: str = "",
         additional_args: Optional[Dict[str, Any]] = None,
         mcp_host: Optional[List[str]] = None,
+        minio_files: Optional[List[Dict[str, Any]]] = None,
+        ocr_text_cache: Optional[Dict[str, str]] = None,
     ) -> RoundResult:
         """Run all specialists in parallel for one round."""
         round_result = RoundResult(round_num=round_num)
+
+        # Extract image URLs for VLM pass-through
+        image_urls = self._extract_image_urls(minio_files) if minio_files else []
 
         with ThreadPoolExecutor(max_workers=len(specialist_configs)) as executor:
             futures = {}
@@ -307,6 +337,8 @@ class ConsultationOrchestrator:
                     round_num=round_num,
                     previous_rounds=previous_rounds,
                     doctor_instructions=doctor_instructions,
+                    minio_files=minio_files,
+                    ocr_text_cache=ocr_text_cache,
                 )
                 future = executor.submit(
                     self._run_single_specialist,
@@ -316,6 +348,7 @@ class ConsultationOrchestrator:
                     prompt=prompt,
                     additional_args=additional_args,
                     mcp_host=mcp_host,
+                    image_urls=image_urls,
                 )
                 futures[future] = spec_config["name"]
 
@@ -360,6 +393,7 @@ class ConsultationOrchestrator:
         prompt: str,
         additional_args: Optional[Dict[str, Any]] = None,
         mcp_host: Optional[List[str]] = None,
+        image_urls: Optional[List[str]] = None,
     ) -> AgentOpinion:
         """Run a single specialist agent and return its opinion."""
         agent_name = spec_config["name"]
@@ -394,7 +428,8 @@ class ConsultationOrchestrator:
                     agent = nexent.create_single_agent(agent_config)
                     nexent.set_agent(agent)
                     final_answer = self._execute_agent(nexent, prompt, agent_name,
-                                                       consultation_id, round_num, additional_args)
+                                                       consultation_id, round_num, additional_args,
+                                                       image_urls=image_urls)
             else:
                 nexent = NexentAgent(
                     observer=self.observer,
@@ -405,7 +440,8 @@ class ConsultationOrchestrator:
                 agent = nexent.create_single_agent(agent_config)
                 nexent.set_agent(agent)
                 final_answer = self._execute_agent(nexent, prompt, agent_name,
-                                                   consultation_id, round_num, additional_args)
+                                                   consultation_id, round_num, additional_args,
+                                                   image_urls=image_urls)
 
             # Parse opinion from final answer
             opinion = self._parse_opinion(final_answer, agent_name, specialty)
@@ -442,7 +478,8 @@ class ConsultationOrchestrator:
 
     def _execute_agent(self, nexent: NexentAgent, prompt: str, agent_name: str,
                        consultation_id: str, round_num: int,
-                       additional_args: Optional[Dict[str, Any]] = None) -> str:
+                       additional_args: Optional[Dict[str, Any]] = None,
+                       image_urls: Optional[List[str]] = None) -> str:
         """Execute an agent and stream intermediate steps via observer."""
         from smolagents import ActionStep, AgentText
         from nexent.core.agents.core_agent import convert_code_format
@@ -450,7 +487,10 @@ class ConsultationOrchestrator:
 
         final_answer_str = ""
         all_steps = []
-        for step_log in nexent.agent.run(prompt, stream=True, reset=True, additional_args=additional_args):
+        run_kwargs = {"stream": True, "reset": True, "additional_args": additional_args}
+        if image_urls:
+            run_kwargs["images"] = image_urls
+        for step_log in nexent.agent.run(prompt, **run_kwargs):
             if not isinstance(step_log, ActionStep):
                 continue
             all_steps.append(step_log)
@@ -495,18 +535,32 @@ class ConsultationOrchestrator:
         round_num: int,
         previous_rounds: List[RoundResult],
         doctor_instructions: str = "",
+        minio_files: Optional[List[Dict[str, Any]]] = None,
+        ocr_text_cache: Optional[Dict[str, str]] = None,
     ) -> str:
         """Build the prompt for a specialist in a given round."""
+        # Build attachment context section
+        attachment_section = self._build_attachment_section(minio_files, ocr_text_cache)
+
+        # Chart output instructions
+        chart_instruction = (
+            "\n## 可视化工具\n"
+            "如果你的分析涉及数据比较、趋势或分布，可以调用 `generate_chart` 工具生成交互式图表。\n"
+            "- Mermaid 流程图/时序图：可直接用 ```mermaid 代码块输出\n"
+        )
+
         if round_num == 1:
             return (
                 f"你是{specialty}专家（{specialist_name}），正在参与一场多学科会诊。\n\n"
                 f"## 会诊问题\n{question}\n\n"
+                f"{attachment_section}"
                 f"## 要求\n"
                 f"请从你的专业角度独立分析这个问题，给出你的诊断意见和建议。\n"
                 f"在回答的最后，请用以下格式总结你的结论：\n"
                 f"【结论】你的核心结论\n"
                 f"【置信度】0-100之间的数字\n"
                 f"【关键诊断要点】3-5个核心诊断要点，用逗号分隔\n"
+                f"{chart_instruction}"
             )
 
         # Round 2+: include previous opinions
@@ -528,6 +582,7 @@ class ConsultationOrchestrator:
         return (
             f"你是{specialty}专家（{specialist_name}），正在参与多学科会诊的第{round_num}轮讨论。\n\n"
             f"## 会诊问题\n{question}\n\n"
+            f"{attachment_section}"
             f"## 其他专家的意见\n{prev_text}\n"
             f"{doctor_text}\n"
             f"## 要求\n"
@@ -543,6 +598,7 @@ class ConsultationOrchestrator:
             f"【同意】列出你同意的专家名字，用逗号分隔（如没有则写\"无\"）\n"
             f"【质疑】列出你质疑的专家名字，用逗号分隔（如没有则写\"无\"）\n"
             f"【质疑原因】被质疑专家名: 原因（每行一个，如没有则写\"无\"）\n"
+            f"{chart_instruction}"
         )
 
     def _parse_opinion(self, final_answer: str, agent_name: str, specialty: str) -> AgentOpinion:
@@ -752,6 +808,130 @@ class ConsultationOrchestrator:
                 "final_recommendation": f"会诊综合分析出错: {str(e)}",
                 "confidence": 0,
             }
+
+    def _preprocess_ocr(
+        self,
+        minio_files: List[Dict[str, Any]],
+        mcp_host: Optional[List[str]] = None,
+    ) -> Dict[str, str]:
+        """Run PaddleOCR on image attachments and return {object_name: ocr_text} cache."""
+        from consts.const import MAIN_SERVICE_URL
+
+        ocr_results: Dict[str, str] = {}
+        backend_api_base = MAIN_SERVICE_URL.rstrip("/")
+
+        image_files = [
+            f for f in minio_files
+            if isinstance(f, dict) and f.get("type") == "image" and f.get("object_name")
+        ]
+        if not image_files:
+            return ocr_results
+
+        # Try to call PaddleOCR MCP tool
+        try:
+            from smolagents import ToolCollection
+
+            # Find PaddleOCR MCP server from mcp_host list (port 5020) or use default
+            ocr_mcp_url = None
+            if mcp_host:
+                for url in mcp_host:
+                    if "5020" in url:
+                        ocr_mcp_url = url
+                        break
+            if not ocr_mcp_url:
+                ocr_mcp_url = "http://localhost:5020/sse"
+
+            mcp_client_list = [{"url": ocr_mcp_url}]
+            with ToolCollection.from_mcp(mcp_client_list, trust_remote_code=True) as tool_collection:
+                ocr_tool = None
+                for tool in tool_collection.tools:
+                    if hasattr(tool, 'name') and 'ocr' in tool.name.lower():
+                        ocr_tool = tool
+                        break
+
+                if ocr_tool is None:
+                    logger.warning("PaddleOCR tool not found in MCP server")
+                    return ocr_results
+
+                for file_info in image_files:
+                    object_name = file_info["object_name"]
+                    file_url = f"{backend_api_base}/file/download/{object_name}"
+                    try:
+                        result = ocr_tool(file_path=file_url)
+                        ocr_text = str(result) if result else ""
+                        if ocr_text:
+                            ocr_results[object_name] = ocr_text
+                            logger.info(f"OCR preprocessed: {file_info.get('name', object_name)} "
+                                        f"({len(ocr_text)} chars)")
+                    except Exception as ocr_err:
+                        logger.warning(f"OCR failed for {file_info.get('name', object_name)}: {ocr_err}")
+
+        except Exception as e:
+            logger.warning(f"OCR preprocess setup failed: {e}")
+
+        return ocr_results
+
+    @staticmethod
+    def _build_attachment_section(
+        minio_files: Optional[List[Dict[str, Any]]],
+        ocr_text_cache: Optional[Dict[str, str]],
+    ) -> str:
+        """Build attachment context section for specialist prompt."""
+        if not minio_files:
+            return ""
+
+        from consts.const import MAIN_SERVICE_URL
+        backend_api_base = MAIN_SERVICE_URL.rstrip("/")
+
+        parts = ["## 附件资料\n"]
+        parts.append("以下附件已通过 OCR 预处理提取了文字内容。如果你需要对特定区域重新识别或提取更精确的内容，"
+                      "可以调用 `ocr(file_path=URL)` 工具。\n")
+
+        for f in minio_files:
+            if not isinstance(f, dict):
+                continue
+            name = f.get("name", "unknown")
+            file_type = f.get("type", "file")
+            object_name = f.get("object_name", "")
+            description = f.get("description", "")
+
+            full_url = f"{backend_api_base}/file/download/{object_name}" if object_name else ""
+
+            if file_type == "image":
+                parts.append(f"[图片: {name}]")
+                if full_url:
+                    parts.append(f"  - 下载地址: {full_url}")
+                if description:
+                    parts.append(f"  - 描述: {description}")
+                # Append OCR text if available
+                ocr_text = (ocr_text_cache or {}).get(object_name, "")
+                if ocr_text:
+                    parts.append(f"  - OCR 提取文字:\n{ocr_text}")
+            else:
+                parts.append(f"[文件: {name}]")
+                if full_url:
+                    parts.append(f"  - 下载地址: {full_url}")
+                if description:
+                    parts.append(f"  - 描述: {description}")
+
+            parts.append("")  # blank line between files
+
+        return "\n".join(parts) + "\n"
+
+    @staticmethod
+    def _extract_image_urls(minio_files: Optional[List[Dict[str, Any]]]) -> List[str]:
+        """Extract download URLs for image files to pass to agent VLM."""
+        if not minio_files:
+            return []
+
+        from consts.const import MAIN_SERVICE_URL
+        backend_api_base = MAIN_SERVICE_URL.rstrip("/")
+
+        urls = []
+        for f in minio_files:
+            if isinstance(f, dict) and f.get("type") == "image" and f.get("object_name"):
+                urls.append(f"{backend_api_base}/file/download/{f['object_name']}")
+        return urls
 
     @staticmethod
     def _build_round_summary(round_result: RoundResult) -> str:

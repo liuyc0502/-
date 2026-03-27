@@ -50,6 +50,7 @@ class ConsultationSession:
     decision_event: threading.Event = field(default_factory=threading.Event)
     decision_result: Optional[Dict[str, Any]] = None
     created_at: datetime = field(default_factory=datetime.now)
+    minio_files: List[Dict[str, Any]] = field(default_factory=list)
 
 
 class ConsultationManager:
@@ -64,6 +65,7 @@ class ConsultationManager:
         question: str,
         specialist_agent_ids: List[int],
         max_rounds: int = 5,
+        minio_files: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         consultation_id = str(uuid.uuid4())
         session = ConsultationSession(
@@ -71,6 +73,7 @@ class ConsultationManager:
             question=question,
             specialist_agent_ids=specialist_agent_ids,
             max_rounds=max_rounds,
+            minio_files=minio_files or [],
         )
         with self._lock:
             self._sessions[consultation_id] = session
@@ -110,6 +113,7 @@ class ConsultationManager:
         consultation_id: str,
         action: str,
         instructions: Optional[str] = None,
+        minio_files: Optional[List[Dict[str, Any]]] = None,
     ) -> bool:
         """Resolve a pending doctor decision. Called by REST endpoint."""
         with self._lock:
@@ -121,6 +125,7 @@ class ConsultationManager:
         session.decision_result = {
             "action": action,
             "instructions": instructions or "",
+            "minio_files": minio_files or [],
         }
         session.status = "running" if action == "continue" else "concluding"
         session.decision_event.set()

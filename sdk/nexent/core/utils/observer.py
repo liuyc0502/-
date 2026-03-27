@@ -35,7 +35,15 @@ class ProcessType(Enum):
     CONSULTATION_AGENT_OPINION = "consultation_agent_opinion"  # agent completed opinion for a round
     CONSULTATION_ROUND_COMPLETE = "consultation_round_complete"  # all agents done for a round
     CONSULTATION_WAITING_DOCTOR = "consultation_waiting_doctor"  # blocking for doctor decision
-    CONSULTATION_RECOMMENDATION = "consultation_recommendation"  # auto-trigger consultation recommendation
+    CONSULTATION_RECOMMENDATION = "consultation_recommendation"
+
+    # Knowledge graph events
+    KNOWLEDGE_GRAPH_START = "knowledge_graph_start"  # graph generation begins
+    KNOWLEDGE_GRAPH_ENTITIES = "knowledge_graph_entities"  # entities extracted
+    KNOWLEDGE_GRAPH_RELATIONS = "knowledge_graph_relations"  # relationships extracted
+    KNOWLEDGE_GRAPH_COMPLETE = "knowledge_graph_complete"  # full subgraph ready
+    TRAJECTORY_PREDICTION = "trajectory_prediction"  # prediction results
+    TRAJECTORY_ANOMALY = "trajectory_anomaly"  # anomaly detected  # auto-trigger consultation recommendation
 
 
 # message transformer base class
@@ -181,7 +189,13 @@ class MessageObserver:
             ProcessType.CONSULTATION_AGENT_OPINION: default_transformer,
             ProcessType.CONSULTATION_ROUND_COMPLETE: default_transformer,
             ProcessType.CONSULTATION_WAITING_DOCTOR: default_transformer,
-            ProcessType.CONSULTATION_RECOMMENDATION: default_transformer
+            ProcessType.CONSULTATION_RECOMMENDATION: default_transformer,
+            ProcessType.KNOWLEDGE_GRAPH_START: default_transformer,
+            ProcessType.KNOWLEDGE_GRAPH_ENTITIES: default_transformer,
+            ProcessType.KNOWLEDGE_GRAPH_RELATIONS: default_transformer,
+            ProcessType.KNOWLEDGE_GRAPH_COMPLETE: default_transformer,
+            ProcessType.TRAJECTORY_PREDICTION: default_transformer,
+            ProcessType.TRAJECTORY_ANOMALY: default_transformer
         }
 
     def add_model_new_token(self, new_token):

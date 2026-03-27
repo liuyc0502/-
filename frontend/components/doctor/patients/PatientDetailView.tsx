@@ -42,9 +42,9 @@ export function PatientDetailView({ patientId, onBack, onConversationClick }: Pa
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#FAFAFA] overflow-hidden">
+    <div className="h-full flex flex-col bg-app-surface overflow-hidden">
       {/* Header with Tab Navigation */}
-      <div className="bg-[#FAFAFA] border-b border-gray-200 flex-shrink-0">
+      <div className="bg-app-surface border-b border-gray-200 flex-shrink-0">
         <div className="px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -70,28 +70,28 @@ export function PatientDetailView({ patientId, onBack, onConversationClick }: Pa
             )}
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-gray-100 h-14 p-1 gap-1 rounded-full">
+            <TabsList className="h-14 rounded-xl border border-gray-200 bg-white p-1">
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 患者概览
               </TabsTrigger>
               <TabsTrigger
                 value="timeline"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 诊疗时间线
               </TabsTrigger>
               <TabsTrigger
                 value="todos"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 待办事项
               </TabsTrigger>
               <TabsTrigger
                 value="careplans"
-                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-full px-8 py-3 font-bold text-base"
+                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
               >
                 康复计划
               </TabsTrigger>

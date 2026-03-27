@@ -25,6 +25,7 @@ from apps.report_interpretation_app import router as report_interpretation_route
 from apps.chat_template_app import router as chat_template_router
 from apps.confirmation_app import router as confirmation_router
 from apps.consultation_app import router as consultation_router
+from apps.knowledge_graph_app import router as knowledge_graph_router
 from apps.portal_agent_assignment_app import router as portal_agent_assignment_router
 from apps.prompt_app import router as prompt_router
 from apps.remote_mcp_app import router as remote_mcp_router
@@ -67,6 +68,7 @@ app.include_router(report_interpretation_router)
 app.include_router(chat_template_router)
 app.include_router(confirmation_router)
 app.include_router(consultation_router)
+app.include_router(knowledge_graph_router)
 app.include_router(elasticsearch_router)
 app.include_router(voice_router)
 app.include_router(file_manager_router)
