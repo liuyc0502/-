@@ -109,9 +109,9 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
   const getDiagnosisColor = (diagnosis?: string) => {
     if (!diagnosis) return "bg-gray-100 text-gray-700 border-gray-200";
     const colors: Record<string, string> = {
-      类风湿关节炎: "bg-red-100 text-red-700 border-red-200",
-      系统性红斑狼疮: "bg-purple-100 text-purple-700 border-purple-200",
-      强直性脊柱炎: "bg-blue-100 text-blue-700 border-blue-200",
+      类风湿关节炎: "bg-[#FCEAE8] text-[#B65B54] border-[#F0C9C4]",
+      系统性红斑狼疮: "bg-[#EEF3FF] text-[#4D79CB] border-[#CFDBFB]",
+      强直性脊柱炎: "bg-[#EAF5F1] text-[#4A8B69] border-[#CDE5DB]",
     };
 
     for (const [key, value] of Object.entries(colors)) {
@@ -158,8 +158,8 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                 onClick={() => setActiveFilter(option.id)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   activeFilter === option.id
-                    ? "bg-[#DA7756] text-white"
-                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                    ? "border border-[#F0D3C0] bg-[#FFF1E8] text-[#C06E4E]"
+                    : "bg-white text-gray-600 border border-gray-200 hover:bg-[#FAF7F2]"
                 }`}
               >
                 {option.label}
@@ -205,7 +205,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                           </div>
                           <button
                             onClick={(e) => handleDeletePatient(patient, e)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-400 hover:text-[#B65B54] hover:bg-[#FCEAE8] rounded-lg transition-colors"
                             title="删除患者"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -218,7 +218,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                         >
                           {latestDiagnosis}
                         </div>
-                        <div className="text-sm text-orange-600 min-h-[1.25rem]">
+                        <div className="text-sm text-[#C1783A] min-h-[1.25rem]">
                           {patient.allergies && patient.allergies.length > 0 ? (
                             <>过敏史: {patient.allergies.join(", ")}</>
                           ) : (
@@ -233,7 +233,7 @@ export function PatientListView({ onSelectPatient }: PatientListViewProps) {
                       </div>
                       <Button
                         variant="outline"
-                        className="w-full text-[#DA7756] border-[#DA7756] hover:bg-[#DA7756] hover:text-white mt-4"
+                        className="mt-4 w-full border-[#E6BDA8] text-[#C06E4E] hover:bg-[#FFF1E8] hover:text-[#B85E40]"
                       >
                         查看档案
                       </Button>

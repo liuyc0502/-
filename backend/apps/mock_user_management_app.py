@@ -1,12 +1,16 @@
 import logging
+import time
+import jwt as pyjwt
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 from http import HTTPStatus
 
-from consts.const import MOCK_USER, MOCK_SESSION
+from consts.const import MOCK_USER, MOCK_SESSION, DEFAULT_TENANT_ID
 from consts.model import UserSignInRequest, UserSignUpRequest
+from database.patient_db import get_patient_by_email
+from utils.auth_utils import MOCK_JWT_SECRET_KEY
 
 logger = logging.getLogger("mock_user_management_app")
 router = APIRouter(prefix="/user", tags=["user"])
@@ -71,28 +75,55 @@ async def signin(request: UserSignInRequest):
     try:
         logger.info(f"Mock signin request: email={request.email}")
 
-        # Mock success response matching user_management_app.py format
+        # If email matches a patient record, generate a JWT with patient email
+        patient = get_patient_by_email(request.email, DEFAULT_TENANT_ID)
+        if patient:
+            expiry_seconds = MOCK_SESSION["expires_in_seconds"]
+            now = int(time.time())
+            payload = {
+                "sub": str(patient["patient_id"]),
+                "email": request.email,
+                "iat": now,
+                "exp": now + expiry_seconds,
+            }
+            access_token = pyjwt.encode(payload, MOCK_JWT_SECRET_KEY, algorithm="HS256")
+            user_id = str(patient["patient_id"])
+            user_role = "user"
+        else:
+            # Default mock user (doctor/admin)
+            expiry_seconds = MOCK_SESSION["expires_in_seconds"]
+            now = int(time.time())
+            payload = {
+                "sub": MOCK_USER["id"],
+                "email": request.email,
+                "iat": now,
+                "exp": now + expiry_seconds,
+            }
+            access_token = pyjwt.encode(payload, MOCK_JWT_SECRET_KEY, algorithm="HS256")
+            user_id = MOCK_USER["id"]
+            user_role = MOCK_USER["role"]
+
         signin_content = {
             "message": "Login successful, session validity is 10 years",
             "data": {
                 "user": {
-                    "id": MOCK_USER["id"],
+                    "id": user_id,
                     "email": request.email,
-                    "role": MOCK_USER["role"]
+                    "role": user_role
                 },
                 "session": {
-                    "access_token": MOCK_SESSION["access_token"],
+                    "access_token": access_token,
                     "refresh_token": MOCK_SESSION["refresh_token"],
                     "expires_at": int((datetime.now() + timedelta(days=3650)).timestamp()),
-                    "expires_in_seconds": MOCK_SESSION["expires_in_seconds"]
+                    "expires_in_seconds": expiry_seconds
                 }
             }
         }
-        
+
         return JSONResponse(status_code=HTTPStatus.OK, content=signin_content)
     except Exception as e:
         logger.error(f"User signin failed: {str(e)}")
-        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, 
+        raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                           detail="User login failed")
 
 

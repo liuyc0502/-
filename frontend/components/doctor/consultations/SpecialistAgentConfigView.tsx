@@ -399,10 +399,10 @@ export function SpecialistAgentConfigView() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 filter === f
                   ? "bg-[#DA7756] text-white"
-                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
               }`}
             >
               {f === "all" ? `全部 (${agents.length})` : f === "enabled" ? `已启用 (${agents.filter((a) => a.enabled).length})` : `未启用 (${agents.filter((a) => !a.enabled).length})`}

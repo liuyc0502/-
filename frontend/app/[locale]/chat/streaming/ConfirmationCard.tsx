@@ -134,10 +134,10 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
   const isResolved = status === "confirmed" || status === "failed" || status === "timeout";
   const icon = toolIconMap[data.tool_name] || <Save size={16} />;
 
-  // Theme: teal for normal ops, red for destructive (delete) ops
+  // Theme: warm orange for standard actions, soft red for destructive actions
   const theme = destructive
-    ? { border: "border-red-200", headerBg: "bg-red-50/80", headerText: "text-red-700", badgeBg: "bg-red-100", badgeText: "text-red-600", badgeBorder: "border-red-200" }
-    : { border: "border-teal-200", headerBg: "bg-teal-50/80", headerText: "text-teal-700", badgeBg: "bg-teal-100", badgeText: "text-teal-600", badgeBorder: "border-teal-200" };
+    ? { border: "border-[#F0C9C4]", headerBg: "bg-[#FCEAE8]", headerText: "text-[#B65B54]", badgeBg: "bg-[#F8D8D3]", badgeText: "text-[#B65B54]", badgeBorder: "border-[#F0C9C4]" }
+    : { border: "border-[#EFD7C7]", headerBg: "bg-[#FFF3EA]", headerText: "text-[#C06E4E]", badgeBg: "bg-[#FFE6D7]", badgeText: "text-[#C06E4E]", badgeBorder: "border-[#F0D3C0]" };
 
   // Status badge
   const statusBadge = () => {
@@ -151,19 +151,19 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
       case "confirming":
       case "regenerating":
         return (
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 border border-blue-200">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#CFE0FF] bg-[#EEF5FF] px-2 py-0.5 text-xs text-[#4D79CB]">
             <Loader2 size={12} className="animate-spin" /> 处理中
           </span>
         );
       case "confirmed":
         return (
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-600 border border-green-200">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#CDE5DB] bg-[#EAF5F1] px-2 py-0.5 text-xs text-[#4A8B69]">
             <Check size={12} /> 已确认
           </span>
         );
       case "failed":
         return (
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#F0C9C4] bg-[#FCEAE8] px-2 py-0.5 text-xs text-[#B65B54]">
             <AlertCircle size={12} /> 失败
           </span>
         );
@@ -306,7 +306,7 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
 
         {/* Error message */}
         {errorMsg && (
-          <div className="mt-2 text-xs text-red-500 flex items-center gap-1">
+          <div className="mt-2 flex items-center gap-1 text-xs text-[#B65B54]">
             <AlertCircle size={12} /> {errorMsg}
           </div>
         )}
@@ -323,7 +323,7 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
                 className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-colors disabled:opacity-50
                   ${destructive
                     ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-teal-600 text-white hover:bg-teal-700"
+                    : "bg-[#DA7756] text-white hover:bg-[#C46B4D]"
                   }`}
               >
                 {status === "confirming" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
@@ -350,7 +350,7 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
               <button
                 onClick={handleEditSave}
                 disabled={status === "confirming"}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#DA7756] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#C46B4D] disabled:opacity-50"
               >
                 {status === "confirming" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                 保存
@@ -369,7 +369,7 @@ export default function ConfirmationCard({ data }: ConfirmationCardProps) {
               <button
                 onClick={handleRegenerate}
                 disabled={status === "regenerating"}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#DA7756] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#C46B4D] disabled:opacity-50"
               >
                 {status === "regenerating" ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                 重新生成

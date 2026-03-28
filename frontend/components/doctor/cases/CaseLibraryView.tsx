@@ -40,16 +40,16 @@ function CaseCard({
           <span className="text-sm font-bold text-gray-500">病例 {caseItem.case_no}</span>
           <div className="flex items-center gap-2">
             {caseItem.is_classic && (
-              <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+              <div className="flex items-center gap-1 rounded-full bg-[#EAF5F1] px-2 py-1 text-[#4A8B69]">
                 <Target className="h-3 w-3" />
                 <span className="text-xs font-semibold">经典</span>
               </div>
             )}
             <button
               onClick={(e) => onDelete(caseItem, e)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-[#FCEAE8] rounded"
             >
-              <Trash2 className="h-4 w-4 text-red-500" />
+              <Trash2 className="h-4 w-4 text-[#B65B54]" />
             </button>
           </div>
         </div>
@@ -67,7 +67,7 @@ function CaseCard({
               {caseItem.tags.slice(0, 3).map((tag, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
+                  className="px-2 py-1 bg-[#EEF5FF] text-[#4D79CB] text-xs rounded-full border border-[#CFDBFB]"
                 >
                   {tag}
                 </span>
@@ -78,7 +78,7 @@ function CaseCard({
 
         <Button
           variant="outline"
-          className="w-full text-[#DA7756] border-[#DA7756] hover:bg-[#DA7756] hover:text-white"
+          className="w-full border-[#E6BDA8] text-[#C06E4E] hover:bg-[#FFF1E8] hover:text-[#B85E40]"
         >
           查看详情
         </Button>
@@ -166,22 +166,22 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
           <h1 className="text-2xl font-bold text-gray-900">病例库</h1>
           <div className="flex items-center gap-4">
             <Tabs value={activeTab} onValueChange={onTabChange}>
-              <TabsList className="h-14 rounded-xl border border-gray-200 bg-white p-1">
+              <TabsList className="h-14 gap-1 rounded-xl border border-gray-200 bg-transparent px-1">
                 <TabsTrigger
                   value="search"
-                  className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                  className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
                 >
                   病例检索
                 </TabsTrigger>
                 <TabsTrigger
                   value="favorites"
-                  className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                  className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
                 >
                   我的收藏
                 </TabsTrigger>
                 <TabsTrigger
                   value="recent"
-                  className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                  className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
                 >
                   最近浏览
                 </TabsTrigger>
@@ -220,8 +220,8 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                       }}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         selectedDiseases.includes(type)
-                          ? "bg-[#DA7756] text-white"
-                          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                          ? "border border-[#F0D3C0] bg-[#FFF1E8] text-[#C06E4E]"
+                          : "bg-white text-gray-600 border border-gray-200 hover:bg-[#FAF7F2]"
                       }`}
                     >
                       {type}
@@ -237,7 +237,7 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                     </Button>
                     <button
                       onClick={() => setShowFilters(!showFilters)}
-                      className="px-4 py-1.5 rounded-lg bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
+                      className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-gray-600 hover:bg-[#FAF7F2]"
                     >
                       <Filter className="h-4 w-4" />
                       {showFilters ? "收起筛选" : "展开筛选"}
@@ -257,8 +257,8 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                             onClick={() => setSelectedAgeRange(selectedAgeRange === range ? "" : range)}
                             className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                               selectedAgeRange === range
-                                ? "bg-[#DA7756] text-white"
-                                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                                ? "border border-[#F0D3C0] bg-[#FFF1E8] text-[#C06E4E]"
+                                : "bg-white text-gray-600 border border-gray-200 hover:bg-[#FAF7F2]"
                             }`}
                           >
                             {range}岁
@@ -272,8 +272,8 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                           onClick={() => setSelectedGender(selectedGender === "男" ? "" : "男")}
                           className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                             selectedGender === "男"
-                              ? "bg-[#DA7756] text-white"
-                              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                              ? "border border-[#F0D3C0] bg-[#FFF1E8] text-[#C06E4E]"
+                              : "bg-white text-gray-600 border border-gray-200 hover:bg-[#FAF7F2]"
                           }`}
                         >
                           男
@@ -282,8 +282,8 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                           onClick={() => setSelectedGender(selectedGender === "女" ? "" : "女")}
                           className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                             selectedGender === "女"
-                              ? "bg-[#DA7756] text-white"
-                              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                              ? "border border-[#F0D3C0] bg-[#FFF1E8] text-[#C06E4E]"
+                              : "bg-white text-gray-600 border border-gray-200 hover:bg-[#FAF7F2]"
                           }`}
                         >
                           女
@@ -291,13 +291,13 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-gray-700 w-20">时间:</span>
-                        <button className="px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
+                        <button className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-[#FAF7F2]">
                           最近添加
                         </button>
-                        <button className="px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
+                        <button className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-[#FAF7F2]">
                           本月新增
                         </button>
-                        <button className="px-3 py-1.5 rounded-lg text-sm bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
+                        <button className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-[#FAF7F2]">
                           经典病例
                         </button>
                       </div>
@@ -379,18 +379,18 @@ export function CaseLibraryView({ activeTab, onTabChange, onSelectCase }: CaseLi
           {searchQuery.includes("肿痛") && (
             <div className="fixed bottom-8 right-8 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 p-5 space-y-3 animate-in slide-in-from-bottom-4">
               <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-600" />
+                <Target className="h-5 w-5 text-[#4D79CB]" />
                 <h3 className="font-bold text-gray-900">为您推荐相似病例</h3>
               </div>
-              <Card className="bg-blue-50 border-blue-200">
+              <Card className="bg-[#F4F8FF] border-[#D9E5FB]">
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-gray-700">病例 #0234</span>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">87% 相似</span>
+                    <span className="text-xs bg-[#EAF5F1] text-[#4A8B69] px-2 py-0.5 rounded-full">87% 相似</span>
                   </div>
                   <p className="text-xs text-gray-600">女, 58岁</p>
                   <p className="text-xs text-gray-600">匹配点: 双膝肿痛、晨僵、RF阳性</p>
-                  <Button size="sm" className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button size="sm" className="w-full mt-2 bg-[#4D79CB] hover:bg-[#416AB8] text-white">
                     展开详情
                   </Button>
                 </CardContent>

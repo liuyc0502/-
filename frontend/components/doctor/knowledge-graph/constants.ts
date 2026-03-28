@@ -23,53 +23,53 @@ export interface NodeTypeConfig {
 
 export const NODE_TYPE_CONFIG: Record<KGNodeType, NodeTypeConfig> = {
   Disease: {
-    surface: "#F0D4CA",
-    accent: "#AD4C3D",
+    surface: "#F8E5DF",
+    accent: "#C76556",
     icon: HeartPulse,
     label: "疾病",
-    badgeClass: "bg-[#E8C3B8] text-[#83382D]",
+    badgeClass: "bg-[#F7E4DE] text-[#A74C40]",
   },
   PathologicalFeature: {
-    surface: "#F0E0BB",
-    accent: "#A77724",
+    surface: "#F8EDCF",
+    accent: "#B78535",
     icon: Microscope,
     label: "病理特征",
-    badgeClass: "bg-[#E8D19B] text-[#7D5815]",
+    badgeClass: "bg-[#F6E9C8] text-[#91691F]",
   },
   Biomarker: {
-    surface: "#D4E0EE",
-    accent: "#476B96",
+    surface: "#E3ECF6",
+    accent: "#5A7EAB",
     icon: FlaskConical,
     label: "生物标志物",
-    badgeClass: "bg-[#C1D2E4] text-[#34567C]",
+    badgeClass: "bg-[#DDE8F4] text-[#476A95]",
   },
   Treatment: {
-    surface: "#D3E2CF",
-    accent: "#56784D",
+    surface: "#E1ECDD",
+    accent: "#66875E",
     icon: Pill,
     label: "治疗方案",
-    badgeClass: "bg-[#C3D8BE] text-[#42623C]",
+    badgeClass: "bg-[#DCE8D8] text-[#54724F]",
   },
   TestMethod: {
-    surface: "#CCE0D9",
-    accent: "#3E7466",
+    surface: "#DCEBE7",
+    accent: "#4F8678",
     icon: TestTubeDiagonal,
     label: "检测方法",
-    badgeClass: "bg-[#B8D2C8] text-[#2F6155]",
+    badgeClass: "bg-[#D6E7E2] text-[#417468]",
   },
   Organ: {
-    surface: "#CFE1E4",
-    accent: "#48767E",
+    surface: "#DEEDEF",
+    accent: "#5A8790",
     icon: Bone,
     label: "器官",
-    badgeClass: "bg-[#BCD3D6] text-[#346168]",
+    badgeClass: "bg-[#D8E8EA] text-[#4A757E]",
   },
   ClinicalStage: {
-    surface: "#EFD6C4",
-    accent: "#AE6B37",
+    surface: "#F7E4D7",
+    accent: "#C37D4B",
     icon: Layers,
     label: "临床分期",
-    badgeClass: "bg-[#E7C8B0] text-[#874A20]",
+    badgeClass: "bg-[#F4DFD1] text-[#A86635]",
   },
 };
 
@@ -79,13 +79,13 @@ export interface EdgeTypeConfig {
 }
 
 export const EDGE_TYPE_CONFIG: Record<KGEdgeType, EdgeTypeConfig> = {
-  indicates: { color: "#3B82F6", label: "表明" },
-  causes: { color: "#EF4444", label: "导致" },
-  differentiates_from: { color: "#F59E0B", label: "鉴别" },
+  indicates: { color: "#5D8FE6", label: "表明" },
+  causes: { color: "#D86C63", label: "导致" },
+  differentiates_from: { color: "#D9AB55", label: "鉴别" },
   progresses_to: { color: "#DA7756", label: "进展为" },
-  treats: { color: "#6E977B", label: "治疗" },
-  detected_by: { color: "#0F766E", label: "检测于" },
-  associated_with: { color: "#94A3B8", label: "相关" },
+  treats: { color: "#78A989", label: "治疗" },
+  detected_by: { color: "#56A7A1", label: "检测于" },
+  associated_with: { color: "#A4B3C6", label: "相关" },
 };
 
 // Friendly labels for patient-facing views

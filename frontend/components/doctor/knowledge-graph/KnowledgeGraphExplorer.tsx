@@ -11,6 +11,7 @@ import {
   ChevronDown,
   AlertTriangle,
   Trash2,
+  X,
 } from "lucide-react";
 import { App, Select } from "antd";
 import { Button } from "@/components/ui/button";
@@ -40,13 +41,13 @@ interface PatientOption {
 
 // Node type color config used in detail panel badges
 const nodeTypeColors: Record<string, string> = {
-  Disease: "bg-[#E8C3B8] text-[#83382D]",
-  PathologicalFeature: "bg-[#E8D19B] text-[#7D5815]",
-  Biomarker: "bg-[#C1D2E4] text-[#34567C]",
-  Treatment: "bg-[#C3D8BE] text-[#42623C]",
-  TestMethod: "bg-[#B8D2C8] text-[#2F6155]",
-  Organ: "bg-[#BCD3D6] text-[#346168]",
-  ClinicalStage: "bg-[#E7C8B0] text-[#874A20]",
+  Disease: "bg-[#F7E4DE] text-[#A74C40]",
+  PathologicalFeature: "bg-[#F6E9C8] text-[#91691F]",
+  Biomarker: "bg-[#DDE8F4] text-[#476A95]",
+  Treatment: "bg-[#DCE8D8] text-[#54724F]",
+  TestMethod: "bg-[#D6E7E2] text-[#417468]",
+  Organ: "bg-[#D8E8EA] text-[#4A757E]",
+  ClinicalStage: "bg-[#F4DFD1] text-[#A86635]",
 };
 
 const nodeTypeLabels: Record<string, string> = {
@@ -58,6 +59,29 @@ const nodeTypeLabels: Record<string, string> = {
   Organ: "器官",
   ClinicalStage: "临床分期",
 };
+
+const nodePropertyLabels: Record<string, string> = {
+  description: "描述",
+  confidence: "置信度",
+  stage: "阶段",
+  severity: "严重程度",
+  source: "来源",
+  evidence: "证据",
+  category: "类别",
+  marker: "标志物",
+  value: "数值",
+  unit: "单位",
+  timeframe: "时间范围",
+  clinical_significance: "临床意义",
+};
+
+function formatNodePropertyLabel(key: string) {
+  if (nodePropertyLabels[key]) return nodePropertyLabels[key];
+  return key
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 export function KnowledgeGraphExplorer() {
   const { message, modal } = App.useApp();
@@ -79,6 +103,13 @@ export function KnowledgeGraphExplorer() {
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeAnchor, setSelectedNodeAnchor] = useState<{
+    x: number;
+    y: number;
+    align: "left" | "right";
+    viewportWidth: number;
+    viewportHeight: number;
+  } | null>(null);
 
   // Load patients and history on mount
   useEffect(() => {
@@ -123,6 +154,8 @@ export function KnowledgeGraphExplorer() {
     setLoading(true);
     setError(null);
     setGraphData(null);
+    setSelectedNodeId(null);
+    setSelectedNodeAnchor(null);
 
     try {
       const res = await fetchWithAuth(API_ENDPOINTS.knowledgeGraph.generate, {
@@ -185,6 +218,8 @@ export function KnowledgeGraphExplorer() {
         });
         setQuery(kg.query || "");
         setActiveHistoryId(cacheId);
+        setSelectedNodeId(null);
+        setSelectedNodeAnchor(null);
       } else {
         setError("加载历史记录失败");
       }
@@ -195,8 +230,15 @@ export function KnowledgeGraphExplorer() {
     }
   }, []);
 
-  const handleNodeClick = useCallback((nodeId: string) => {
+  const handleNodeClick = useCallback((nodeId: string, anchor?: {
+    x: number;
+    y: number;
+    align: "left" | "right";
+    viewportWidth: number;
+    viewportHeight: number;
+  }) => {
     setSelectedNodeId(nodeId);
+    setSelectedNodeAnchor(anchor ?? null);
   }, []);
 
   const handleDeleteHistory = useCallback(
@@ -251,24 +293,43 @@ export function KnowledgeGraphExplorer() {
   );
 
   const selectedNode = graphData?.nodes.find((n) => n.id === selectedNodeId);
+  const selectedNodeDescription =
+    typeof selectedNode?.properties?.description === "string"
+      ? selectedNode.properties.description
+      : null;
+  const selectedNodeProperties = selectedNode?.properties
+    ? Object.entries(selectedNode.properties).filter(([key]) => key !== "description")
+    : [];
+  const selectedNodeOverlayStyle = selectedNodeAnchor
+    ? {
+        top: Math.max(
+          16,
+          Math.min(selectedNodeAnchor.y - 112, selectedNodeAnchor.viewportHeight - 280)
+        ),
+        left:
+          selectedNodeAnchor.align === "right"
+            ? Math.min(selectedNodeAnchor.x + 24, selectedNodeAnchor.viewportWidth - 336)
+            : Math.max(16, selectedNodeAnchor.x - 328),
+      }
+    : null;
 
   return (
     <div className="relative flex h-full bg-app-surface">
       {/* Left Panel */}
       <div className="relative h-full flex-shrink-0">
-        <div className="relative h-full w-72 border-r border-[#E7DCCF] bg-[#F8F3EA]">
+       <div className="relative h-full w-72 border-r border-[#E7DCCF] bg-[#F8F3EA]">
           <div className="flex h-full flex-col p-4">
-            <div className="flex min-h-0 w-64 flex-1 flex-col overflow-hidden rounded-2xl border border-[#E8DDCF] bg-[#FBF7F1] shadow-sm">
+            <div className="flex min-h-0 w-64 flex-1 flex-col overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
               {/* Search */}
-              <div className="border-b border-[#EDE2D4] p-4">
-                <label className="mb-2 block text-xs font-semibold tracking-[0.03em] text-[#2E251D]">
+              <div className="border-b border-[#EFEFEF] p-4">
+                <label className="mb-2 block text-xs font-semibold tracking-[0.03em] text-[#111827]">
                   搜索查询
                 </label>
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="输入疾病、症状或病理特征..."
-                  className="h-11 border-[#E5D9C8] bg-white text-sm focus-visible:ring-[#DA7756]/20"
+                  className="h-11 border-[#E5E7EB] bg-white text-sm focus-visible:ring-[#DA7756]/20"
                   onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
                 />
                 <Button
@@ -286,8 +347,8 @@ export function KnowledgeGraphExplorer() {
               </div>
 
               {/* Patient Selector */}
-              <div className="border-b border-[#EDE2D4] p-4">
-                <label className="mb-2 block text-xs font-semibold tracking-[0.03em] text-[#2E251D]">
+              <div className="border-b border-[#EFEFEF] p-4">
+                <label className="mb-2 block text-xs font-semibold tracking-[0.03em] text-[#111827]">
                   <User size={12} className="mr-1 inline" />
                   患者轨迹叠加
                 </label>
@@ -296,7 +357,7 @@ export function KnowledgeGraphExplorer() {
                   onChange={(value) => setSelectedPatientId(value ?? null)}
                   placeholder="不选择患者"
                   allowClear
-                  suffixIcon={<ChevronDown size={16} className="text-[#7E6A54]" />}
+                  suffixIcon={<ChevronDown size={16} className="text-[#9CA3AF]" />}
                   popupMatchSelectWidth
                   popupClassName="kg-patient-select-dropdown"
                   options={patients.map((p) => ({
@@ -310,7 +371,7 @@ export function KnowledgeGraphExplorer() {
 
               {/* History */}
               <div className="flex min-h-0 flex-1 flex-col p-4">
-                <div className="mb-3 flex items-center gap-1 text-xs font-semibold tracking-[0.03em] text-[#2E251D]">
+                <div className="mb-3 flex items-center gap-1 text-xs font-semibold tracking-[0.03em] text-[#111827]">
                   <History size={12} />
                   历史记录
                 </div>
@@ -331,8 +392,8 @@ export function KnowledgeGraphExplorer() {
                           key={item.cache_id}
                           className={`group relative overflow-hidden rounded-xl border transition-colors ${
                             isActive
-                              ? "border-[#D8C8B6] bg-[#F7F1E7]"
-                              : "border-transparent bg-white hover:border-[#E8DDCF] hover:bg-[#F7F1E7]"
+                              ? "border-[#F0D3C0] bg-[#FFF6F0]"
+                              : "border-transparent bg-white hover:border-[#E5E7EB] hover:bg-[#F9FAFB]"
                           }`}
                         >
                           <button
@@ -343,8 +404,8 @@ export function KnowledgeGraphExplorer() {
                             <p
                               className={`truncate text-sm font-medium ${
                                 isActive
-                                  ? "text-[#8C4E39]"
-                                  : "text-[#2E251D] group-hover:text-[#8C4E39]"
+                                  ? "text-[#374151]"
+                                  : "text-[#111827] group-hover:text-[#374151]"
                               }`}
                             >
                               {item.query}
@@ -359,7 +420,7 @@ export function KnowledgeGraphExplorer() {
                             type="button"
                             onClick={(e) => handleDeleteHistory(item, e)}
                             disabled={isDeleting}
-                            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg text-[#B08F75] opacity-0 transition-all hover:bg-[#F1E5D8] hover:text-[#9C5A45] group-hover:opacity-100 disabled:opacity-100"
+                            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg text-[#9CA3AF] opacity-0 transition-all hover:bg-[#FCEAE8] hover:text-[#B65B54] group-hover:opacity-100 disabled:opacity-100"
                             aria-label={`删除历史记录 ${item.query}`}
                           >
                             {isDeleting ? (
@@ -384,7 +445,7 @@ export function KnowledgeGraphExplorer() {
         {/* Graph Area */}
         <div className="flex-1 relative">
           {loading && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#FCFAF7]/90">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/90">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 size={32} className="animate-spin text-[#DA7756]" />
                 <p className="text-sm text-gray-500">正在生成知识图谱...</p>
@@ -394,8 +455,8 @@ export function KnowledgeGraphExplorer() {
 
           {error && (
             <div className="absolute inset-0 z-20 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2 rounded-2xl border border-[#E7DCCF] bg-white p-6 text-center shadow-sm">
-                <AlertTriangle size={32} className="text-amber-500" />
+              <div className="flex flex-col items-center gap-2 rounded-2xl border border-[#E7E7E7] bg-white p-6 text-center shadow-sm">
+                <AlertTriangle size={32} className="text-[#B87426]" />
                 <p className="text-sm text-gray-700">{error}</p>
                 <Button variant="outline" size="sm" onClick={() => setError(null)}>
                   关闭
@@ -412,6 +473,10 @@ export function KnowledgeGraphExplorer() {
               predictions={graphData.predictions}
               anomalies={graphData.anomalies}
               onNodeClick={handleNodeClick}
+              onPaneClick={() => {
+                setSelectedNodeId(null);
+                setSelectedNodeAnchor(null);
+              }}
               className="h-full"
             />
           ) : (
@@ -419,56 +484,102 @@ export function KnowledgeGraphExplorer() {
             !error && (
               <div className="flex items-center justify-center h-full text-gray-400">
                 <div className="text-center">
-                  <Network size={48} className="mx-auto mb-3 text-[#C7B39D]" />
+                  <Network size={48} className="mx-auto mb-3 text-[#D1D5DB]" />
                   <p className="text-sm">输入查询生成知识图谱</p>
                   <p className="text-xs mt-1">或从历史记录中选择</p>
                 </div>
               </div>
             )
           )}
+
+          {selectedNode && selectedNodeOverlayStyle && (
+            <div
+              className="absolute z-20 w-80 max-w-[calc(100%-2rem)] rounded-2xl border border-[#E7E7E7] bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.16)]"
+              style={selectedNodeOverlayStyle}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold tracking-[0.03em] text-[#9CA3AF]">节点详情</p>
+                  <p className="mt-1 text-sm font-semibold text-[#111827] break-words">
+                    {selectedNode.label}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNodeId(null);
+                    setSelectedNodeAnchor(null);
+                  }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#9CA3AF] transition-colors hover:bg-[#F3F4F6] hover:text-[#4B5563]"
+                  aria-label="关闭节点详情"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded px-1.5 py-0.5 text-xs ${
+                    nodeTypeColors[selectedNode.type] || "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {nodeTypeLabels[selectedNode.type] || selectedNode.type}
+                </span>
+                {selectedNode.isPatientPosition && (
+                  <span className="rounded-full bg-[#FFF3EA] px-2 py-0.5 text-xs font-medium text-[#C06E4E]">
+                    当前患者位置
+                  </span>
+                )}
+                {selectedNode.isAnomaly && (
+                  <span className="rounded-full bg-[#FCEAE8] px-2 py-0.5 text-xs font-medium text-[#B65B54]">
+                    检测到异常
+                  </span>
+                )}
+              </div>
+
+              {selectedNodeDescription && (
+                <div className="mt-3 rounded-xl border border-[#F0E1D9] bg-[#FEF7F4] px-3 py-2.5">
+                  <p className="text-[11px] font-semibold tracking-[0.03em] text-[#C07054]">描述</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[#5B4A42] break-words">
+                    {selectedNodeDescription}
+                  </p>
+                </div>
+              )}
+
+              {selectedNodeProperties.length > 0 && (
+                <div className="mt-3 grid gap-2">
+                  {selectedNodeProperties.slice(0, 6).map(([key, val]) => (
+                    <div
+                      key={key}
+                      className="rounded-xl border border-[#EEF0F3] bg-[#FCFCFC] px-3 py-2"
+                    >
+                      <p className="text-[11px] font-semibold text-[#94A3B8]">
+                        {formatNodePropertyLabel(key)}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[#4B5563] break-words">
+                        {String(val)}
+                      </p>
+                    </div>
+                  ))}
+                  {selectedNodeProperties.length > 6 && (
+                    <p className="text-[11px] text-[#9CA3AF]">
+                      还有 {selectedNodeProperties.length - 6} 项属性未展示
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom Panel */}
         {graphData && (
-          <div className="border-t border-[#E7DCCF] bg-[#FCFAF7]">
-            {/* Node Detail + Predictions */}
-            <div className="flex">
-              {/* Node Detail */}
-              {selectedNode && (
-                <div className="w-64 border-r border-[#DDCFBD] bg-[#F5EDE1] p-4">
-                  <p className="mb-1 text-xs font-semibold tracking-[0.03em] text-[#8E7962]">节点详情</p>
-                  <p className="text-sm font-semibold text-[#332922]">{selectedNode.label}</p>
-                  <span
-                    className={`mt-2 inline-block rounded px-1.5 py-0.5 text-xs ${
-                      nodeTypeColors[selectedNode.type] || "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {nodeTypeLabels[selectedNode.type] || selectedNode.type}
-                  </span>
-                  {selectedNode.isPatientPosition && (
-                    <p className="text-xs text-[#DA7756] mt-1 font-medium">当前患者位置</p>
-                  )}
-                  {selectedNode.isAnomaly && (
-                    <p className="text-xs text-red-600 mt-1 font-medium">检测到异常</p>
-                  )}
-                  {selectedNode.properties &&
-                    Object.entries(selectedNode.properties).map(([key, val]) => (
-                      <p key={key} className="text-xs text-gray-500 mt-0.5">
-                        {key}: {String(val)}
-                      </p>
-                    ))}
-                </div>
-              )}
-
-              {/* Prediction Panel */}
-              <div className="flex-1 max-h-52 overflow-y-auto">
-                <PredictionPanel
-                  predictions={graphData.predictions}
-                  anomalies={graphData.anomalies}
-                  onNodeHighlight={handleNodeClick}
-                />
-              </div>
-            </div>
+          <div className="relative border-t border-[#E7E7E7] bg-white px-4 py-3">
+            <PredictionPanel
+              predictions={graphData.predictions}
+              anomalies={graphData.anomalies}
+              onNodeHighlight={(nodeId) => handleNodeClick(nodeId)}
+            />
           </div>
         )}
       </div>

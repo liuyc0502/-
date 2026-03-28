@@ -238,6 +238,49 @@ async def verify_invite_code(invite_code):
 async def signin_user(email: EmailStr,
                       password: str):
     """User login"""
+    from consts.const import IS_SPEED_MODE, DEFAULT_TENANT_ID
+    from database.patient_db import get_patient_by_email
+    from utils.auth_utils import MOCK_JWT_SECRET_KEY
+
+    if IS_SPEED_MODE:
+        # Speed mode: skip password verification, only check if email exists in patient records
+        patient = get_patient_by_email(email, DEFAULT_TENANT_ID)
+        if not patient:
+            from supabase_auth.errors import AuthApiError
+            raise AuthApiError("Email not found", 401)
+
+        expiry_seconds = 10 * 365 * 24 * 60 * 60  # 10 years
+        expires_at = calculate_expires_at()
+
+        import jwt as pyjwt
+        import time
+        now = int(time.time())
+        payload = {
+            "sub": str(patient["patient_id"]),
+            "email": email,
+            "iat": now,
+            "exp": now + expiry_seconds,
+        }
+        access_token = pyjwt.encode(payload, MOCK_JWT_SECRET_KEY, algorithm="HS256")
+
+        logging.info(f"Speed mode: patient {email} logged in successfully")
+        return {
+            "message": "Login successful (speed mode)",
+            "data": {
+                "user": {
+                    "id": str(patient["patient_id"]),
+                    "email": email,
+                    "role": "user"
+                },
+                "session": {
+                    "access_token": access_token,
+                    "refresh_token": "",
+                    "expires_at": expires_at,
+                    "expires_in_seconds": expiry_seconds
+                }
+            }
+        }
+
     client = get_supabase_client()
 
     response = client.auth.sign_in_with_password({

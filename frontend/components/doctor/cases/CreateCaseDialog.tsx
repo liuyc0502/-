@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal, Form, Input, Select, InputNumber, message } from "antd";
 import medicalCaseService from "@/services/medicalCaseService";
+import log from "@/lib/logger";
 
 const { TextArea } = Input;
 
@@ -42,7 +43,7 @@ export function CreateCaseDialog({ open, onClose, onSuccess }: CreateCaseDialogP
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("Failed to create case:", error);
+      log.error("Failed to create case:", error);
       message.error("创建病例失败，请重试");
     } finally {
       setLoading(false);
@@ -64,6 +65,14 @@ export function CreateCaseDialog({ open, onClose, onSuccess }: CreateCaseDialogP
       width={900}
       okText="创建"
       cancelText="取消"
+      okButtonProps={{
+        className:
+          "bg-[#DA7756] hover:bg-[#C46B4D] border-[#DA7756] hover:border-[#C46B4D]",
+      }}
+      cancelButtonProps={{
+        className:
+          "border-[#DA7756] text-[#DA7756] hover:border-[#C46B4D] hover:text-[#C46B4D]",
+      }}
     >
       <Form form={form} layout="vertical" className="mt-4">
         <div className="grid grid-cols-2 gap-x-6">
@@ -157,9 +166,9 @@ export function CreateCaseDialog({ open, onClose, onSuccess }: CreateCaseDialogP
         </Form.Item>
       </Form>
 
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
-          💡 提示：创建后您可以在病例详情页点击"编辑"按钮，进一步完善现病史、体格检查、实验室检查、治疗方案等详细信息。
+      <div className="mt-4 p-3 bg-[#F8E5DF] border border-[#E8C9BF] rounded-lg">
+        <p className="text-sm text-[#8A3F35]">
+          提示：创建后您可以在病例详情页点击"编辑"按钮，进一步完善现病史、体格检查、实验室检查、治疗方案等详细信息。
         </p>
       </div>
     </Modal>

@@ -5,7 +5,9 @@ and doctor intervention gates.
 """
 import json
 import logging
+import os
 import re
+import inspect
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Event
 from typing import Any, Dict, List, Optional
@@ -98,10 +100,12 @@ class ConsultationOrchestrator:
             # Multimodal: track all attachments and OCR cache
             all_minio_files: List[Dict[str, Any]] = list(minio_files or [])
             ocr_text_cache: Dict[str, str] = {}
+            file_text_cache: Dict[str, str] = {}
 
-            # OCR preprocess for image attachments
+            # Preprocess attachments into prompt-ready text.
             if all_minio_files:
                 ocr_text_cache = self._preprocess_ocr(all_minio_files, mcp_host)
+                file_text_cache = self._preprocess_text_files(all_minio_files, question)
 
             all_round_results: List[RoundResult] = []
             doctor_instructions = ""
@@ -124,6 +128,7 @@ class ConsultationOrchestrator:
                     mcp_host=mcp_host,
                     minio_files=all_minio_files,
                     ocr_text_cache=ocr_text_cache,
+                    file_text_cache=file_text_cache,
                 )
                 all_round_results.append(round_result)
                 self.consultation_manager.add_round_result(consultation_id, round_result)
@@ -190,6 +195,8 @@ class ConsultationOrchestrator:
                     # OCR preprocess new image files
                     new_ocr = self._preprocess_ocr(intervention_files, mcp_host)
                     ocr_text_cache.update(new_ocr)
+                    new_file_text = self._preprocess_text_files(intervention_files, question)
+                    file_text_cache.update(new_file_text)
 
                 # If focused debate strategy, inject prompt modifier
                 if scheduling.strategy == DebateStrategy.FOCUSED_DEBATE:
@@ -320,12 +327,14 @@ class ConsultationOrchestrator:
         mcp_host: Optional[List[str]] = None,
         minio_files: Optional[List[Dict[str, Any]]] = None,
         ocr_text_cache: Optional[Dict[str, str]] = None,
+        file_text_cache: Optional[Dict[str, str]] = None,
     ) -> RoundResult:
         """Run all specialists in parallel for one round."""
         round_result = RoundResult(round_num=round_num)
 
-        # Extract image URLs for VLM pass-through
-        image_urls = self._extract_image_urls(minio_files) if minio_files else []
+        # Consultation currently uses text LLM configs only. Keep multimodal input
+        # on the text/OCR path until a dedicated VLM selection path is added.
+        image_urls: List[str] = []
 
         with ThreadPoolExecutor(max_workers=len(specialist_configs)) as executor:
             futures = {}
@@ -339,6 +348,7 @@ class ConsultationOrchestrator:
                     doctor_instructions=doctor_instructions,
                     minio_files=minio_files,
                     ocr_text_cache=ocr_text_cache,
+                    file_text_cache=file_text_cache,
                 )
                 future = executor.submit(
                     self._run_single_specialist,
@@ -486,14 +496,47 @@ class ConsultationOrchestrator:
         from nexent.core.utils.constants import THINK_TAG_PATTERN
 
         final_answer_str = ""
-        all_steps = []
         run_kwargs = {"stream": True, "reset": True, "additional_args": additional_args}
         if image_urls:
-            run_kwargs["images"] = image_urls
-        for step_log in nexent.agent.run(prompt, **run_kwargs):
-            if not isinstance(step_log, ActionStep):
-                continue
-            all_steps.append(step_log)
+            import requests
+            from PIL import Image
+            from io import BytesIO
+            pil_images = []
+            for url in image_urls:
+                try:
+                    resp = requests.get(url, timeout=30)
+                    resp.raise_for_status()
+                    pil_images.append(Image.open(BytesIO(resp.content)))
+                except Exception as e:
+                    logger.warning(f"Failed to load image from {url}: {e}")
+            if pil_images:
+                run_kwargs["images"] = pil_images
+
+        def _collect_steps(current_run_kwargs: Dict[str, Any]) -> List[ActionStep]:
+            collected_steps: List[ActionStep] = []
+            for step_log in nexent.agent.run(prompt, **current_run_kwargs):
+                if not isinstance(step_log, ActionStep):
+                    continue
+                collected_steps.append(step_log)
+            return collected_steps
+
+        try:
+            all_steps = _collect_steps(run_kwargs)
+        except Exception as run_err:
+            # Some OpenAI-compatible endpoints accept only text content and reject
+            # multimodal `image_url` payloads. In that case, retry once without images
+            # and rely on OCR/text attachment context instead of hard-failing.
+            if run_kwargs.get("images") and self._is_image_message_not_supported_error(run_err):
+                logger.warning(
+                    "Model endpoint rejected image_url payload for %s, retrying without images: %s",
+                    agent_name,
+                    run_err,
+                )
+                retry_kwargs = dict(run_kwargs)
+                retry_kwargs.pop("images", None)
+                all_steps = _collect_steps(retry_kwargs)
+            else:
+                raise
 
         # Emit intermediate steps (exclude the last step which contains final_answer
         # to avoid duplicating content that will appear in the opinion)
@@ -513,6 +556,16 @@ class ConsultationOrchestrator:
                         }, ensure_ascii=False)
                     )
 
+        # Collect chart JSON from tool observations across all steps
+        chart_jsons = []
+        for step in all_steps:
+            obs = getattr(step, "observations", None)
+            if obs:
+                obs_str = str(obs)
+                for chart_json in self._extract_chart_jsons(obs_str):
+                    chart_jsons.append(chart_json)
+        chart_jsons = self._dedupe_chart_jsons(chart_jsons)
+
         # Get final answer from last step (not all steps have final_answer attr)
         final_answer = getattr(all_steps[-1], "final_answer", None) if all_steps else None
         if not final_answer and all_steps:
@@ -525,6 +578,21 @@ class ConsultationOrchestrator:
 
         final_answer_str = re.sub(THINK_TAG_PATTERN, "", final_answer_str,
                                   flags=re.DOTALL | re.IGNORECASE)
+
+        # Append only missing chart JSON so the conclusion field can render them
+        existing_chart_jsons = self._dedupe_chart_jsons(self._extract_chart_jsons(final_answer_str))
+        existing_chart_keys = {
+            self._normalize_chart_json(chart_json)
+            for chart_json in existing_chart_jsons
+        }
+        missing_chart_jsons = [
+            chart_json
+            for chart_json in chart_jsons
+            if self._normalize_chart_json(chart_json) not in existing_chart_keys
+        ]
+        if missing_chart_jsons:
+            final_answer_str += "\n" + "\n".join(missing_chart_jsons)
+
         return final_answer_str
 
     def _build_round_prompt(
@@ -537,10 +605,15 @@ class ConsultationOrchestrator:
         doctor_instructions: str = "",
         minio_files: Optional[List[Dict[str, Any]]] = None,
         ocr_text_cache: Optional[Dict[str, str]] = None,
+        file_text_cache: Optional[Dict[str, str]] = None,
     ) -> str:
         """Build the prompt for a specialist in a given round."""
         # Build attachment context section
-        attachment_section = self._build_attachment_section(minio_files, ocr_text_cache)
+        attachment_section = self._build_attachment_section(
+            minio_files,
+            ocr_text_cache,
+            file_text_cache,
+        )
 
         # Chart output instructions
         chart_instruction = (
@@ -608,10 +681,17 @@ class ConsultationOrchestrator:
         agrees_with = []
         disagrees_with = []
 
+        # Extract chart JSON blocks before parsing structured fields
+        chart_blocks = self._dedupe_chart_jsons(self._extract_chart_jsons(final_answer))
+
         # Try to extract structured fields
         conclusion_match = re.search(r"【结论】(.+?)(?=\n【|$)", final_answer, re.DOTALL)
         if conclusion_match:
             conclusion = conclusion_match.group(1).strip()
+
+        # Append chart JSON to conclusion so frontend can render them
+        if chart_blocks:
+            conclusion = conclusion + "\n" + "\n".join(chart_blocks)
 
         confidence_match = re.search(r"【置信度】\s*(\d+)", final_answer)
         if confidence_match:
@@ -725,18 +805,37 @@ class ConsultationOrchestrator:
         coord_agent_config.max_steps = max(coord_agent_config.max_steps, 10)
 
         try:
-            nexent = NexentAgent(
-                observer=self.observer,
-                model_config_list=self.model_config_list,
-                stop_event=self.stop_event,
-            )
-            agent = nexent.create_single_agent(coord_agent_config)
-            nexent.set_agent(agent)
+            if mcp_host and len(mcp_host) > 0:
+                from smolagents import ToolCollection
 
-            final_answer = self._execute_agent(
-                nexent, synthesis_prompt, "coordinator",
-                consultation_id, 0, additional_args
-            )
+                mcp_client_list = [{"url": mcp_url} for mcp_url in mcp_host]
+                with ToolCollection.from_mcp(mcp_client_list, trust_remote_code=True) as tool_collection:
+                    nexent = NexentAgent(
+                        observer=self.observer,
+                        model_config_list=self.model_config_list,
+                        stop_event=self.stop_event,
+                        mcp_tool_collection=tool_collection,
+                        confirmation_manager=self.confirmation_manager,
+                    )
+                    agent = nexent.create_single_agent(coord_agent_config)
+                    nexent.set_agent(agent)
+                    final_answer = self._execute_agent(
+                        nexent, synthesis_prompt, "coordinator",
+                        consultation_id, 0, additional_args
+                    )
+            else:
+                nexent = NexentAgent(
+                    observer=self.observer,
+                    model_config_list=self.model_config_list,
+                    stop_event=self.stop_event,
+                    confirmation_manager=self.confirmation_manager,
+                )
+                agent = nexent.create_single_agent(coord_agent_config)
+                nexent.set_agent(agent)
+                final_answer = self._execute_agent(
+                    nexent, synthesis_prompt, "coordinator",
+                    consultation_id, 0, additional_args
+                )
 
             # Try to parse JSON from coordinator's answer.
             # The model may wrap JSON in ```json ... ``` blocks or add trailing text,
@@ -857,7 +956,7 @@ class ConsultationOrchestrator:
                     object_name = file_info["object_name"]
                     file_url = f"{backend_api_base}/file/download/{object_name}"
                     try:
-                        result = ocr_tool(file_path=file_url)
+                        result = self._invoke_ocr_tool(ocr_tool, file_url, file_type="image")
                         ocr_text = str(result) if result else ""
                         if ocr_text:
                             ocr_results[object_name] = ocr_text
@@ -875,6 +974,7 @@ class ConsultationOrchestrator:
     def _build_attachment_section(
         minio_files: Optional[List[Dict[str, Any]]],
         ocr_text_cache: Optional[Dict[str, str]],
+        file_text_cache: Optional[Dict[str, str]],
     ) -> str:
         """Build attachment context section for specialist prompt."""
         if not minio_files:
@@ -884,8 +984,11 @@ class ConsultationOrchestrator:
         backend_api_base = MAIN_SERVICE_URL.rstrip("/")
 
         parts = ["## 附件资料\n"]
-        parts.append("以下附件已通过 OCR 预处理提取了文字内容。如果你需要对特定区域重新识别或提取更精确的内容，"
-                      "可以调用 `ocr(file_path=URL)` 工具。\n")
+        parts.append(
+            "图片附件会附带 OCR 结果，普通文件会附带抽取后的重点内容。"
+            "如果你需要对图片特定区域重新识别或提取更精确的内容，"
+            "可以调用 `ocr(input_data=URL, file_type=\"image\")` 工具。\n"
+        )
 
         for f in minio_files:
             if not isinstance(f, dict):
@@ -913,10 +1016,94 @@ class ConsultationOrchestrator:
                     parts.append(f"  - 下载地址: {full_url}")
                 if description:
                     parts.append(f"  - 描述: {description}")
+                file_text = (file_text_cache or {}).get(object_name, "")
+                if file_text:
+                    parts.append(f"  - 文件内容提要:\n{file_text}")
 
             parts.append("")  # blank line between files
 
         return "\n".join(parts) + "\n"
+
+    def _preprocess_text_files(
+        self,
+        minio_files: List[Dict[str, Any]],
+        question: str,
+    ) -> Dict[str, str]:
+        """Extract text from non-image attachments and summarize for the current question."""
+        from database.attachment_db import get_file_stream
+        from nexent.data_process import DataProcessCore
+        from utils.attachment_utils import convert_long_text_to_text
+
+        file_results: Dict[str, str] = {}
+        data_processor = DataProcessCore()
+        language = getattr(self.observer, "lang", "zh")
+
+        attachment_files = [
+            f for f in minio_files
+            if isinstance(f, dict)
+            and f.get("type") != "image"
+            and f.get("object_name")
+        ]
+        if not attachment_files:
+            return file_results
+
+        for file_info in attachment_files:
+            object_name = file_info["object_name"]
+            filename = file_info.get("name") or os.path.basename(object_name)
+
+            try:
+                file_stream = get_file_stream(object_name)
+                if file_stream is None:
+                    logger.warning("Failed to read attachment from storage: %s", object_name)
+                    continue
+
+                file_bytes = file_stream.read()
+                file_stream.close()
+                if not file_bytes:
+                    logger.warning("Attachment is empty: %s", object_name)
+                    continue
+
+                chunks = data_processor.file_process(
+                    file_data=file_bytes,
+                    filename=filename,
+                    chunking_strategy="basic",
+                )
+                raw_text = "\n".join(
+                    chunk.get("content", "").strip()
+                    for chunk in chunks
+                    if isinstance(chunk, dict) and chunk.get("content")
+                ).strip()
+                if not raw_text:
+                    logger.warning("No text extracted from attachment: %s", filename)
+                    continue
+
+                try:
+                    summary_text, _ = convert_long_text_to_text(
+                        query=question,
+                        file_context=raw_text,
+                        tenant_id=self.tenant_id,
+                        language=language,
+                    )
+                    normalized_text = summary_text.strip()
+                except Exception as summarize_err:
+                    logger.warning(
+                        "Failed to summarize attachment %s, fallback to extracted excerpt: %s",
+                        filename,
+                        summarize_err,
+                    )
+                    normalized_text = raw_text[:1200]
+
+                if normalized_text:
+                    file_results[object_name] = normalized_text
+                    logger.info(
+                        "File preprocessed: %s (%s chars)",
+                        filename,
+                        len(normalized_text),
+                    )
+            except Exception as file_err:
+                logger.warning("Text preprocess failed for %s: %s", filename, file_err)
+
+        return file_results
 
     @staticmethod
     def _extract_image_urls(minio_files: Optional[List[Dict[str, Any]]]) -> List[str]:
@@ -934,10 +1121,114 @@ class ConsultationOrchestrator:
         return urls
 
     @staticmethod
+    def _invoke_ocr_tool(ocr_tool: Any, file_url: str, file_type: str = "image") -> Any:
+        """Call OCR MCP tool across old/new parameter schemas."""
+        try:
+            signature = inspect.signature(ocr_tool)
+            parameter_names = set(signature.parameters.keys())
+        except (TypeError, ValueError):
+            parameter_names = set()
+
+        if "input_data" in parameter_names:
+            kwargs = {"input_data": file_url}
+            if "file_type" in parameter_names:
+                kwargs["file_type"] = file_type
+            return ocr_tool(**kwargs)
+
+        if "file_path" in parameter_names:
+            kwargs = {"file_path": file_url}
+            if "file_type" in parameter_names:
+                kwargs["file_type"] = file_type
+            return ocr_tool(**kwargs)
+
+        # Last-resort compatibility fallbacks when the wrapper obscures signature.
+        try:
+            return ocr_tool(input_data=file_url, file_type=file_type)
+        except Exception:
+            return ocr_tool(file_path=file_url)
+
+    @staticmethod
+    def _extract_chart_jsons(text: str) -> List[str]:
+        """Extract chart JSON objects from text, handling nested braces."""
+        results = []
+        marker = '"type": "chart"'
+        alt_marker = '"type":"chart"'
+        idx = 0
+        while idx < len(text):
+            pos = text.find(marker, idx)
+            alt_pos = text.find(alt_marker, idx)
+            if pos == -1 and alt_pos == -1:
+                break
+            if pos == -1:
+                pos = alt_pos
+            elif alt_pos != -1:
+                pos = min(pos, alt_pos)
+            # Walk backwards to find the opening brace
+            start = text.rfind("{", 0, pos)
+            if start == -1:
+                idx = pos + 1
+                continue
+            # Walk forward counting braces to find the matching close
+            depth = 0
+            end = start
+            for i in range(start, len(text)):
+                if text[i] == "{":
+                    depth += 1
+                elif text[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = i + 1
+                        break
+            if depth != 0:
+                idx = pos + 1
+                continue
+            candidate = text[start:end]
+            try:
+                parsed = json.loads(candidate)
+                if parsed.get("chart_type") and parsed.get("data"):
+                    results.append(candidate)
+            except (json.JSONDecodeError, ValueError):
+                pass
+            idx = end
+        return results
+
+    @staticmethod
+    def _normalize_chart_json(chart_json: str) -> str:
+        try:
+            parsed = json.loads(chart_json)
+            return json.dumps(parsed, ensure_ascii=False, sort_keys=True)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return chart_json.strip()
+
+    @classmethod
+    def _dedupe_chart_jsons(cls, chart_jsons: List[str]) -> List[str]:
+        deduped = []
+        seen = set()
+        for chart_json in chart_jsons:
+            normalized = cls._normalize_chart_json(chart_json)
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            deduped.append(chart_json)
+        return deduped
+
+    @staticmethod
+    def _is_image_message_not_supported_error(error: Exception) -> bool:
+        error_str = str(error)
+        markers = [
+            "unknown variant `image_url`",
+            "expected `text`",
+            "invalid type for messages",
+            "image_url",
+        ]
+        return all(marker in error_str for marker in markers[:2]) or any(
+            marker in error_str for marker in markers[:2]
+        )
+
+    @staticmethod
     def _build_round_summary(round_result: RoundResult) -> str:
         """Build a text summary for a completed round."""
         parts = []
         for name, opinion in round_result.opinions.items():
             parts.append(f"{name}: {opinion.conclusion[:100]}")
         return " | ".join(parts) if parts else "无意见"
-

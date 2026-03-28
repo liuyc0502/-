@@ -535,28 +535,28 @@ const handleDeleteAllLabResults = () => {
             </div>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="h-14 rounded-xl border border-gray-200 bg-white p-1">
+            <TabsList className="h-14 gap-1 rounded-xl border border-gray-200 bg-transparent px-1">
               <TabsTrigger
                 value="basic"
-                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
               >
                 基本信息
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
               >
                 病史
               </TabsTrigger>
               <TabsTrigger
                 value="examination"
-                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
               >
                 检查
               </TabsTrigger>
               <TabsTrigger
                 value="treatment"
-                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
               >
                 诊疗
               </TabsTrigger>

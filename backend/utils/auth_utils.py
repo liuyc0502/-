@@ -307,10 +307,20 @@ def get_current_user_id(authorization: Optional[str] = None) -> tuple[str, str]:
     Returns:
         tuple[str, str]: (user_id, tenant_id)
     """
-    # if deploy in speed mode or authorization is None, return default user id and tenant id
-    if IS_SPEED_MODE or authorization is None:
+    # if authorization is None, return default user id and tenant id
+    if authorization is None:
         logging.debug(
-            "Speed mode or no valid authorization header detected - returning default user ID and tenant ID")
+            "No valid authorization header detected - returning default user ID and tenant ID")
+        return DEFAULT_USER_ID, DEFAULT_TENANT_ID
+
+    # Speed mode: try to extract user id from token, fall back to default if not present
+    if IS_SPEED_MODE:
+        try:
+            user_id = _extract_user_id_from_jwt_token(authorization)
+            if user_id:
+                return user_id, DEFAULT_TENANT_ID
+        except Exception:
+            pass
         return DEFAULT_USER_ID, DEFAULT_TENANT_ID
 
     try:

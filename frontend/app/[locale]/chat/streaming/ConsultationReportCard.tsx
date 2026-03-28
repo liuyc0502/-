@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Users,
   CheckCircle2,
@@ -11,8 +11,15 @@ import {
   Download,
   Loader2,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { exportToPdf } from "@/lib/exportPdf";
 import type { ConsultationReportData } from "@/types/consultation";
+import { cardSurface, confidenceTheme, consultationCardTheme } from "./cardTheme";
+
+const InteractiveChart = dynamic(
+  () => import("@/components/consultation/InteractiveChart"),
+  { ssr: false, loading: () => <div className="h-60 animate-pulse rounded bg-gray-50" /> }
+);
 
 interface ConsultationReportCardProps {
   data: ConsultationReportData;
@@ -20,20 +27,20 @@ interface ConsultationReportCardProps {
 
 function ConfidenceBar({ confidence }: { confidence: number }) {
   const percent = Math.round(confidence);
-  let barColor = "bg-red-400";
-  let textColor = "text-red-600";
+  let barColor = confidenceTheme.lowBar;
+  let textColor = confidenceTheme.lowText;
   if (percent >= 80) {
-    barColor = "bg-emerald-400";
-    textColor = "text-emerald-600";
+    barColor = confidenceTheme.highBar;
+    textColor = confidenceTheme.highText;
   } else if (percent >= 50) {
-    barColor = "bg-amber-400";
-    textColor = "text-amber-600";
+    barColor = confidenceTheme.midBar;
+    textColor = confidenceTheme.midText;
   }
 
   return (
     <div className="flex items-center gap-2">
       <span className={`text-xs font-medium ${textColor}`}>综合置信度</span>
-      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className={`flex-1 h-2 rounded-full overflow-hidden ${confidenceTheme.track}`}>
         <div
           className={`h-full ${barColor} rounded-full transition-all`}
           style={{ width: `${percent}%` }}
@@ -72,7 +79,7 @@ function ConvergenceChart({
 
   return (
     <div>
-      <svg width={width} height={height} className="bg-gray-50 rounded">
+      <svg width={width} height={height} className={`rounded ${consultationCardTheme.panelBg}`}>
         {/* Y-axis labels */}
         <text x={padding.left - 4} y={padding.top + 4} textAnchor="end" className="text-[8px] fill-gray-400" style={{ fontFamily: "sans-serif" }}>100%</text>
         <text x={padding.left - 4} y={padding.top + chartH + 2} textAnchor="end" className="text-[8px] fill-gray-400" style={{ fontFamily: "sans-serif" }}>0%</text>
@@ -117,7 +124,7 @@ function ConvergenceChart({
       </svg>
       <div className="flex items-center gap-3 mt-1">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-0.5 bg-[#DA7756] rounded" />
+        <div className="w-3 h-0.5 rounded bg-[#DA7756]" />
           <span className="text-[10px] text-gray-500">共识分数</span>
         </div>
         <div className="flex items-center gap-1">
@@ -129,6 +136,89 @@ function ConvergenceChart({
         <span>最终共识: <span className="font-medium text-gray-700">{Math.round(finalCCS * 100)}%</span></span>
         <span>熵减少: <span className="font-medium text-gray-700">{entropyReduction > 0 ? "+" : ""}{(entropyReduction * 100).toFixed(1)}%</span></span>
       </div>
+    </div>
+  );
+}
+
+function RichOpinionContent({ text }: { text: string }) {
+  const segments = useMemo(() => {
+    const result: { type: "text" | "chart"; content: string }[] = [];
+    const seenCharts = new Set<string>();
+    const pushChart = (content: string) => {
+      try {
+        const parsed = JSON.parse(content);
+        if (!(parsed && (parsed.chart_type || parsed.type === "chart") && parsed.data)) {
+          return false;
+        }
+        const normalized = JSON.stringify(parsed);
+        if (seenCharts.has(normalized)) {
+          return true;
+        }
+        seenCharts.add(normalized);
+        result.push({ type: "chart", content });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const blockRegex = /```(?:chart|json)\s*\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = blockRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        result.push({ type: "text", content: text.slice(lastIndex, match.index) });
+      }
+      if (!pushChart(match[1].trim())) {
+        result.push({ type: "text", content: match[0] });
+      }
+      lastIndex = match.index + match[0].length;
+    }
+
+    const remaining = text.slice(lastIndex);
+    const chartJsonRegex = /\{"type"\s*:\s*"chart"[\s\S]*?"chart_type"\s*:\s*"[^"]*"[\s\S]*?"data"\s*:\s*\[[\s\S]*?\]\s*[,\s\S]*?\}/g;
+    let inlineLastIndex = 0;
+    let inlineMatch;
+
+    while ((inlineMatch = chartJsonRegex.exec(remaining)) !== null) {
+      if (inlineMatch.index > inlineLastIndex) {
+        result.push({ type: "text", content: remaining.slice(inlineLastIndex, inlineMatch.index) });
+      }
+      if (!pushChart(inlineMatch[0])) {
+        result.push({ type: "text", content: inlineMatch[0] });
+      }
+      inlineLastIndex = inlineMatch.index + inlineMatch[0].length;
+    }
+
+    if (inlineLastIndex < remaining.length) {
+      result.push({ type: "text", content: remaining.slice(inlineLastIndex) });
+    } else if (lastIndex < text.length && inlineLastIndex === 0) {
+      result.push({ type: "text", content: remaining });
+    }
+
+    return result;
+  }, [text]);
+
+  const hasChart = segments.some((segment) => segment.type === "chart");
+  if (!hasChart) {
+    return <p className={`text-xs ${cardSurface.textSecondary}`}>{text}</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {segments.map((segment, idx) => {
+        if (segment.type === "chart") {
+          try {
+            return <InteractiveChart key={idx} spec={JSON.parse(segment.content)} />;
+          } catch {
+            return <p key={idx} className={`text-xs ${cardSurface.textSecondary}`}>{segment.content}</p>;
+          }
+        }
+        return segment.content.trim() ? (
+          <p key={idx} className={`text-xs ${cardSurface.textSecondary}`}>{segment.content}</p>
+        ) : null;
+      })}
     </div>
   );
 }
@@ -153,24 +243,24 @@ export default function ConsultationReportCard({
   };
 
   return (
-    <div ref={reportRef} className="my-3 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+    <div ref={reportRef} className={`my-3 overflow-hidden rounded-xl border bg-white shadow-sm ${consultationCardTheme.border}`}>
       {/* Header */}
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+      <div className={`px-4 py-3 border-b ${cardSurface.headerBorder} ${consultationCardTheme.headerBg}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText size={18} className="text-[#DA7756]" />
-            <h3 className="text-sm font-semibold text-gray-900">
+            <FileText size={18} className={consultationCardTheme.accent} />
+            <h3 className={`text-sm font-semibold ${cardSurface.textPrimary}`}>
               会诊结论报告
             </h3>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">
+            <span className={`text-xs ${cardSurface.textSecondary}`}>
               共 {data.total_rounds} 轮讨论 · {data.specialists?.length || 0} 位专家
             </span>
             <button
               onClick={handleExportPdf}
               disabled={isExporting}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+              className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors disabled:opacity-50 ${cardSurface.textSecondary} ${cardSurface.hoverTextPrimary} ${cardSurface.hoverSoftBg}`}
             >
               {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
               导出 PDF
@@ -180,27 +270,27 @@ export default function ConsultationReportCard({
       </div>
 
       {/* Confidence bar */}
-      <div className="px-4 py-3 border-b border-gray-100">
+      <div className={`px-4 py-3 border-b ${cardSurface.sectionBorder}`}>
         <ConfidenceBar confidence={data.confidence} />
       </div>
 
       {/* Final recommendation */}
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h4 className="text-xs font-semibold text-gray-700 mb-1.5">
+      <div className={`px-4 py-3 border-b ${cardSurface.sectionBorder}`}>
+        <h4 className={`text-xs font-semibold mb-1.5 ${cardSurface.textPrimary}`}>
           最终推荐方案
         </h4>
-        <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+        <p className={`text-sm leading-relaxed whitespace-pre-wrap ${cardSurface.textPrimary}`}>
           {data.final_recommendation}
         </p>
       </div>
 
       {/* Agreements & Disagreements */}
-      <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-3 border-b border-gray-100">
+      <div className={`px-4 py-3 grid grid-cols-1 gap-3 border-b md:grid-cols-2 ${cardSurface.sectionBorder}`}>
         {/* Agreements */}
         <div>
           <div className="flex items-center gap-1.5 mb-2">
-            <CheckCircle2 size={14} className="text-emerald-500" />
-            <h4 className="text-xs font-semibold text-emerald-700">
+            <CheckCircle2 size={14} className={consultationCardTheme.successText} />
+            <h4 className={`text-xs font-semibold ${consultationCardTheme.successText}`}>
               共识点
             </h4>
           </div>
@@ -209,22 +299,22 @@ export default function ConsultationReportCard({
               {data.agreements.map((item, idx) => (
                 <li
                   key={idx}
-                  className="text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded"
+                  className={`rounded px-2 py-1 text-xs ${consultationCardTheme.successBg} ${consultationCardTheme.successText}`}
                 >
                   {item}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-gray-400">暂无共识点</p>
+            <p className={`text-xs ${cardSurface.textMuted}`}>暂无共识点</p>
           )}
         </div>
 
         {/* Disagreements */}
         <div>
           <div className="flex items-center gap-1.5 mb-2">
-            <AlertTriangle size={14} className="text-orange-500" />
-            <h4 className="text-xs font-semibold text-orange-700">
+            <AlertTriangle size={14} className={consultationCardTheme.warningText} />
+            <h4 className={`text-xs font-semibold ${consultationCardTheme.warningText}`}>
               分歧点
             </h4>
           </div>
@@ -233,24 +323,24 @@ export default function ConsultationReportCard({
               {data.disagreements.map((item, idx) => (
                 <li
                   key={idx}
-                  className="text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded"
+                  className={`rounded px-2 py-1 text-xs ${consultationCardTheme.warningBg} ${consultationCardTheme.warningText}`}
                 >
                   {item}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-gray-400">无分歧</p>
+            <p className={`text-xs ${cardSurface.textMuted}`}>无分歧</p>
           )}
         </div>
       </div>
 
       {/* Convergence history (collapsible) */}
       {data.consensus_history && data.consensus_history.length > 0 && (
-        <div className="px-4 py-2 border-b border-gray-100">
+        <div className={`px-4 py-2 border-b ${cardSurface.sectionBorder}`}>
           <button
             onClick={() => setShowConvergence(!showConvergence)}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            className={`flex items-center gap-1.5 text-xs transition-colors ${cardSurface.textSecondary} ${cardSurface.hoverTextPrimary}`}
           >
             {showConvergence ? (
               <ChevronDown size={14} />
@@ -271,7 +361,7 @@ export default function ConsultationReportCard({
       <div className="px-4 py-2">
         <button
           onClick={() => setShowSpecialists(!showSpecialists)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          className={`flex items-center gap-1.5 text-xs transition-colors ${cardSurface.textSecondary} ${cardSurface.hoverTextPrimary}`}
         >
           {showSpecialists ? (
             <ChevronDown size={14} />
@@ -287,19 +377,17 @@ export default function ConsultationReportCard({
             {data.specialists.map((specialist, idx) => (
               <div
                 key={idx}
-                className="p-2 bg-gray-50 rounded border border-gray-200"
+                className={`rounded border p-2 ${consultationCardTheme.panelBg} ${consultationCardTheme.panelBorder}`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-800">
+                  <span className={`text-xs font-medium ${cardSurface.textPrimary}`}>
                     {specialist.name}
                   </span>
-                  <span className="text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded">
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs ${cardSurface.softBg} ${cardSurface.textSecondary}`}>
                     {specialist.specialty}
                   </span>
                 </div>
-                <p className="text-xs text-gray-600">
-                  {specialist.final_opinion}
-                </p>
+                <RichOpinionContent text={specialist.final_opinion} />
               </div>
             ))}
           </div>

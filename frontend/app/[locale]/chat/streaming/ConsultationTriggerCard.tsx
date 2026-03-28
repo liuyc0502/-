@@ -5,6 +5,7 @@ import { Users, AlertCircle, Check, X, Loader2 } from "lucide-react";
 import type { Agent } from "@/types/chat";
 import { API_ENDPOINTS } from "@/services/api";
 import { fetchWithAuth } from "@/lib/auth";
+import { cardSurface, consultationCardTheme } from "./cardTheme";
 
 interface ConsultationTriggerCardProps {
   specialties: string[];
@@ -96,7 +97,7 @@ export default function ConsultationTriggerCard({
   // Resolved or dismissed state
   if (resolved || dismissed) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-500 border border-gray-200">
+      <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${cardSurface.softBg} ${cardSurface.textSecondary} ${cardSurface.baseBorder}`}>
         <Users size={14} />
         <span>{dismissed ? "已忽略会诊建议" : "已发起会诊"}</span>
       </div>
@@ -104,33 +105,33 @@ export default function ConsultationTriggerCard({
   }
 
   return (
-    <div className="border border-[#DA7756]/30 rounded-lg bg-[#DA7756]/5 overflow-hidden my-2">
+    <div className={`my-2 overflow-hidden rounded-lg border bg-white ${consultationCardTheme.border}`}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-[#DA7756]/10 border-b border-[#DA7756]/20">
-        <Users size={18} className="text-[#DA7756]" />
-        <span className="font-medium text-[#DA7756]">AI 建议发起多专科会诊</span>
+      <div className={`flex items-center gap-2 border-b px-4 py-3 ${cardSurface.headerBorder} ${consultationCardTheme.headerBg}`}>
+        <Users size={18} className={consultationCardTheme.accent} />
+        <span className={`font-medium ${consultationCardTheme.headerText}`}>AI 建议发起多专科会诊</span>
       </div>
 
       <div className="px-4 py-3 space-y-3">
         {/* Reason */}
-        <p className="text-sm text-gray-700">{reason}</p>
+        <p className={`text-sm ${cardSurface.textPrimary}`}>{reason}</p>
 
         {/* Agent selection */}
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className={`flex items-center gap-2 text-sm ${cardSurface.textSecondary}`}>
             <Loader2 size={14} className="animate-spin" />
             <span>加载专科列表...</span>
           </div>
         ) : (
           <>
-            <div className="text-xs text-gray-500 mb-1">
+            <div className={`mb-1 text-xs ${cardSurface.textSecondary}`}>
               推荐专科：{specialties.join("、")}（请选择至少 2 位专家）
             </div>
             <div className="space-y-1.5">
               {agents.map((agent) => (
                 <label
                   key={agent.agent_id}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
+                  className={`flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm ${cardSurface.hoverSoftBg}`}
                 >
                   <input
                     type="checkbox"
@@ -138,9 +139,9 @@ export default function ConsultationTriggerCard({
                     onChange={() => handleToggleAgent(agent.agent_id)}
                     className="rounded border-gray-300 text-[#DA7756] focus:ring-[#DA7756]"
                   />
-                  <span className="font-medium">{agent.display_name}</span>
+                  <span className={`font-medium ${cardSurface.textPrimary}`}>{agent.display_name}</span>
                   {agent.description && (
-                    <span className="text-gray-400">— {agent.description}</span>
+                    <span className={cardSurface.textMuted}>— {agent.description}</span>
                   )}
                 </label>
               ))}
@@ -148,7 +149,7 @@ export default function ConsultationTriggerCard({
 
             {/* Unmatched specialties warning */}
             {unmatchedSpecialties.length > 0 && (
-              <div className="flex items-start gap-1.5 text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded">
+              <div className={`flex items-start gap-1.5 rounded px-2 py-1.5 text-xs ${consultationCardTheme.warningBg} ${consultationCardTheme.warningText}`}>
                 <AlertCircle size={12} className="mt-0.5 shrink-0" />
                 <span>未匹配到专科：{unmatchedSpecialties.join("、")}</span>
               </div>
@@ -161,14 +162,14 @@ export default function ConsultationTriggerCard({
           <button
             onClick={handleConfirm}
             disabled={selectedAgentIds.length < 2 || loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#DA7756] text-white text-sm rounded-md hover:bg-[#c5664a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 rounded-md bg-[#DA7756] px-3 py-1.5 text-sm text-white transition-colors hover:bg-[#C46B4D] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Check size={14} />
             开始会诊
           </button>
           <button
             onClick={handleDismiss}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-gray-500 text-sm rounded-md hover:bg-gray-100 transition-colors"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${cardSurface.textSecondary} ${cardSurface.hoverSoftBg}`}
           >
             <X size={14} />
             忽略

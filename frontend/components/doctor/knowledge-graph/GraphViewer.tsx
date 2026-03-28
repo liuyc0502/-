@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback, useEffect, useRef } from "react";
 import ReactFlow, {
   useNodesState,
   useEdgesState,
@@ -27,7 +27,17 @@ interface GraphViewerProps {
   patientPosition?: PatientPosition;
   predictions?: PredictionPath[];
   anomalies?: TrajectoryAnomaly[];
-  onNodeClick?: (nodeId: string) => void;
+  onNodeClick?: (
+    nodeId: string,
+    anchor?: {
+      x: number;
+      y: number;
+      align: "left" | "right";
+      viewportWidth: number;
+      viewportHeight: number;
+    }
+  ) => void;
+  onPaneClick?: () => void;
   className?: string;
 }
 
@@ -135,15 +145,15 @@ function getLayoutedElements(
         type: "smoothstep",
         animated: true,
         style: {
-          stroke: "#f59e0b",
+          stroke: "#DA7756",
           strokeWidth: 2.5,
           opacity: 0.7,
           strokeDasharray: "8 4",
         },
-        labelStyle: { fontSize: 11, fill: "#f59e0b", fontWeight: 500 },
-        labelBgStyle: { fill: "#f59e0b15", fillOpacity: 1, rx: 6, ry: 6 },
+        labelStyle: { fontSize: 11, fill: "#C06E4E", fontWeight: 500 },
+        labelBgStyle: { fill: "#FFF3EA", fillOpacity: 1, rx: 6, ry: 6 },
         labelBgPadding: [6, 4] as [number, number],
-        markerEnd: { type: MarkerType.ArrowClosed, color: "#f59e0b", width: 16, height: 16 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: "#DA7756", width: 16, height: 16 },
       });
     });
   }
@@ -156,8 +166,10 @@ function GraphViewerInner({
   edges: kgEdges,
   predictions,
   onNodeClick,
+  onPaneClick,
   className = "",
 }: GraphViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(
     () => getLayoutedElements(kgNodes, kgEdges, predictions),
     [kgNodes, kgEdges, predictions]
@@ -175,20 +187,35 @@ function GraphViewerInner({
   }, [layoutedEdges, setEdges]);
 
   const handleNodeClick = useCallback(
-    (_: any, node: any) => {
-      onNodeClick?.(node.id);
+    (event: any, node: any) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) {
+        onNodeClick?.(node.id);
+        return;
+      }
+
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      onNodeClick?.(node.id, {
+        x,
+        y,
+        align: x > rect.width * 0.6 ? "left" : "right",
+        viewportWidth: rect.width,
+        viewportHeight: rect.height,
+      });
     },
     [onNodeClick]
   );
 
   return (
-    <div className={`w-full h-full relative bg-[#FCFAF7] ${className}`}>
+    <div ref={containerRef} className={`w-full h-full relative bg-[#FCFAF7] ${className}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}

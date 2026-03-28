@@ -109,8 +109,8 @@ class FinalAnswerError(Exception):
 
 
 class CoreAgent(CodeAgent):
-    # Default additional imports for MCP JSON parsing
-    DEFAULT_ADDITIONAL_IMPORTS = ["json"]
+    # Default additional imports for MCP JSON parsing and MCP tool modules
+    DEFAULT_ADDITIONAL_IMPORTS = ["json", "chart_generation_generate_chart"]
     
     def __init__(self, observer: MessageObserver, prompt_templates: Dict[str, Any] | None = None, *args, **kwargs):
         # Merge default imports with any additional ones passed in
@@ -285,11 +285,11 @@ You have been provided with these additional arguments, that you can access usin
             if hasattr(self.python_executor, "state"):
                 executor_state_keys = list(self.python_executor.state.keys()) if isinstance(self.python_executor.state, dict) else "not a dict"
                 print(f"[CoreAgent.run] python_executor.state keys AFTER send_variables: {executor_state_keys}")
-                # Check specifically for patient_id
+                # Only validate patient_id if it was explicitly injected.
                 if isinstance(self.python_executor.state, dict):
-                    if "patient_id" in self.python_executor.state:
+                    if "patient_id" in self.state and "patient_id" in self.python_executor.state:
                         print(f"[CoreAgent.run] SUCCESS: patient_id in executor state: {self.python_executor.state['patient_id']}")
-                    else:
+                    elif "patient_id" in self.state:
                         print(f"[CoreAgent.run] FAILED: patient_id NOT in executor state after send_variables!")
             
             print(f"[CoreAgent.run] ========== DEBUG END ==========")

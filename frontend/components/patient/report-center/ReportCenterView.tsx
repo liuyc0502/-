@@ -55,16 +55,16 @@ export function ReportCenterView() {
         <div className="px-8 py-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">报告解读</h1>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="h-14 rounded-xl border border-gray-200 bg-white p-1">
+            <TabsList className="h-14 gap-1 rounded-xl border border-gray-200 bg-transparent px-1">
               <TabsTrigger
                 value="reports"
-                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
               >
                 报告列表
               </TabsTrigger>
               <TabsTrigger
                 value="trends"
-                className="h-12 rounded-lg border border-transparent bg-white px-8 py-3 text-base font-bold text-gray-600 hover:bg-gray-50 data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none"
+                className="h-12 rounded-lg border border-transparent bg-transparent px-8 py-3 text-base font-bold text-gray-600 hover:bg-[#F6F0EA] data-[state=active]:border-[#D4D0CA] data-[state=active]:bg-[#E1DEDA] data-[state=active]:text-[#241A12] data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
               >
                 指标趋势
               </TabsTrigger>

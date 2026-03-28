@@ -24,9 +24,9 @@ function CustomGraphNode({ data, selected }: NodeProps<CustomNodeData>) {
       style={{
         minWidth: 160,
         filter: data.isPatientPosition
-          ? `drop-shadow(0 0 8px rgba(218,119,86,0.35))`
+          ? `drop-shadow(0 0 8px rgba(218,119,86,0.24))`
           : data.isAnomaly
-          ? `drop-shadow(0 0 8px rgba(239,68,68,0.35))`
+          ? `drop-shadow(0 0 8px rgba(216,108,99,0.24))`
           : undefined,
       }}
     >
@@ -39,14 +39,14 @@ function CustomGraphNode({ data, selected }: NodeProps<CustomNodeData>) {
 
       <div
         className={`rounded-xl shadow-md border transition-shadow group-hover:shadow-lg ${
-          data.isAnomaly ? "border-dashed border-red-400 border-2" : ""
+          data.isAnomaly ? "border-dashed border-[#D86C63] border-2" : ""
         }`}
         style={{
           backgroundColor: config.surface,
           borderColor: data.isAnomaly ? undefined : `${config.accent}55`,
           boxShadow: selected
-            ? "0 10px 22px rgba(91, 63, 34, 0.14)"
-            : "0 4px 12px rgba(91, 63, 34, 0.08)",
+            ? "0 10px 22px rgba(15, 23, 42, 0.10)"
+            : "0 4px 12px rgba(15, 23, 42, 0.06)",
         }}
       >
         {/* Patient position badge */}
@@ -61,7 +61,7 @@ function CustomGraphNode({ data, selected }: NodeProps<CustomNodeData>) {
 
         {/* Anomaly badge */}
         {data.isAnomaly && !data.isPatientPosition && (
-          <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-sm animate-pulse">
+          <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#D86C63] flex items-center justify-center shadow-sm animate-pulse">
             <AlertTriangle size={10} className="text-white" />
           </div>
         )}
@@ -87,7 +87,7 @@ function CustomGraphNode({ data, selected }: NodeProps<CustomNodeData>) {
           <div className="w-full h-px mb-1.5" style={{ backgroundColor: `${config.accent}38` }} />
 
           {/* Node label */}
-          <p className="text-sm font-semibold leading-snug text-[#332922]">{data.label}</p>
+          <p className="text-sm font-semibold leading-snug text-[#1F2937]">{data.label}</p>
         </div>
       </div>
 
